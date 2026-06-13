@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Live Analytics Dashboard</title>
-    <!-- Tailwind CSS for sleek, modern layout styling -->
-    <script src="https://jsdelivr.net"></script>
+    <!-- Fixed Tailwind CSS v4 CDN script integration -->
+    <script src="https://unpkg.com"></script>
     <!-- Chart.js for building high-performance interactive graphics -->
     <script src="https://jsdelivr.net"></script>
     <!-- PapaParse for reliably decoding live stream CSV format data -->
@@ -104,7 +104,7 @@
     <!-- Active Real-time JavaScript Connection Architecture -->
     <script>
         // Dedicated Target Endpoint Link passed by user
-        const CSV_ENDPOINT = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSZjO-A6VhuzifXXgffaGdtD6ysazVtS1FTjeFTUxdi-q9IIfjc4DZmrS3QF7MhzKjHRqeN36ZeX_qu/pub?gid=1590006273&single=true&output=csv";
+        const CSV_ENDPOINT = "https://google.com";
 
         // Local References for Global Charts Memory
         let chartInstanceInstance1 = null;
@@ -164,4 +164,3 @@
 
             tableHeadContainer.innerHTML = `<tr>${columnsArray.map(col => `<th class="p-4">${col}</th>`).join('')}</tr>`;
             tableBodyContainer.innerHTML = datasetArray.map(row => {
-            return <tr class="hover:bg-gray-700/30 transition-colors">${columnsArray.map(col => ${row[col] || ''}).join('')}</tr>;}).join('');// Step 4: Build Dynamic Analytics Graphical Charts Configurationsconst rawGraphicLabels = datasetArray.map(r => r[targetLabelColumn]);const rawGraphicValues = datasetArray.map(r => parseFloat(r[targetNumericColumn]) || 0);// Clear legacy layout configurations to prevent overlapping redraw calculationsif (chartInstanceInstance1) chartInstanceInstance1.destroy();if (chartInstanceInstance2) chartInstanceInstance2.destroy();// Render Graphical Element 1: Sequential Trend Chart Matrixconst ctx1 = document.getElementById('trendChart').getContext('2d');chartInstanceInstance1 = new Chart(ctx1, {type: 'line',data: {labels: rawGraphicLabels,datasets: [{label: targetNumericColumn,data: rawGraphicValues,borderColor: '#2dd4bf', // Teal 400backgroundColor: 'rgba(45, 212, 191, 0.1)',borderWidth: 3,fill: true,tension: 0.3,pointBackgroundColor: '#14b8a6'}]},options: {responsive: true,maintainAspectRatio: false,plugins: { legend: { display: false } },scales: {x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } },y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } }}}});// Render Graphical Element 2: Categorical Segments Breakdown Modelconst ctx2 = document.getElementById('categoryChart').getContext('2d');chartInstanceInstance2 = new Chart(ctx2, {type: 'bar',data: {labels: rawGraphicLabels.slice(0, 10), // Limit layout spacing constraints gracefullydatasets: [{label: targetNumericColumn,data: rawGraphicValues.slice(0, 10),backgroundColor: 'rgba(99, 102, 241, 0.85)', // Indigo 500borderRadius: 6,borderWidth: 0}]},options: {responsive: true,maintainAspectRatio: false,plugins: { legend: { display: false } },scales: {x: { grid: { display: false }, ticks: { color: '#9ca3af' } },y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } }}}});}// Initialize script trigger automatically on client browser frame entryfetchSpreadsheetAndBuildDashboard();
