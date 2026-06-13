@@ -3,189 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upcoming Tenders Dashboard</title>
-    <!-- Chart.js & PapaParse for live data processing -->
-    <script src="https://jsdelivr.net"></script>
-    <script src="https://cloudflare.com"></script>
+    <title>Dynamic CSV Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background-color: #0b0f17; color: #f1f5f9; padding: 24px; min-height: 100vh; }
-        .dashboard-container { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
-        
-        /* Top Banner styling matching your image */
-        .main-header { background: #111823; padding: 24px; border-radius: 8px; border-left: 5px solid #f97316; }
-        .brand-title { color: #f97316; font-size: 24px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
-        .brand-sub { color: #94a3b8; font-size: 13px; margin-top: 4px; }
-        .tag-row { display: flex; gap: 10px; margin-top: 12px; }
-        .tag { background: #1e293b; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; color: #94a3b8; }
-        .tag-orange { background: rgba(249, 115, 22, 0.2); color: #f97316; }
-        .tag-teal { background: rgba(45, 212, 191, 0.2); color: #2dd4bf; }
-        
-        .big-metric-display { margin-top: 20px; }
-        .big-val { font-size: 42px; font-weight: 900; color: #2dd4bf; }
-        .big-lbl { font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 1px; margin-top: 2px; }
-
-        /* Metric Grid Row */
-        .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 8px; }
-        @media (max-width: 768px) { .metrics-grid { grid-template-columns: 1fr; } }
-        .metric-box { background: #111823; padding: 20px; border-radius: 4px; border-bottom: 3px solid #334155; }
-        .box-blue { border-bottom-color: #38bdf8; }
-        .box-indigo { border-bottom-color: #6366f1; }
-        .box-teal { border-bottom-color: #2dd4bf; }
-        .metric-lbl { font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px; }
-        .metric-val { font-size: 28px; font-weight: 800; color: #ffffff; margin-top: 6px; }
-
-        .sub-metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-        @media (max-width: 600px) { .sub-metrics-grid { grid-template-columns: 1fr; } }
-
-        /* Search & Controls */
-        .controls-panel { background: #111823; padding: 20px; border-radius: 8px; display: flex; flex-direction: column; gap: 16px; margin-top: 8px; }
-        .search-bar { background: #0b0f17; border: 1px solid #1e293b; padding: 12px; border-radius: 6px; color: #ffffff; width: 100%; font-size: 14px; }
-        
-        /* Table layout */
-        .table-container { background: #111823; border-radius: 8px; overflow: hidden; margin-top: 8px; }
-        .table-viewport { overflow-x: auto; max-height: 450px; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
-        th { background: #0b0f17; color: #64748b; padding: 14px 16px; font-weight: 700; text-transform: uppercase; font-size: 11px; border-bottom: 2px solid #1e293b; position: sticky; top: 0; }
-        td { padding: 14px 16px; border-top: 1px solid #1e293b; color: #cbd5e1; }
-        tr:hover { background: rgba(255,255,255,0.02); }
-        .status-sync { font-size: 12px; color: #2dd4bf; font-weight: 600; text-align: right; }
+        :root { --primary: #2563eb; --bg: #f8fafc; --card: #ffffff; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px; }
+        .card { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .stat-card { text-align: center; }
+        .stat-value { font-size: 2rem; font-weight: bold; color: var(--primary); }
+        .chart-container { position: relative; height: 300px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+        th { background: #f1f5f9; position: sticky; top: 0; }
+        .scrollable { max-height: 400px; overflow-y: auto; border-radius: 8px; }
     </style>
 </head>
 <body>
 
-    <div class="dashboard-container">
-        
-        <!-- Main Brand Header -->
-        <header class="main-header">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                    <div class="brand-title">💼 Upcoming Tenders Dashboard</div>
-                    <div class="brand-sub">Authority-wise project intelligence · Government of India</div>
-                </div>
-                <div class="status-sync" id="sync-status">🟢 Connected Live</div>
-            </div>
-            
-            <div class="tag-row">
-                <div class="tag tag-orange" id="tag-count">... Tenders</div>
-                <div class="tag tag-teal">All India Coverage</div>
-                <div class="tag" id="tag-date">Updated Live</div>
-            </div>
+    <h2 style="margin-bottom: 20px;">Business Analytics Dashboard</h2>
 
-            <div class="big-metric-display">
-                <div class="big-val" id="total-value-banner">₹0 Cr</div>
-                <div class="big-lbl">Total Tender Value</div>
-            </div>
-        </header>
+    <!-- Summary Cards -->
+    <div class="grid">
+        <div class="card stat-card">
+            <div class="stat-label">Total Records</div>
+            <div id="total-records" class="stat-value">0</div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-label">Total Revenue</div>
+            <div id="total-sales" class="stat-value">$0</div>
+        </div>
+    </div>
 
-        <!-- KPI Block Group 1 -->
-        <section class="metrics-grid">
-            <div class="metric-box box-blue">
-                <div class="metric-lbl">📋 Total Tenders</div>
-                <div class="metric-val" id="kpi-total-tenders">...</div>
+    <!-- Charts Section -->
+    <div class="grid">
+        <div class="card">
+            <h3>Sales by Category</h3>
+            <div class="chart-container">
+                <canvas id="categoryChart"></canvas>
             </div>
-            <div class="metric-box box-indigo">
-                <div class="metric-lbl">💰 Total Value</div>
-                <div class="metric-val" id="kpi-total-value">...</div>
+        </div>
+        <div class="card">
+            <h3>Monthly Trend</h3>
+            <div class="chart-container">
+                <canvas id="trendChart"></canvas>
             </div>
-            <div class="metric-box box-teal">
-                <div class="metric-lbl">📊 Avg Tender Value</div>
-                <div class="metric-val" id="kpi-avg-value">...</div>
-            </div>
-        </section>
+        </div>
+    </div>
 
-        <!-- KPI Block Group 2 -->
-        <section class="sub-metrics-grid">
-            <div class="metric-box">
-                <div class="metric-lbl">🗺️ States Covered</div>
-                <div class="metric-val" id="kpi-states">...</div>
-            </div>
-            <div class="metric-box">
-                <div class="metric-lbl">🔥 High Value Tenders (₹500 Cr+)</div>
-                <div class="metric-val" id="kpi-high-val">...</div>
-            </div>
-        </section>
-
-        <!-- Dynamic Controls Search Box -->
-        <section class="controls-panel">
-            <input type="text" id="dashboard-search" class="search-bar" placeholder="Search title, Tender ID, organisation, city...">
-        </section>
-
-        <!-- Interactive Table Data -->
-        <section class="table-container">
-            <div class="table-viewport">
-                <table>
-                    <thead id="dynamic-th">
-                        <!-- Loaded automatically from CSV headers -->
-                    </thead>
-                    <tbody id="dynamic-tb">
-                        <tr>
-                            <td style="padding: 40px; text-align: center; color: #475569; font-style: italic;">Connecting to data stream...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
+    <!-- Data Table -->
+    <div class="card">
+        <h3>Raw Data Preview</h3>
+        <div class="scrollable">
+            <table id="data-table">
+                <thead><tr id="table-head"></tr></thead>
+                <tbody id="table-body"></tbody>
+            </table>
+        </div>
     </div>
 
     <script>
-        // Your Google Sheets live CSV URL endpoint
-        const SHEET_CSV_URL = "https://google.com";
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSZjO-A6VhuzifXXgffaGdtD6ysazVtS1FTjeFTUxdi-q9IIfjc4DZmrS3QF7MhzKjHRqeN36ZeX_qu/pub?gid=1590006273&single=true&output=csv';
 
-        let fullDatasetMemory = [];
-
-        async function initializeDashboardSync() {
-            try {
-                const response = await fetch(SHEET_CSV_URL);
-                if (!response.ok) throw new Error("Could not pull live sheet data.");
-                const csvDataText = await response.text();
-
-                Papa.parse(csvDataText, {
-                    header: true,
-                    skipEmptyLines: true,
-                    complete: function(results) {
-                        fullDatasetMemory = results.data;
-                        processAndRenderDashboard(fullDatasetMemory);
-                    }
-                });
-            } catch (err) {
-                console.error(err);
-                document.getElementById('sync-status').textContent = "🔴 Sync Error";
-                document.getElementById('sync-status').style.color = "#ef4444";
-            }
+        async function initDashboard() {
+            Papa.parse(CSV_URL, {
+                download: true,
+                header: true,
+                dynamicTyping: true,
+                complete: function(results) {
+                    const data = results.data.filter(row => row.Category); // Filter empty rows
+                    renderStats(data);
+                    renderCharts(data);
+                    renderTable(data);
+                }
+            });
         }
 
-        function processAndRenderDashboard(rows) {
-            if(!rows || rows.length === 0) return;
+        function renderStats(data) {
+            document.getElementById('total-records').innerText = data.length.toLocaleString();
+            const total = data.reduce((sum, row) => sum + (Number(row.Sales) || 0), 0);
+            document.getElementById('total-sales').innerText = '$' + Math.round(total).toLocaleString();
+        }
 
-            // Extract spreadsheet keys dynamically
-            const headerKeys = Object.keys(rows[0]);
-            
-            // Look for columns that represent specific tender properties
-            const valueColumn = headerKeys.find(k => k.toLowerCase().includes('value') || k.toLowerCase().includes('amount')) || headerKeys[headerKeys.length - 1];
-            const stateColumn = headerKeys.find(k => k.toLowerCase().includes('state') || k.toLowerCase().includes('region')) || headerKeys[0];
-
-            // 1. Calculations logic for KPIs
-            let totalValueSum = 0;
-            let highValueCount = 0;
-            let statesSet = new Set();
-
-            rows.forEach(row => {
-                let val = parseFloat(String(row[valueColumn]).replace(/[^0-9.]/g, '')) || 0;
-                totalValueSum += val;
-                if (val >= 500) highValueCount++;
-                if (row[stateColumn]) statesSet.add(row[stateColumn].trim());
+        function renderCharts(data) {
+            // Process Category Data
+            const cats = {};
+            data.forEach(row => {
+                cats[row.Category] = (cats[row.Category] || 0) + (row.Sales || 0);
             });
 
-            let avgValue = rows.length ? (totalValueSum / rows.length) : 0;
+            new Chart(document.getElementById('categoryChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(cats),
+                    datasets: [{
+                        data: Object.values(cats),
+                        backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+                    }]
+                },
+                options: { maintainAspectRatio: false }
+            });
 
-            // Formatter engine for clean numerical readings
-            function formatToCr(v) {
-                if (v >= 100000) return `₹${(v / 100000).toFixed(2)}L Cr`;
-                return `₹${v.toLocaleString(undefined, {maximumFractionDigits: 0})} Cr`;
-            }
+            // Process Trend Data (by Date)
+            const trend = {};
+            data.slice(0, 50).forEach(row => { // Sample last 50 for trend
+                const label = row['Order Date'] || 'Unknown';
+                trend[label] = (trend[label] || 0) + (row.Sales || 0);
+            });
 
-            // 2. Inject calculated numbers back into visual HTML items
-            document.getElementById('tag-count').textContent = `${rows.length.toLocaleString()} Tenders`;
-            document.getElementById('total-value-banner').textContent = formatToCr(totalValueSum);
-            document.getElementById('kpi-total-tenders').textContent = rows.length.toLocaleString();
+            new Chart(document.getElementById('trendChart'), {
+                type: 'line',
+                data: {
+                    labels: Object.keys(trend),
+                    datasets: [{
+                        label: 'Sales Trend',
+                        data: Object.values(trend),
+                        borderColor: '#2563eb',
+                        tension: 0.3,
+                        fill: true,
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)'
+                    }]
+                },
+                options: { maintainAspectRatio: false }
+            });
+        }
+
+        function renderTable(data) {
+            const headers = Object.keys(data[0]);
+            const headRow = document.getElementById('table-head');
+            const bodyRow = document.getElementById('table-body');
+
+            headers.forEach(h => headRow.innerHTML += `<th>${h}</th>`);
+            
+            data.slice(0, 20).forEach(row => {
+                const tr = document.createElement('tr');
+                headers.forEach(h => tr.innerHTML += `<td>${row[h] || ''}</td>`);
+                bodyRow.appendChild(tr);
+            });
+        }
+
+        initDashboard();
+    </script>
+</body>
+</html>
