@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Analytics Dashboard</title>
+    <!-- Tailwind CSS for sleek, modern layout styling -->
+    <script src="https://jsdelivr.net"></script>
+    <!-- Chart.js for building high-performance interactive graphics -->
+    <script src="https://jsdelivr.net"></script>
+    <!-- PapaParse for reliably decoding live stream CSV format data -->
+    <script src="https://cloudflare.com"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen p-6">
+
+    <!-- Dashboard Main Wrapper Container -->
+    <div class="max-w-7xl mx-auto space-y-6">
+        
+        <!-- Dashboard Header Area -->
+        <header class="flex justify-between items-center bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-xl">
+            <div>
+                <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400 tracking-tight">Live Business Intel</h1>
+                <p class="text-sm text-gray-400 mt-1">Automatically syncing data instantly with cloud database</p>
+            </div>
+            <div class="flex items-center gap-3 bg-gray-900/50 px-4 py-2 rounded-xl border border-gray-700">
+                <span class="relative flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                </span>
+                <span id="status-badge" class="text-xs font-semibold text-emerald-400 tracking-wider uppercase">Connected Live</span>
+            </div>
+        </header>
+
+        <!-- KPI Executive Metrics Summary Ribbon -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Summary Metric Card 1 -->
+            <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-lg flex flex-col justify-between">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Aggregate Records Count</span>
+                <h2 id="kpi-total-rows" class="text-4xl font-extrabold text-white mt-2">...</h2>
+                <div class="text-xs text-teal-400 font-medium mt-2">✓ Parsed rows successfully</div>
+            </div>
+            <!-- Summary Metric Card 2 -->
+            <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-lg flex flex-col justify-between">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Key Metric Baseline (Avg)</span>
+                <h2 id="kpi-avg-value" class="text-4xl font-extrabold text-white mt-2">...</h2>
+                <div class="text-xs text-indigo-400 font-medium mt-2">ℹ️ Derived dynamically across dimensions</div>
+            </div>
+            <!-- Summary Metric Card 3 -->
+            <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-lg flex flex-col justify-between">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Identified Key Factors</span>
+                <h2 id="kpi-unique-categories" class="text-4xl font-extrabold text-white mt-2">...</h2>
+                <div class="text-xs text-amber-400 font-medium mt-2">⚡ Distinct elements isolated</div>
+            </div>
+        </section>
+
+        <!-- Chart Grid Matrix Representation Area -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Visual Graphic Object 1: Primary Trends Structure -->
+            <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-xl">
+                <div class="mb-4">
+                    <h3 class="text-lg font-bold text-gray-200">Continuous Trend Matrix</h3>
+                    <p class="text-xs text-gray-400">Sequential chronological flow configuration</p>
+                </div>
+                <div class="relative h-80 w-full">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Visual Graphic Object 2: Structural Breakdown Layout -->
+            <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-xl">
+                <div class="mb-4">
+                    <h3 class="text-lg font-bold text-gray-200">Segment Apportionment Model</h3>
+                    <p class="text-xs text-gray-400">Categorical structural composition percentage allocation</p>
+                </div>
+                <div class="relative h-80 w-full">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dynamic Real-Time Interactive Data Table Component -->
+        <section class="bg-gray-800 rounded-2xl border border-gray-700 shadow-xl overflow-hidden">
+            <div class="p-6 border-b border-gray-700 bg-gray-800/50 flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-200">Active File Records Mirror</h3>
+                    <p class="text-xs text-gray-400">Direct query response matrix of cloud spreadsheet storage cells</p>
+                </div>
+            </div>
+            <div class="overflow-x-auto max-h-96 overflow-y-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead id="table-head" class="bg-gray-900 text-gray-300 font-semibold sticky top-0 uppercase text-xs tracking-wider border-b border-gray-700">
+                        <!-- Populated Dynamically based on Spreadsheet Schema -->
+                    </thead>
+                    <tbody id="table-body" class="divide-y divide-gray-700/50 text-gray-300">
+                        <tr>
+                            <td class="p-6 text-center text-gray-500 italic">Streaming layout structures from server endpoints...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- Active Real-time JavaScript Connection Architecture -->
+    <script>
+        // Dedicated Target Endpoint Link passed by user
+        const CSV_ENDPOINT = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSZjO-A6VhuzifXXgffaGdtD6ysazVtS1FTjeFTUxdi-q9IIfjc4DZmrS3QF7MhzKjHRqeN36ZeX_qu/pub?gid=1590006273&single=true&output=csv";
+
+        // Local References for Global Charts Memory
+        let chartInstanceInstance1 = null;
+        let chartInstanceInstance2 = null;
+
+        // Core Initialization Asynchronous Execution
+        async function fetchSpreadsheetAndBuildDashboard() {
+            const statusBadge = document.getElementById('status-badge');
+            try {
+                const fetchResponse = await fetch(CSV_ENDPOINT);
+                if (!fetchResponse.ok) throw new Error("Network status invalid check configuration link.");
+                
+                const responseRawText = await fetchResponse.text();
+                
+                // Parse CSV contents safely ignoring trailing clean carriage whitespace
+                Papa.parse(responseRawText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(parsingResults) {
+                        renderDashboardGraphics(parsingResults.data);
+                    }
+                });
+            } catch (runtimeNetworkError) {
+                console.error("Critical execution abort error details:", runtimeNetworkError);
+                statusBadge.textContent = "Sync Offline / Error";
+                statusBadge.className = "text-xs font-semibold text-rose-400 tracking-wider uppercase";
+            }
+        }
+
+        function renderDashboardGraphics(datasetArray) {
+            if (!datasetArray || datasetArray.length === 0) return;
+
+            // Step 1: Detect available database structure properties dynamically
+            const columnsArray = Object.keys(datasetArray[0]);
+            
+            // Extract analytical candidates (Column 0: Labels, Column 1 or last: Numbers)
+            const targetLabelColumn = columnsArray[0];
+            const targetNumericColumn = columnsArray.find(col => {
+                return datasetArray.some(row => !isNaN(parseFloat(row[col])) && isFinite(row[col]));
+            }) || columnsArray[columnsArray.length - 1];
+
+            // Step 2: Compute Quantitative Core Performance Cards Indicators
+            const quantitativeValues = datasetArray.map(r => parseFloat(r[targetNumericColumn])).filter(v => !isNaN(v));
+            const calculatedTotalSum = quantitativeValues.reduce((acc, curr) => acc + curr, 0);
+            const calculatedAverageValue = quantitativeValues.length ? (calculatedTotalSum / quantitativeValues.length).toFixed(1) : 0;
+            
+            const uniquelyIsolatedLabels = [...new Set(datasetArray.map(r => r[targetLabelColumn]))];
+
+            // Render calculations into interface cells
+            document.getElementById('kpi-total-rows').textContent = datasetArray.length.toLocaleString();
+            document.getElementById('kpi-avg-value').textContent = calculatedAverageValue;
+            document.getElementById('kpi-unique-categories').textContent = uniquelyIsolatedLabels.length;
+
+            // Step 3: Parse and populate clean dynamic Table Element structures
+            const tableHeadContainer = document.getElementById('table-head');
+            const tableBodyContainer = document.getElementById('table-body');
+
+            tableHeadContainer.innerHTML = `<tr>${columnsArray.map(col => `<th class="p-4">${col}</th>`).join('')}</tr>`;
+            tableBodyContainer.innerHTML = datasetArray.map(row => {
+            return <tr class="hover:bg-gray-700/30 transition-colors">${columnsArray.map(col => ${row[col] || ''}).join('')}</tr>;}).join('');// Step 4: Build Dynamic Analytics Graphical Charts Configurationsconst rawGraphicLabels = datasetArray.map(r => r[targetLabelColumn]);const rawGraphicValues = datasetArray.map(r => parseFloat(r[targetNumericColumn]) || 0);// Clear legacy layout configurations to prevent overlapping redraw calculationsif (chartInstanceInstance1) chartInstanceInstance1.destroy();if (chartInstanceInstance2) chartInstanceInstance2.destroy();// Render Graphical Element 1: Sequential Trend Chart Matrixconst ctx1 = document.getElementById('trendChart').getContext('2d');chartInstanceInstance1 = new Chart(ctx1, {type: 'line',data: {labels: rawGraphicLabels,datasets: [{label: targetNumericColumn,data: rawGraphicValues,borderColor: '#2dd4bf', // Teal 400backgroundColor: 'rgba(45, 212, 191, 0.1)',borderWidth: 3,fill: true,tension: 0.3,pointBackgroundColor: '#14b8a6'}]},options: {responsive: true,maintainAspectRatio: false,plugins: { legend: { display: false } },scales: {x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } },y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } }}}});// Render Graphical Element 2: Categorical Segments Breakdown Modelconst ctx2 = document.getElementById('categoryChart').getContext('2d');chartInstanceInstance2 = new Chart(ctx2, {type: 'bar',data: {labels: rawGraphicLabels.slice(0, 10), // Limit layout spacing constraints gracefullydatasets: [{label: targetNumericColumn,data: rawGraphicValues.slice(0, 10),backgroundColor: 'rgba(99, 102, 241, 0.85)', // Indigo 500borderRadius: 6,borderWidth: 0}]},options: {responsive: true,maintainAspectRatio: false,plugins: { legend: { display: false } },scales: {x: { grid: { display: false }, ticks: { color: '#9ca3af' } },y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } }}}});}// Initialize script trigger automatically on client browser frame entryfetchSpreadsheetAndBuildDashboard();
