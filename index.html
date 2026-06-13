@@ -1,149 +1,450 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic CSV Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    <style>
-        :root { --primary: #2563eb; --bg: #f8fafc; --card: #ffffff; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px; }
-        .card { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        .stat-card { text-align: center; }
-        .stat-value { font-size: 2rem; font-weight: bold; color: var(--primary); }
-        .chart-container { position: relative; height: 300px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
-        th { background: #f1f5f9; position: sticky; top: 0; }
-        .scrollable { max-height: 400px; overflow-y: auto; border-radius: 8px; }
-    </style>
+  <meta charset="utf-8" />
+  <title>CSV Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Tabulator table -->
+  <link href="[unpkg.com](https://unpkg.com/tabulator-tables@6.3.1/dist/css/tabulator.min.css)" rel="stylesheet">
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 16px; color: #222; }
+    header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 16px; }
+    header h1 { margin: 0 12px 0 0; font-size: 20px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+    .controls label { font-weight: 600; }
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 12px 0 16px; }
+    .kpi { border: 1px solid #ddd; border-radius: 8px; padding: 12px; background: #fafafa; }
+    .kpi .label { font-size: 12px; color: #666; }
+    .kpi .value { font-size: 22px; font-weight: 700; margin-top: 6px; }
+    .grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; }
+    @media (max-width: 1000px) { .grid { grid-template-columns: 1fr; } }
+    .panel { border: 1px solid #ddd; border-radius: 8px; padding: 12px; background: #fff; }
+    .panel h3 { margin: 0 0 8px; font-size: 16px; }
+    canvas { max-height: 360px; }
+    .footer { margin-top: 16px; font-size: 12px; color: #666; }
+    select, input[type="text"] { padding: 6px 8px; border: 1px solid #ccc; border-radius: 6px; }
+    button { padding: 6px 10px; border: 1px solid #aaa; border-radius: 6px; background: #f2f2f2; cursor: pointer; }
+    button:hover { background: #e9e9e9; }
+    .spacer { flex: 1; }
+  </style>
 </head>
 <body>
-
-    <h2 style="margin-bottom: 20px;">Business Analytics Dashboard</h2>
-
-    <!-- Summary Cards -->
-    <div class="grid">
-        <div class="card stat-card">
-            <div class="stat-label">Total Records</div>
-            <div id="total-records" class="stat-value">0</div>
-        </div>
-        <div class="card stat-card">
-            <div class="stat-label">Total Revenue</div>
-            <div id="total-sales" class="stat-value">$0</div>
-        </div>
+  <header>
+    <h1>CSV Dashboard</h1>
+    <div class="spacer"></div>
+    <div class="controls">
+      <label>Dimension</label>
+      <select id="dimension"></select>
+      <label>Metric</label>
+      <select id="metric"></select>
+      <label>Group by time</label>
+      <select id="timeGroup">
+        <option value="none">None</option>
+        <option value="day">Day</option>
+        <option value="week">Week</option>
+        <option value="month" selected>Month</option>
+      </select>
+      <label>Filter</label>
+      <input id="globalFilter" type="text" placeholder="Type to filter table..." />
+      <button id="reset">Reset</button>
     </div>
+  </header>
 
-    <!-- Charts Section -->
-    <div class="grid">
-        <div class="card">
-            <h3>Sales by Category</h3>
-            <div class="chart-container">
-                <canvas id="categoryChart"></canvas>
-            </div>
-        </div>
-        <div class="card">
-            <h3>Monthly Trend</h3>
-            <div class="chart-container">
-                <canvas id="trendChart"></canvas>
-            </div>
-        </div>
+  <section class="kpis" id="kpis"></section>
+
+  <section class="grid">
+    <div class="panel">
+      <h3>Trend</h3>
+      <canvas id="lineChart"></canvas>
     </div>
-
-    <!-- Data Table -->
-    <div class="card">
-        <h3>Raw Data Preview</h3>
-        <div class="scrollable">
-            <table id="data-table">
-                <thead><tr id="table-head"></tr></thead>
-                <tbody id="table-body"></tbody>
-            </table>
-        </div>
+    <div class="panel">
+      <h3>Top by Dimension</h3>
+      <canvas id="barChart"></canvas>
     </div>
+  </section>
 
-    <script>
-        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSZjO-A6VhuzifXXgffaGdtD6ysazVtS1FTjeFTUxdi-q9IIfjc4DZmrS3QF7MhzKjHRqeN36ZeX_qu/pub?gid=1590006273&single=true&output=csv';
+  <section class="panel" style="margin-top:16px;">
+    <h3>Data</h3>
+    <div id="table"></div>
+  </section>
 
-        async function initDashboard() {
-            Papa.parse(CSV_URL, {
-                download: true,
-                header: true,
-                dynamicTyping: true,
-                complete: function(results) {
-                    const data = results.data.filter(row => row.Category); // Filter empty rows
-                    renderStats(data);
-                    renderCharts(data);
-                    renderTable(data);
-                }
-            });
+  <div class="footer">
+    Data refreshes on page load from the CSV source URL.
+  </div>
+
+  <!-- Libraries -->
+  <script src="[unpkg.com](https://unpkg.com/papaparse@5.4.1/papaparse.min.js)"></script>
+  <script src="[cdn.jsdelivr.net](https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js)"></script>
+  <script src="[unpkg.com](https://unpkg.com/tabulator-tables@6.3.1/dist/js/tabulator.min.js)"></script>
+
+  <script>
+    // ======= CONFIG =======
+    const CSV_URL = "[docs.google.com](https://docs.google.com/spreadsheets/d/e/2PACX-1vSZjO-A6VhuzifXXgffaGdtD6ysazVtS1FTjeFTUxdi-q9IIfjc4DZmrS3QF7MhzKjHRqeN36ZeX_qu/pub?gid=1590006273&single=true&output=csv)";
+
+    // If your sheet has specific column names, set defaults here to auto-select:
+    const DEFAULTS = {
+      // Try to detect these automatically, but you can force names:
+      dateColumn: null,     // e.g., "Date"
+      dimension: null,      // e.g., "Category"
+      metric: null          // e.g., "Revenue"
+    };
+
+    // ======= UTILITIES =======
+    function inferType(val) {
+      if (val === null || val === undefined) return "empty";
+      const s = String(val).trim();
+      if (s === "" || s.toLowerCase() === "null" || s.toLowerCase() === "na") return "empty";
+      // number?
+      const n = Number(s.replace(/[, ]/g, ""));
+      if (!isNaN(n) && s.match(/^-?[0-9.,\s]+$/)) return "number";
+      // date?
+      const d = new Date(s);
+      if (!isNaN(d)) return "date";
+      return "string";
+    }
+
+    function parseNumber(s) {
+      if (s === null || s === undefined) return null;
+      const n = Number(String(s).replace(/[, ]/g, ""));
+      return isNaN(n) ? null : n;
+    }
+
+    function truncate(str, n = 24) {
+      str = String(str);
+      return str.length > n ? str.slice(0, n - 1) + "…" : str;
+    }
+
+    function formatNumber(n) {
+      if (n === null || n === undefined || isNaN(n)) return "";
+      if (Math.abs(n) >= 1e9) return (n/1e9).toFixed(2) + "B";
+      if (Math.abs(n) >= 1e6) return (n/1e6).toFixed(2) + "M";
+      if (Math.abs(n) >= 1e3) return (n/1e3).toFixed(2) + "K";
+      return n.toLocaleString();
+    }
+
+    function startOf(date, unit) {
+      const d = new Date(date);
+      if (unit === "day") {
+        d.setHours(0,0,0,0);
+      } else if (unit === "week") {
+        const day = d.getDay(); // 0 Sun - 6 Sat
+        const diff = (day + 6) % 7; // make Monday start
+        d.setDate(d.getDate() - diff);
+        d.setHours(0,0,0,0);
+      } else if (unit === "month") {
+        d.setDate(1); d.setHours(0,0,0,0);
+      }
+      return d;
+    }
+
+    function fmtPeriod(d, unit) {
+      if (unit === "day") return d.toISOString().slice(0,10);
+      if (unit === "week") return "Wk of " + d.toISOString().slice(0,10);
+      if (unit === "month") return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0");
+      return d.toISOString();
+    }
+
+    // ======= STATE =======
+    let rawRows = [];
+    let columns = [];
+    let typeMap = {}; // col -> inferred type
+    let table;
+    let lineChart, barChart;
+
+    // ======= LOAD =======
+    async function loadCSV() {
+      return new Promise((resolve, reject) => {
+        Papa.parse(CSV_URL, {
+          download: true,
+          header: true,
+          dynamicTyping: false,
+          skipEmptyLines: true,
+          complete: results => resolve(results.data),
+          error: reject
+        });
+      });
+    }
+
+    function inferColumns(rows) {
+      columns = Object.keys(rows[0] || {});
+      typeMap = {};
+      for (const c of columns) {
+        // Sample 20 values to infer type
+        const sample = rows.slice(0, 20).map(r => r[c]).filter(v => v !== undefined);
+        const scores = { number:0, date:0, string:0 };
+        for (const v of sample) {
+          const t = inferType(v);
+          if (t in scores) scores[t]++;
+          else scores.string++;
         }
+        const best = Object.entries(scores).sort((a,b)=>b[1]-a[1])[0]?.[0] || "string";
+        typeMap[c] = best;
+      }
+    }
 
-        function renderStats(data) {
-            document.getElementById('total-records').innerText = data.length.toLocaleString();
-            const total = data.reduce((sum, row) => sum + (Number(row.Sales) || 0), 0);
-            document.getElementById('total-sales').innerText = '$' + Math.round(total).toLocaleString();
+    function pickDefaults() {
+      // Date column
+      let dateCol = DEFAULTS.dateColumn;
+      if (!dateCol) {
+        dateCol = columns.find(c => typeMap[c] === "date" && /date|day|time/i.test(c)) || columns.find(c => typeMap[c] === "date");
+      }
+      // Dimension: first string that's not the date
+      let dimension = DEFAULTS.dimension || columns.find(c => typeMap[c] === "string" && c !== dateCol) || columns[0];
+      // Metric: first number
+      let metric = DEFAULTS.metric || columns.find(c => typeMap[c] === "number");
+      if (!metric) {
+        // Try to coerce any column that looks numeric in most rows
+        const numericish = columns.filter(c => {
+          let good = 0, seen = 0;
+          for (const r of rawRows.slice(0, 50)) {
+            const v = parseNumber(r[c]);
+            if (v !== null) good++;
+            if (r[c] !== undefined) seen++;
+          }
+          return seen > 0 && good / seen > 0.6;
+        });
+        metric = numericish[0] || columns[1] || columns[0];
+      }
+      return { dateCol, dimension, metric };
+    }
+
+    function populateSelectors(selId, items, selected) {
+      const el = document.getElementById(selId);
+      el.innerHTML = "";
+      for (const it of items) {
+        const opt = document.createElement("option");
+        opt.value = it;
+        opt.textContent = it;
+        el.appendChild(opt);
+      }
+      if (selected && items.includes(selected)) el.value = selected;
+    }
+
+    function aggregateTrend(rows, dateCol, metric, unit) {
+      if (!dateCol || unit === "none") {
+        // No date grouping: just index order
+        const pts = rows.map((r, i) => ({ x: i + 1, y: parseNumber(r[metric]) || 0 }));
+        return { labels: pts.map(p => p.x), values: pts.map(p => p.y), labelFmt: v => String(v) };
+      }
+      const bucket = new Map();
+      for (const r of rows) {
+        const d = new Date(r[dateCol]);
+        if (isNaN(d)) continue;
+        const s = startOf(d, unit);
+        const key = s.toISOString();
+        const val = parseNumber(r[metric]) || 0;
+        bucket.set(key, (bucket.get(key) || 0) + val);
+      }
+      const entries = Array.from(bucket.entries()).sort((a,b)=> new Date(a[0]) - new Date(b[0]));
+      const labels = entries.map(([k]) => fmtPeriod(new Date(k), unit));
+      const values = entries.map(([_,v]) => v);
+      return { labels, values };
+    }
+
+    function aggregateTop(rows, dimension, metric, topN = 10) {
+      const sums = new Map();
+      for (const r of rows) {
+        const key = r[dimension] ?? "(blank)";
+        const val = parseNumber(r[metric]) || 0;
+        sums.set(key, (sums.get(key) || 0) + val);
+      }
+      const sorted = Array.from(sums.entries()).sort((a,b)=>b[1]-a[1]).slice(0, topN);
+      return { labels: sorted.map(([k]) => String(k)), values: sorted.map(([_,v]) => v) };
+    }
+
+    function computeKPIs(rows, metric, dateCol) {
+      const total = rows.reduce((a,r)=> a + (parseNumber(r[metric]) || 0), 0);
+      let latest = null, prev = null;
+      if (dateCol) {
+        // Find latest period sum vs previous period sum (by day)
+        const byDay = new Map();
+        for (const r of rows) {
+          const d = new Date(r[dateCol]);
+          if (isNaN(d)) continue;
+          d.setHours(0,0,0,0);
+          const key = d.toISOString().slice(0,10);
+          byDay.set(key, (byDay.get(key)||0) + (parseNumber(r[metric])||0));
         }
-
-        function renderCharts(data) {
-            // Process Category Data
-            const cats = {};
-            data.forEach(row => {
-                cats[row.Category] = (cats[row.Category] || 0) + (row.Sales || 0);
-            });
-
-            new Chart(document.getElementById('categoryChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(cats),
-                    datasets: [{
-                        data: Object.values(cats),
-                        backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
-                    }]
-                },
-                options: { maintainAspectRatio: false }
-            });
-
-            // Process Trend Data (by Date)
-            const trend = {};
-            data.slice(0, 50).forEach(row => { // Sample last 50 for trend
-                const label = row['Order Date'] || 'Unknown';
-                trend[label] = (trend[label] || 0) + (row.Sales || 0);
-            });
-
-            new Chart(document.getElementById('trendChart'), {
-                type: 'line',
-                data: {
-                    labels: Object.keys(trend),
-                    datasets: [{
-                        label: 'Sales Trend',
-                        data: Object.values(trend),
-                        borderColor: '#2563eb',
-                        tension: 0.3,
-                        fill: true,
-                        backgroundColor: 'rgba(37, 99, 235, 0.1)'
-                    }]
-                },
-                options: { maintainAspectRatio: false }
-            });
+        const days = Array.from(byDay.entries()).sort((a,b)=>a[0].localeCompare(b[0]));
+        if (days.length >= 2) {
+          latest = days[days.length-1][1];
+          prev = days[days.length-2][1];
+        } else if (days.length === 1) {
+          latest = days[0][1];
+          prev = 0;
         }
+      }
+      const change = (latest !== null && prev !== null) ? ((latest - prev) / (prev || 1)) * 100 : null;
+      return { total, latest, change };
+    }
 
-        function renderTable(data) {
-            const headers = Object.keys(data[0]);
-            const headRow = document.getElementById('table-head');
-            const bodyRow = document.getElementById('table-body');
+    function renderKPIs(kpisEl, k) {
+      const items = [
+        { label: "Total", value: formatNumber(k.total) },
+        { label: "Latest period", value: k.latest != null ? formatNumber(k.latest) : "—" },
+        { label: "Change vs prev", value: k.change != null ? (k.change >= 0 ? "+" : "") + k.change.toFixed(1) + "%" : "—" },
+        { label: "Rows", value: formatNumber(rawRows.length) }
+      ];
+      kpisEl.innerHTML = items.map(it => `
+        <div class="kpi">
+          <div class="label">${it.label}</div>
+          <div class="value">${it.value}</div>
+        </div>
+      `).join("");
+    }
 
-            headers.forEach(h => headRow.innerHTML += `<th>${h}</th>`);
-            
-            data.slice(0, 20).forEach(row => {
-                const tr = document.createElement('tr');
-                headers.forEach(h => tr.innerHTML += `<td>${row[h] || ''}</td>`);
-                bodyRow.appendChild(tr);
-            });
+    function makeLineChart(ctx, labels, values, label="Trend") {
+      if (lineChart) lineChart.destroy();
+      lineChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [{
+            label,
+            data: values,
+            borderColor: "#2563eb",
+            backgroundColor: "rgba(37, 99, 235, 0.15)",
+            fill: true,
+            tension: 0.25,
+            pointRadius: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { ticks: { callback: (v) => formatNumber(v) }, beginAtZero: true }
+          },
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => formatNumber(ctx.parsed.y) } } }
         }
+      });
+    }
 
-        initDashboard();
-    </script>
+    function makeBarChart(ctx, labels, values, label="Top") {
+      if (barChart) barChart.destroy();
+      barChart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: labels.map(truncate),
+          datasets: [{
+            label,
+            data: values,
+            backgroundColor: "#16a34a"
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { ticks: { callback: (v) => formatNumber(v) }, beginAtZero: true }
+          },
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => formatNumber(ctx.parsed.y) } } }
+        }
+      });
+    }
+
+    function buildTable(el, rows) {
+      if (table) table.destroy();
+      // Build column defs with type-aware formatters
+      const cols = columns.map(c => {
+        if (typeMap[c] === "number") {
+          return { title: c, field: c, sorter: "number", hozAlign: "right",
+                   formatter: (cell) => {
+                     const v = parseNumber(cell.getValue());
+                     return v == null ? "" : formatNumber(v);
+                   }};
+        } else if (typeMap[c] === "date") {
+          return { title: c, field: c, sorter: "datetime", hozAlign: "left" };
+        }
+        return { title: c, field: c, sorter: "string", hozAlign: "left" };
+      });
+      table = new Tabulator(el, {
+        data: rows,
+        layout: "fitDataStretch",
+        reactiveData: false,
+        pagination: true,
+        paginationSize: 15,
+        columns: cols,
+        height: 420
+      });
+      // global filter
+      const filterInput = document.getElementById("globalFilter");
+      filterInput.addEventListener("input", () => {
+        const q = filterInput.value.toLowerCase();
+        table.setFilter((row) => {
+          const r = row.getData();
+          return columns.some(c => String(r[c] ?? "").toLowerCase().includes(q));
+        });
+        updateChartsAndKPIs();
+      });
+    }
+
+    function getFilteredRows() {
+      // If Tabulator has active filters, get current view; else use all rows
+      if (table) {
+        try {
+          return table.getData("active"); // returns filtered/sorted rows
+        } catch(e) {}
+      }
+      return rawRows;
+    }
+
+    function updateChartsAndKPIs() {
+      const dimension = document.getElementById("dimension").value;
+      const metric = document.getElementById("metric").value;
+      const timeGroup = document.getElementById("timeGroup").value;
+      const { dateCol } = pickDefaults(); // recompute to know current date column
+      const currentRows = getFilteredRows();
+
+      const trend = aggregateTrend(currentRows, dateCol, metric, timeGroup);
+      makeLineChart(document.getElementById("lineChart"), trend.labels, trend.values, `${metric} trend`);
+
+      const top = aggregateTop(currentRows, dimension, metric, 10);
+      makeBarChart(document.getElementById("barChart"), top.labels, top.values, `Top ${dimension}`);
+
+      const k = computeKPIs(currentRows, metric, dateCol);
+      renderKPIs(document.getElementById("kpis"), k);
+    }
+
+    async function init() {
+      rawRows = await loadCSV();
+
+      // Normalize empty values
+      rawRows = rawRows.map(r => {
+        const o = {};
+        for (const k in r) o[k.trim()] = r[k];
+        return o;
+      });
+
+      if (!rawRows.length) {
+        alert("No data rows found in the CSV.");
+        return;
+      }
+
+      inferColumns(rawRows);
+      const { dateCol, dimension, metric } = pickDefaults();
+
+      populateSelectors("dimension", columns.filter(c => typeMap[c] !== "number"), dimension);
+      populateSelectors("metric", columns.filter(c => typeMap[c] === "number" || c === metric), metric);
+
+      // Events
+      document.getElementById("dimension").addEventListener("change", updateChartsAndKPIs);
+      document.getElementById("metric").addEventListener("change", updateChartsAndKPIs);
+      document.getElementById("timeGroup").addEventListener("change", updateChartsAndKPIs);
+      document.getElementById("reset").addEventListener("click", () => {
+        document.getElementById("globalFilter").value = "";
+        if (table) table.clearFilter();
+        updateChartsAndKPIs();
+      });
+
+      buildTable(document.getElementById("table"), rawRows);
+      updateChartsAndKPIs();
+    }
+
+    init().catch(err => {
+      console.error(err);
+      alert("Failed to load or parse the CSV. Check the URL and CORS availability.");
+    });
+  </script>
 </body>
 </html>
