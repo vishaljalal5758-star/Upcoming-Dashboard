@@ -1,406 +1,484 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CSV Dynamic Dashboard</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upcoming Tenders Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root{
-      --bg:#0f172a;
-      --panel:#111827;
-      --card:#1f2937;
-      --text:#e5e7eb;
-      --muted:#9ca3af;
-      --accent:#60a5fa;
-      --accent2:#34d399;
-      --border:#334155;
+      --bg:#0b1220;
+      --panel:#111a2e;
+      --panel-2:#16213a;
+      --card:#0f1729;
+      --text:#e8eefc;
+      --muted:#91a4c7;
+      --line:rgba(255,255,255,.08);
+      --accent:#58a6ff;
+      --accent2:#37d67a;
+      --warn:#ffcc66;
+      --danger:#ff6b6b;
+      --shadow:0 20px 50px rgba(0,0,0,.28);
     }
     *{box-sizing:border-box}
     body{
       margin:0;
       font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      background:linear-gradient(180deg,#0b1120 0%, #111827 100%);
+      background:linear-gradient(180deg,#08101d 0%, #0b1220 100%);
       color:var(--text);
     }
-    header{
-      padding:20px 24px;
-      border-bottom:1px solid var(--border);
-      background:rgba(15,23,42,.85);
-      position:sticky;
-      top:0;
-      backdrop-filter:blur(10px);
-      z-index:10;
+    .wrap{max-width:1600px;margin:0 auto;padding:20px}
+    .header{
+      display:flex;justify-content:space-between;align-items:flex-start;gap:16px;
+      background:linear-gradient(135deg, rgba(88,166,255,.14), rgba(55,214,122,.10));
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+      border-radius:24px;padding:22px 24px;margin-bottom:18px;
     }
-    header h1{margin:0;font-size:22px}
-    header p{margin:6px 0 0;color:var(--muted);font-size:14px}
-    .wrap{padding:24px;max-width:1400px;margin:0 auto}
+    .title h1{margin:0;font-size:28px;font-weight:800}
+    .title p{margin:8px 0 0;color:var(--muted);font-size:14px}
+    .stats{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:12px;min-width:520px}
+    .stat{
+      background:rgba(17,26,46,.78);border:1px solid var(--line);border-radius:18px;padding:14px 16px;
+    }
+    .stat .k{font-size:12px;color:var(--muted);margin-bottom:8px}
+    .stat .v{font-size:22px;font-weight:800}
     .controls{
-      display:grid;
-      grid-template-columns:2fr 1fr 1fr 1fr;
-      gap:12px;
-      margin-bottom:18px;
+      display:grid;grid-template-columns:1.7fr 1fr;gap:14px;margin-bottom:18px;
     }
-    .controls input,.controls select,.controls button{
-      width:100%;
-      padding:12px 14px;
-      border:1px solid var(--border);
-      border-radius:12px;
-      background:var(--panel);
-      color:var(--text);
-      outline:none;
+    .panel{
+      background:rgba(17,26,46,.9);border:1px solid var(--line);border-radius:22px;padding:16px;box-shadow:var(--shadow);
     }
-    .controls button{
-      cursor:pointer;
-      background:linear-gradient(135deg,var(--accent),#8b5cf6);
-      border:none;
-      font-weight:600;
+    .panel h3{margin:0 0 12px;font-size:15px}
+    textarea,input,select,button{
+      font:inherit;
     }
-    .stats{
-      display:grid;
-      grid-template-columns:repeat(4,1fr);
-      gap:14px;
-      margin-bottom:18px;
+    textarea{
+      width:100%;min-height:130px;resize:vertical;background:#0b1324;color:var(--text);
+      border:1px solid var(--line);border-radius:14px;padding:12px;outline:none;
     }
-    .card{
-      background:rgba(31,41,55,.9);
-      border:1px solid var(--border);
-      border-radius:18px;
-      padding:18px;
-      box-shadow:0 10px 30px rgba(0,0,0,.2);
+    .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+    .btn{
+      background:linear-gradient(135deg,var(--accent),#7c5cff);
+      color:white;border:none;border-radius:12px;padding:11px 14px;font-weight:700;cursor:pointer;
     }
-    .stat-label{color:var(--muted);font-size:13px;margin-bottom:8px}
-    .stat-value{font-size:28px;font-weight:700}
-    .grid{
-      display:grid;
-      grid-template-columns:2fr 1fr;
-      gap:18px;
-      margin-bottom:18px;
+    .btn.secondary{background:#1b2947}
+    .btn.green{background:linear-gradient(135deg,var(--accent2),#1dbf73)}
+    .btn.danger{background:linear-gradient(135deg,#ff6b6b,#ff8f6b)}
+    .file-label{
+      display:inline-flex;align-items:center;gap:8px;background:#1b2947;color:#fff;padding:11px 14px;border-radius:12px;cursor:pointer;font-weight:700;
     }
-    .panel-title{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin-bottom:12px;
+    input[type=file]{display:none}
+    .filters{
+      display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:12px;
     }
-    .panel-title h2{margin:0;font-size:18px}
-    .panel-title span{color:var(--muted);font-size:13px}
-    .table-wrap{
-      overflow:auto;
-      max-height:520px;
+    .filters input,.filters select{
+      width:100%;background:#0b1324;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:10px 12px;outline:none;
     }
-    table{
-      width:100%;
-      border-collapse:collapse;
-      font-size:14px;
+    .quick{
+      display:flex;flex-wrap:wrap;gap:10px;margin-top:12px
     }
-    th,td{
-      padding:10px 12px;
-      border-bottom:1px solid var(--border);
-      text-align:left;
-      white-space:nowrap;
-    }
-    th{
-      position:sticky;
-      top:0;
-      background:#0f172a;
-      cursor:pointer;
-      z-index:1;
-    }
-    tr:hover td{background:rgba(96,165,250,.08)}
-    canvas{max-width:100%}
-    .footer-note{
-      color:var(--muted);
+    .chip{
+      padding:9px 12px;border-radius:999px;border:1px solid var(--line);background:#0b1324;color:var(--text);cursor:pointer;
       font-size:13px;
-      margin-top:12px;
     }
-    @media (max-width:1100px){
-      .controls,.stats,.grid{grid-template-columns:1fr 1fr}
+    .chip.active{background:rgba(88,166,255,.2);border-color:rgba(88,166,255,.45)}
+    .table-wrap{
+      background:rgba(17,26,46,.92);border:1px solid var(--line);border-radius:22px;padding:12px;box-shadow:var(--shadow);
+      overflow:hidden;
     }
-    @media (max-width:700px){
-      .controls,.stats,.grid{grid-template-columns:1fr}
+    .table-head{
+      display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 8px 14px;
+      color:var(--muted);font-size:13px;
+    }
+    table{width:100%;border-collapse:collapse}
+    thead th{
+      position:sticky;top:0;background:#10192d;color:#dce7ff;font-size:13px;text-align:left;
+      padding:14px 12px;border-bottom:1px solid var(--line);cursor:pointer;
+    }
+    tbody td{
+      padding:12px;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:top;font-size:13px;color:#edf3ff;
+    }
+    tbody tr:hover{background:rgba(88,166,255,.06)}
+    .muted{color:var(--muted)}
+    .badge{
+      display:inline-block;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700;
+      background:rgba(55,214,122,.15);color:#67e8a3;border:1px solid rgba(55,214,122,.25);
+    }
+    .badge.orange{background:rgba(255,204,102,.15);color:#ffd36a;border-color:rgba(255,204,102,.25)}
+    .badge.red{background:rgba(255,107,107,.15);color:#ff9b9b;border-color:rgba(255,107,107,.25)}
+    .footer{
+      display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:10px;color:var(--muted);font-size:13px
+    }
+    .pager button{margin-left:6px}
+    .chart-box{
+      margin-top:14px;background:#0b1324;border:1px solid var(--line);border-radius:18px;padding:14px
+    }
+    @media (max-width:1200px){
+      .header,.controls{grid-template-columns:1fr;display:grid}
+      .stats{grid-template-columns:repeat(2,1fr);min-width:0}
+      .filters{grid-template-columns:repeat(2,1fr)}
+    }
+    @media (max-width:768px){
+      .stats{grid-template-columns:1fr}
+      .filters{grid-template-columns:1fr}
+      .wrap{padding:12px}
+      .title h1{font-size:22px}
+      table{display:block;overflow:auto}
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>CSV Dynamic Dashboard</h1>
-    <p>Load any CSV URL, filter rows, sort columns, and visualize data automatically.</p>
-  </header>
-
   <div class="wrap">
+    <div class="header">
+      <div class="title">
+        <h1>🏗️ Upcoming Tenders Dashboard</h1>
+        <p>Authority-wise project intelligence · CSV-driven dashboard</p>
+        <p class="muted">Paste CSV below or upload a CSV file to populate the dashboard.</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="k">Total Tenders</div><div class="v" id="totalTenders">0</div></div>
+        <div class="stat"><div class="k">Total Value</div><div class="v" id="totalValue">₹0 Cr</div></div>
+        <div class="stat"><div class="k">Avg Tender Value</div><div class="v" id="avgValue">₹0 Cr</div></div>
+        <div class="stat"><div class="k">States Covered</div><div class="v" id="stateCount">0</div></div>
+      </div>
+    </div>
+
     <div class="controls">
-      <input id="csvUrl" type="text" value="PASTE_YOUR_CSV_URL_HERE" placeholder="Enter CSV URL" />
-      <select id="chartType">
-        <option value="bar">Bar</option>
-        <option value="line">Line</option>
-        <option value="pie">Pie</option>
-        <option value="doughnut">Doughnut</option>
-      </select>
-      <select id="xColumn">
-        <option value="">X-axis column</option>
-      </select>
-      <select id="yColumn">
-        <option value="">Y-axis column</option>
-      </select>
-      <button id="loadBtn">Load CSV</button>
-    </div>
-
-    <div class="stats">
-      <div class="card">
-        <div class="stat-label">Rows</div>
-        <div class="stat-value" id="rowCount">0</div>
-      </div>
-      <div class="card">
-        <div class="stat-label">Columns</div>
-        <div class="stat-value" id="colCount">0</div>
-      </div>
-      <div class="card">
-        <div class="stat-label">Numeric Columns</div>
-        <div class="stat-value" id="numCount">0</div>
-      </div>
-      <div class="card">
-        <div class="stat-label">Visible Rows</div>
-        <div class="stat-value" id="visibleCount">0</div>
-      </div>
-    </div>
-
-    <div class="controls" style="grid-template-columns:2fr 1fr 1fr;">
-      <input id="searchBox" type="text" placeholder="Search table..." />
-      <select id="rowsPerPage">
-        <option value="10">10 rows</option>
-        <option value="25" selected>25 rows</option>
-        <option value="50">50 rows</option>
-        <option value="100">100 rows</option>
-      </select>
-      <button id="refreshBtn">Refresh View</button>
-    </div>
-
-    <div class="grid">
-      <div class="card">
-        <div class="panel-title">
-          <h2>Chart</h2>
-          <span id="chartLabel">Select columns to visualize</span>
+      <div class="panel">
+        <h3>Load Data</h3>
+        <div class="row">
+          <label class="file-label">
+            📁 Upload CSV
+            <input type="file" id="csvFile" accept=".csv" />
+          </label>
+          <button class="btn green" id="loadPaste">Load Pasted CSV</button>
+          <button class="btn secondary" id="loadSample">Use Sample URL</button>
+          <button class="btn danger" id="resetAll">Reset</button>
         </div>
-        <canvas id="chart"></canvas>
-      </div>
-      <div class="card">
-        <div class="panel-title">
-          <h2>Summary</h2>
-          <span>Auto-generated</span>
+        <div style="margin-top:12px">
+          <textarea id="csvInput" placeholder="Paste CSV content here..."></textarea>
         </div>
-        <div id="summary"></div>
+      </div>
+
+      <div class="panel">
+        <h3>Filters</h3>
+        <div class="filters">
+          <select id="stateFilter"><option value="">All States</option></select>
+          <select id="valueFilter">
+            <option value="">All Values</option>
+            <option value="lt5">Under ₹5 Cr</option>
+            <option value="5to25">₹5 – ₹25 Cr</option>
+            <option value="25to100">₹25 – ₹100 Cr</option>
+            <option value="100to500">₹100 – ₹500 Cr</option>
+            <option value="gt500">₹500 Cr+</option>
+          </select>
+          <select id="sortBy">
+            <option value="value_desc">Value: High → Low</option>
+            <option value="value_asc">Value: Low → High</option>
+            <option value="bid_asc">Bid Date: Earliest</option>
+            <option value="bid_desc">Bid Date: Latest</option>
+            <option value="pub_desc">Published: Latest</option>
+            <option value="title_asc">Title A–Z</option>
+          </select>
+          <input id="searchBox" placeholder="Search title, ID, city, org..." />
+          <input id="startDate" type="date" />
+          <input id="endDate" type="date" />
+        </div>
+        <div class="quick" id="quickFilters"></div>
       </div>
     </div>
 
-    <div class="card">
-      <div class="panel-title">
-        <h2>Data Table</h2>
-        <span>Click headers to sort</span>
+    <div class="table-wrap">
+      <div class="table-head">
+        <div><strong id="resultCount">0 tenders</strong> <span class="muted">shown</span></div>
+        <div class="pager">
+          <button class="btn secondary" id="prevPage">Prev</button>
+          <button class="btn secondary" id="nextPage">Next</button>
+        </div>
       </div>
-      <div class="table-wrap">
-        <table id="dataTable"></table>
+      <div style="overflow:auto;max-height:68vh">
+        <table>
+          <thead>
+            <tr>
+              <th data-sort="title">Tender Title</th>
+              <th data-sort="tender_id">Tender ID</th>
+              <th data-sort="state">State</th>
+              <th>City</th>
+              <th>Organisation</th>
+              <th data-sort="value">Value</th>
+              <th>EMD</th>
+              <th data-sort="bid_date">Bid Deadline</th>
+              <th data-sort="published_date">Published</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
       </div>
-      <div class="footer-note">Tip: Replace the CSV URL with your public CSV file. The dashboard will load and update dynamically.</div>
+      <div class="footer">
+        <div id="pageInfo">Page 1</div>
+        <div class="muted">Tip: column headers sort, filters update instantly.</div>
+      </div>
+    </div>
+
+    <div class="chart-box">
+      <canvas id="stateChart" height="90"></canvas>
     </div>
   </div>
 
-  <script>
-    let rawData = [];
-    let filteredData = [];
-    let headers = [];
-    let numericCols = [];
-    let sortState = { col: null, asc: true };
-    let chartInstance = null;
+<script>
+let rawData = [];
+let filteredData = [];
+let page = 1;
+const pageSize = 25;
+let stateChart;
 
-    const el = id => document.getElementById(id);
+const sampleUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSZjO-A6VhuzifXXgffaGdtD6ysazVtS1FTjeFTUxdi-q9IIfjc4DZmrS3QF7MhzKjHRqeN36ZeX_qu/pub?gid=1590006273&single=true&output=csv';
 
-    function isNumeric(val) {
-      return val !== null && val !== '' && !isNaN(val) && isFinite(val);
+const cols = {
+  title: ['title','tender title','work name','project title'],
+  tender_id: ['tender id','id'],
+  state: ['state'],
+  city: ['districtcity','city','district'],
+  organisation: ['organisation','authority','department'],
+  value: ['tender value','value','estimated cost'],
+  emd: ['emd'],
+  bid_date: ['bid submission end date','bid deadline','bid date','submission end date'],
+  published_date: ['published date','publication date'],
+  status: ['tender status','status']
+};
+
+function norm(s){ return String(s||'').trim().toLowerCase(); }
+
+function getKey(row, keys){
+  const entries = Object.entries(row);
+  for(const k of keys){
+    const found = entries.find(([a]) => norm(a) === k || norm(a).includes(k));
+    if(found) return found[1];
+  }
+  return '';
+}
+
+function parseMoney(v){
+  const n = parseFloat(String(v).replace(/[^0-9.-]/g,''));
+  return isNaN(n)?0:n;
+}
+
+function fmtCr(v){
+  return '₹' + (v/10000000).toFixed(v >= 100000000 ? 0 : 1) + ' Cr';
+}
+
+function fmtDate(v){
+  if(!v) return '';
+  const d = new Date(v);
+  return isNaN(d) ? String(v) : d.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
+}
+
+function getRow(row){
+  return {
+    title: getKey(row, cols.title),
+    tender_id: getKey(row, cols.tender_id),
+    state: getKey(row, cols.state),
+    city: getKey(row, cols.city),
+    organisation: getKey(row, cols.organisation),
+    value: parseMoney(getKey(row, cols.value)),
+    emd: parseMoney(getKey(row, cols.emd)),
+    bid_date: getKey(row, cols.bid_date),
+    published_date: getKey(row, cols.published_date),
+    status: getKey(row, cols.status) || 'Upcoming',
+    raw: row
+  };
+}
+
+function applyFilters(){
+  const q = norm(document.getElementById('searchBox').value);
+  const state = document.getElementById('stateFilter').value;
+  const valFilter = document.getElementById('valueFilter').value;
+  const sortBy = document.getElementById('sortBy').value;
+  const start = document.getElementById('startDate').value;
+  const end = document.getElementById('endDate').value;
+
+  filteredData = rawData.filter(r => {
+    const hay = [r.title,r.tender_id,r.state,r.city,r.organisation,r.status].join(' ').toLowerCase();
+    if(q && !hay.includes(q)) return false;
+    if(state && norm(r.state) !== norm(state)) return false;
+    if(valFilter){
+      const cr = r.value / 10000000;
+      if(valFilter==='lt5' && !(cr < 5)) return false;
+      if(valFilter==='5to25' && !(cr >= 5 && cr < 25)) return false;
+      if(valFilter==='25to100' && !(cr >= 25 && cr < 100)) return false;
+      if(valFilter==='100to500' && !(cr >= 100 && cr < 500)) return false;
+      if(valFilter==='gt500' && !(cr >= 500)) return false;
     }
+    const bd = r.bid_date ? new Date(r.bid_date) : null;
+    if(start && bd && bd < new Date(start)) return false;
+    if(end && bd && bd > new Date(end)) return false;
+    return true;
+  });
 
-    function detectNumericColumns(data) {
-      if (!data.length) return [];
-      return headers.filter(h => data.every(r => isNumeric(r[h])));
-    }
+  filteredData.sort((a,b) => {
+    if(sortBy==='value_desc') return b.value-a.value;
+    if(sortBy==='value_asc') return a.value-b.value;
+    if(sortBy==='bid_asc') return new Date(a.bid_date||0)-new Date(b.bid_date||0);
+    if(sortBy==='bid_desc') return new Date(b.bid_date||0)-new Date(a.bid_date||0);
+    if(sortBy==='pub_desc') return new Date(b.published_date||0)-new Date(a.published_date||0);
+    if(sortBy==='title_asc') return a.title.localeCompare(b.title);
+    return 0;
+  });
 
-    function updateStats() {
-      el('rowCount').textContent = rawData.length;
-      el('colCount').textContent = headers.length;
-      el('numCount').textContent = numericCols.length;
-      el('visibleCount').textContent = filteredData.length;
-    }
+  page = 1;
+  render();
+}
 
-    function populateSelectors() {
-      const xSel = el('xColumn');
-      const ySel = el('yColumn');
-      xSel.innerHTML = '<option value="">X-axis column</option>';
-      ySel.innerHTML = '<option value="">Y-axis column</option>';
+function render(){
+  const total = filteredData.length;
+  const startIdx = (page-1)*pageSize;
+  const rows = filteredData.slice(startIdx, startIdx+pageSize);
 
-      headers.forEach(h => {
-        xSel.innerHTML += `<option value="${h}">${h}</option>`;
-      });
-      numericCols.forEach(h => {
-        ySel.innerHTML += `<option value="${h}">${h}</option>`;
-      });
+  document.getElementById('resultCount').textContent = total + ' tenders';
+  document.getElementById('pageInfo').textContent = `Page ${page} of ${Math.max(1, Math.ceil(total/pageSize))}`;
 
-      if (headers.length) xSel.value = headers[0];
-      if (numericCols.length) ySel.value = numericCols[0];
-    }
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.title || ''}</td>
+      <td>${r.tender_id || ''}</td>
+      <td>${r.state || ''}</td>
+      <td>${r.city || ''}</td>
+      <td>${r.organisation || ''}</td>
+      <td>${r.value ? fmtCr(r.value) : ''}</td>
+      <td>${r.emd ? fmtCr(r.emd) : ''}</td>
+      <td>${fmtDate(r.bid_date)}</td>
+      <td>${fmtDate(r.published_date)}</td>
+      <td><span class="badge">${r.status || 'Upcoming'}</span></td>
+    </tr>
+  `).join('');
 
-    function renderSummary() {
-      const summary = el('summary');
-      if (!rawData.length) {
-        summary.innerHTML = '<p style="color:#9ca3af">No data loaded yet.</p>';
-        return;
+  const totalValue = filteredData.reduce((s,r)=>s+r.value,0);
+  const states = [...new Set(filteredData.map(r => r.state).filter(Boolean))];
+  document.getElementById('totalTenders').textContent = total;
+  document.getElementById('totalValue').textContent = fmtCr(totalValue);
+  document.getElementById('avgValue').textContent = total ? fmtCr(totalValue/total) : '₹0 Cr';
+  document.getElementById('stateCount').textContent = states.length;
+
+  updateChart(filteredData);
+
+  const totalPages = Math.max(1, Math.ceil(total/pageSize));
+  document.getElementById('prevPage').disabled = page <= 1;
+  document.getElementById('nextPage').disabled = page >= totalPages;
+}
+
+function updateChart(data){
+  const counts = {};
+  data.forEach(r => { const k = r.state || 'Unknown'; counts[k]=(counts[k]||0)+1; });
+  const top = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const labels = top.map(x=>x[0]);
+  const vals = top.map(x=>x[1]);
+
+  const ctx = document.getElementById('stateChart').getContext('2d');
+  if(stateChart) stateChart.destroy();
+  stateChart = new Chart(ctx, {
+    type:'bar',
+    data:{ labels, datasets:[{ label:'Tenders by State', data:vals, backgroundColor:'rgba(88,166,255,.75)' }] },
+    options:{
+      responsive:true,
+      plugins:{ legend:{labels:{color:'#e8eefc'}} },
+      scales:{
+        x:{ ticks:{ color:'#91a4c7' }, grid:{ color:'rgba(255,255,255,.05)' } },
+        y:{ ticks:{ color:'#91a4c7', precision:0 }, grid:{ color:'rgba(255,255,255,.05)' } }
       }
-      const firstRow = rawData[0];
-      let html = '<ul style="padding-left:18px; margin:0; line-height:1.8">';
-      headers.slice(0, 8).forEach(h => {
-        html += `<li><b>${h}:</b> ${firstRow[h]}</li>`;
-      });
-      html += '</ul>';
-      summary.innerHTML = html;
     }
+  });
+}
 
-    function renderTable() {
-      const table = el('dataTable');
-      const limit = parseInt(el('rowsPerPage').value, 10);
-      const q = el('searchBox').value.trim().toLowerCase();
-      let data = [...filteredData];
+function populateStates(){
+  const sel = document.getElementById('stateFilter');
+  const states = [...new Set(rawData.map(r => r.state).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">All States</option>' + states.map(s=>`<option value="${s}">${s}</option>`).join('');
+}
 
-      if (q) {
-        data = data.filter(row => headers.some(h => String(row[h]).toLowerCase().includes(q)));
-      }
+function loadRows(rows){
+  rawData = rows.map(getRow);
+  filteredData = [...rawData];
+  populateStates();
+  render();
+  buildQuickFilters();
+}
 
-      if (sortState.col) {
-        data.sort((a, b) => {
-          const va = a[sortState.col];
-          const vb = b[sortState.col];
-          const na = parseFloat(va);
-          const nb = parseFloat(vb);
-          let cmp;
-          if (!isNaN(na) && !isNaN(nb)) cmp = na - nb;
-          else cmp = String(va).localeCompare(String(vb));
-          return sortState.asc ? cmp : -cmp;
-        });
-      }
+function buildQuickFilters(){
+  const box = document.getElementById('quickFilters');
+  const states = [...new Set(rawData.map(r => r.state).filter(Boolean))].slice(0,8);
+  const chips = states.concat(['🔥 ₹500 Cr+','₹100–500 Cr']);
+  box.innerHTML = chips.map(c => `<button class="chip" data-chip="${c}">${c}</button>`).join('');
+  box.querySelectorAll('.chip').forEach(ch => ch.addEventListener('click', ()=>{
+    const val = ch.getAttribute('data-chip');
+    if(val === '🔥 ₹500 Cr+'){ document.getElementById('valueFilter').value='gt500'; }
+    else if(val === '₹100–500 Cr'){ document.getElementById('valueFilter').value='100to500'; }
+    else { document.getElementById('stateFilter').value = val; }
+    applyFilters();
+  }));
+}
 
-      const display = data.slice(0, limit);
-      table.innerHTML = '';
+document.getElementById('csvFile').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if(!f) return;
+  Papa.parse(f, {
+    header:true,
+    skipEmptyLines:true,
+    complete: results => loadRows(results.data)
+  });
+});
 
-      let thead = '<thead><tr>';
-      headers.forEach(h => {
-        const arrow = sortState.col === h ? (sortState.asc ? ' ▲' : ' ▼') : '';
-        thead += `<th data-col="${h}">${h}${arrow}</th>`;
-      });
-      thead += '</tr></thead>';
+document.getElementById('loadPaste').addEventListener('click', ()=>{
+  const txt = document.getElementById('csvInput').value.trim();
+  if(!txt) return alert('Paste CSV content first.');
+  const res = Papa.parse(txt, {header:true, skipEmptyLines:true});
+  loadRows(res.data);
+});
 
-      let tbody = '<tbody>';
-      display.forEach(row => {
-        tbody += '<tr>' + headers.map(h => `<td>${row[h] ?? ''}</td>`).join('') + '</tr>';
-      });
-      tbody += '</tbody>';
+document.getElementById('loadSample').addEventListener('click', async ()=>{
+  const txt = await fetch(sampleUrl).then(r=>r.text());
+  const res = Papa.parse(txt, {header:true, skipEmptyLines:true});
+  loadRows(res.data);
+});
 
-      table.innerHTML = thead + tbody;
-      table.querySelectorAll('th').forEach(th => {
-        th.addEventListener('click', () => {
-          const col = th.getAttribute('data-col');
-          if (sortState.col === col) sortState.asc = !sortState.asc;
-          else { sortState.col = col; sortState.asc = true; }
-          renderTable();
-        });
-      });
-    }
+document.getElementById('resetAll').addEventListener('click', ()=>{
+  document.getElementById('csvInput').value = '';
+  document.getElementById('csvFile').value = '';
+  document.getElementById('searchBox').value = '';
+  document.getElementById('stateFilter').value = '';
+  document.getElementById('valueFilter').value = '';
+  document.getElementById('sortBy').value = 'value_desc';
+  document.getElementById('startDate').value = '';
+  document.getElementById('endDate').value = '';
+  rawData = [];
+  filteredData = [];
+  render();
+});
 
-    function renderChart() {
-      const xCol = el('xColumn').value;
-      const yCol = el('yColumn').value;
-      const type = el('chartType').value;
+['searchBox','stateFilter','valueFilter','sortBy','startDate','endDate'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', applyFilters);
+  document.getElementById(id).addEventListener('change', applyFilters);
+});
 
-      if (!xCol || !yCol || !filteredData.length) {
-        el('chartLabel').textContent = 'Select columns to visualize';
-        if (chartInstance) chartInstance.destroy();
-        chartInstance = null;
-        return;
-      }
+document.getElementById('prevPage').addEventListener('click', ()=>{ if(page>1){ page--; render(); }});
+document.getElementById('nextPage').addEventListener('click', ()=>{ const tp=Math.max(1,Math.ceil(filteredData.length/pageSize)); if(page<tp){ page++; render(); }});
 
-      const labels = filteredData.map(r => r[xCol]).slice(0, 20);
-      const values = filteredData.map(r => parseFloat(r[yCol])).slice(0, 20);
-
-      el('chartLabel').textContent = `${xCol} vs ${yCol}`;
-
-      if (chartInstance) chartInstance.destroy();
-      chartInstance = new Chart(el('chart').getContext('2d'), {
-        type,
-        data: {
-          labels,
-          datasets: [{
-            label: yCol,
-            data: values,
-            backgroundColor: [
-              'rgba(96,165,250,.7)','rgba(52,211,153,.7)','rgba(251,191,36,.7)',
-              'rgba(248,113,113,.7)','rgba(167,139,250,.7)','rgba(34,197,94,.7)'
-            ],
-            borderColor: 'rgba(96,165,250,1)',
-            borderWidth: 2,
-            fill: type === 'line'
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { labels: { color: '#e5e7eb' } }
-          },
-          scales: type === 'pie' || type === 'doughnut' ? {} : {
-            x: { ticks: { color: '#e5e7eb' }, grid: { color: 'rgba(148,163,184,.15)' } },
-            y: { ticks: { color: '#e5e7eb' }, grid: { color: 'rgba(148,163,184,.15)' } }
-          }
-        }
-      });
-    }
-
-    function applyView() {
-      filteredData = [...rawData];
-      updateStats();
-      renderSummary();
-      renderTable();
-      renderChart();
-    }
-
-    async function loadCSV() {
-      const url = el('csvUrl').value.trim();
-      if (!url) return alert('Please enter a CSV URL.');
-
-      Papa.parse(url, {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        complete: function(results) {
-          rawData = results.data;
-          headers = results.meta.fields || Object.keys(rawData[0] || {});
-          numericCols = detectNumericColumns(rawData);
-          populateSelectors();
-          applyView();
-        },
-        error: function(err) {
-          alert('Failed to load CSV: ' + err.message);
-        }
-      });
-    }
-
-    el('loadBtn').addEventListener('click', loadCSV);
-    el('refreshBtn').addEventListener('click', applyView);
-    el('searchBox').addEventListener('input', renderTable);
-    el('rowsPerPage').addEventListener('change', renderTable);
-    el('xColumn').addEventListener('change', renderChart);
-    el('yColumn').addEventListener('change', renderChart);
-    el('chartType').addEventListener('change', renderChart);
-
-    if (el('csvUrl').value && el('csvUrl').value !== 'PASTE_YOUR_CSV_URL_HERE') {
-      loadCSV();
-    }
-  </script>
+document.querySelectorAll('thead th[data-sort]').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const s = th.getAttribute('data-sort');
+    if(s==='value') document.getElementById('sortBy').value='value_desc';
+    if(s==='bid_date') document.getElementById('sortBy').value='bid_asc';
+    if(s==='published_date') document.getElementById('sortBy').value='pub_desc';
+    if(s==='title') document.getElementById('sortBy').value='title_asc';
+    applyFilters();
+  });
+});
+</script>
 </body>
 </html>
