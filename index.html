@@ -13,111 +13,70 @@
     :root{
       --bg:#0b1220;
       --panel:#111a2e;
-      --panel-2:#16213a;
       --card:#0f1729;
       --text:#e8eefc;
       --muted:#91a4c7;
       --line:rgba(255,255,255,.08);
       --accent:#58a6ff;
       --accent2:#37d67a;
-      --warn:#ffcc66;
-      --danger:#ff6b6b;
       --shadow:0 20px 50px rgba(0,0,0,.28);
     }
     *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      background:linear-gradient(180deg,#08101d 0%, #0b1220 100%);
-      color:var(--text);
-    }
+    body{margin:0;font-family:Inter,system-ui,sans-serif;background:linear-gradient(180deg,#08101d 0%, #0b1220 100%);color:var(--text)}
     .wrap{max-width:1600px;margin:0 auto;padding:20px}
-    .header{
-      display:flex;justify-content:space-between;align-items:flex-start;gap:16px;
-      background:linear-gradient(135deg, rgba(88,166,255,.14), rgba(55,214,122,.10));
-      border:1px solid var(--line);
-      box-shadow:var(--shadow);
-      border-radius:24px;padding:22px 24px;margin-bottom:18px;
-    }
+    .header,.panel,.table-wrap{background:rgba(17,26,46,.92);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow)}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:22px 24px;margin-bottom:18px}
     .title h1{margin:0;font-size:28px;font-weight:800}
     .title p{margin:8px 0 0;color:var(--muted);font-size:14px}
     .stats{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:12px;min-width:520px}
-    .stat{
-      background:rgba(17,26,46,.78);border:1px solid var(--line);border-radius:18px;padding:14px 16px;
-    }
+    .stat{background:rgba(15,23,41,.9);border:1px solid var(--line);border-radius:18px;padding:14px 16px}
     .stat .k{font-size:12px;color:var(--muted);margin-bottom:8px}
     .stat .v{font-size:22px;font-weight:800}
-    .controls{
-      display:grid;grid-template-columns:1.7fr 1fr;gap:14px;margin-bottom:18px;
-    }
-    .panel{
-      background:rgba(17,26,46,.9);border:1px solid var(--line);border-radius:22px;padding:16px;box-shadow:var(--shadow);
-    }
+    .controls{display:grid;grid-template-columns:1.7fr 1fr;gap:14px;margin-bottom:18px}
+    .panel{padding:16px}
     .panel h3{margin:0 0 12px;font-size:15px}
-    textarea,input,select,button{
-      font:inherit;
-    }
+    .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+    textarea,input,select,button{font:inherit}
     textarea{
       width:100%;min-height:130px;resize:vertical;background:#0b1324;color:var(--text);
-      border:1px solid var(--line);border-radius:14px;padding:12px;outline:none;
+      border:1px solid var(--line);border-radius:14px;padding:12px;outline:none
     }
-    .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
     .btn{
       background:linear-gradient(135deg,var(--accent),#7c5cff);
-      color:white;border:none;border-radius:12px;padding:11px 14px;font-weight:700;cursor:pointer;
+      color:#fff;border:none;border-radius:12px;padding:11px 14px;font-weight:700;cursor:pointer
     }
     .btn.secondary{background:#1b2947}
     .btn.green{background:linear-gradient(135deg,var(--accent2),#1dbf73)}
-    .btn.danger{background:linear-gradient(135deg,#ff6b6b,#ff8f6b)}
     .file-label{
-      display:inline-flex;align-items:center;gap:8px;background:#1b2947;color:#fff;padding:11px 14px;border-radius:12px;cursor:pointer;font-weight:700;
+      display:inline-flex;align-items:center;gap:8px;background:#1b2947;color:#fff;padding:11px 14px;border-radius:12px;cursor:pointer;font-weight:700
     }
     input[type=file]{display:none}
     .filters{
-      display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:12px;
+      display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:12px
     }
     .filters input,.filters select{
-      width:100%;background:#0b1324;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:10px 12px;outline:none;
+      width:100%;background:#0b1324;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:10px 12px;outline:none
     }
-    .quick{
-      display:flex;flex-wrap:wrap;gap:10px;margin-top:12px
-    }
+    .quick{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
     .chip{
-      padding:9px 12px;border-radius:999px;border:1px solid var(--line);background:#0b1324;color:var(--text);cursor:pointer;
-      font-size:13px;
+      padding:9px 12px;border-radius:999px;border:1px solid var(--line);background:#0b1324;color:var(--text);cursor:pointer;font-size:13px
     }
     .chip.active{background:rgba(88,166,255,.2);border-color:rgba(88,166,255,.45)}
-    .table-wrap{
-      background:rgba(17,26,46,.92);border:1px solid var(--line);border-radius:22px;padding:12px;box-shadow:var(--shadow);
-      overflow:hidden;
-    }
-    .table-head{
-      display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 8px 14px;
-      color:var(--muted);font-size:13px;
-    }
+    .table-wrap{padding:12px;overflow:hidden}
+    .table-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 8px 14px;color:var(--muted);font-size:13px}
     table{width:100%;border-collapse:collapse}
     thead th{
       position:sticky;top:0;background:#10192d;color:#dce7ff;font-size:13px;text-align:left;
-      padding:14px 12px;border-bottom:1px solid var(--line);cursor:pointer;
+      padding:14px 12px;border-bottom:1px solid var(--line);cursor:pointer
     }
-    tbody td{
-      padding:12px;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:top;font-size:13px;color:#edf3ff;
-    }
+    tbody td{padding:12px;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:top;font-size:13px;color:#edf3ff}
     tbody tr:hover{background:rgba(88,166,255,.06)}
     .muted{color:var(--muted)}
     .badge{
       display:inline-block;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700;
-      background:rgba(55,214,122,.15);color:#67e8a3;border:1px solid rgba(55,214,122,.25);
+      background:rgba(55,214,122,.15);color:#67e8a3;border:1px solid rgba(55,214,122,.25)
     }
-    .badge.orange{background:rgba(255,204,102,.15);color:#ffd36a;border-color:rgba(255,204,102,.25)}
-    .badge.red{background:rgba(255,107,107,.15);color:#ff9b9b;border-color:rgba(255,107,107,.25)}
-    .footer{
-      display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:10px;color:var(--muted);font-size:13px
-    }
-    .pager button{margin-left:6px}
-    .chart-box{
-      margin-top:14px;background:#0b1324;border:1px solid var(--line);border-radius:18px;padding:14px
-    }
+    .footer{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:10px;color:var(--muted);font-size:13px}
     @media (max-width:1200px){
       .header,.controls{grid-template-columns:1fr;display:grid}
       .stats{grid-template-columns:repeat(2,1fr);min-width:0}
@@ -137,8 +96,8 @@
     <div class="header">
       <div class="title">
         <h1>🏗️ Upcoming Tenders Dashboard</h1>
-        <p>Authority-wise project intelligence · CSV-driven dashboard</p>
-        <p class="muted">Paste CSV below or upload a CSV file to populate the dashboard.</p>
+        <p>Live dashboard pulled directly from your CSV link</p>
+        <p class="muted">Auto-refreshes from the published Google Sheets CSV source.</p>
       </div>
       <div class="stats">
         <div class="stat"><div class="k">Total Tenders</div><div class="v" id="totalTenders">0</div></div>
@@ -150,18 +109,17 @@
 
     <div class="controls">
       <div class="panel">
-        <h3>Load Data</h3>
+        <h3>Live Source</h3>
         <div class="row">
-          <label class="file-label">
-            📁 Upload CSV
-            <input type="file" id="csvFile" accept=".csv" />
-          </label>
-          <button class="btn green" id="loadPaste">Load Pasted CSV</button>
-          <button class="btn secondary" id="loadSample">Use Sample URL</button>
-          <button class="btn danger" id="resetAll">Reset</button>
+          <button class="btn green" id="reloadLive">Reload Live CSV</button>
+          <button class="btn secondary" id="toggleAuto">Auto Refresh: ON</button>
         </div>
         <div style="margin-top:12px">
-          <textarea id="csvInput" placeholder="Paste CSV content here..."></textarea>
+          <textarea id="csvInput" placeholder="Optional fallback: paste CSV here if needed..."></textarea>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn secondary" id="loadPaste">Load Pasted CSV</button>
+          <button class="btn secondary" id="resetFallback">Clear Fallback</button>
         </div>
       </div>
 
@@ -196,7 +154,7 @@
     <div class="table-wrap">
       <div class="table-head">
         <div><strong id="resultCount">0 tenders</strong> <span class="muted">shown</span></div>
-        <div class="pager">
+        <div>
           <button class="btn secondary" id="prevPage">Prev</button>
           <button class="btn secondary" id="nextPage">Next</button>
         </div>
@@ -226,19 +184,21 @@
       </div>
     </div>
 
-    <div class="chart-box">
+    <div class="panel" style="margin-top:14px">
       <canvas id="stateChart" height="90"></canvas>
     </div>
   </div>
 
 <script>
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSZjO-A6VhuzifXXgffaGdtD6ysazVtS1FTjeFTUxdi-q9IIfjc4DZmrS3QF7MhzKjHRqeN36ZeX_qu/pub?gid=1590006273&single=true&output=csv";
+
 let rawData = [];
 let filteredData = [];
 let page = 1;
 const pageSize = 25;
+let autoRefresh = true;
+let timer = null;
 let stateChart;
-
-const sampleUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSZjO-A6VhuzifXXgffaGdtD6ysazVtS1FTjeFTUxdi-q9IIfjc4DZmrS3QF7MhzKjHRqeN36ZeX_qu/pub?gid=1590006273&single=true&output=csv';
 
 const cols = {
   title: ['title','tender title','work name','project title'],
@@ -295,6 +255,26 @@ function getRow(row){
   };
 }
 
+function populateStates(){
+  const sel = document.getElementById('stateFilter');
+  const states = [...new Set(rawData.map(r => r.state).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">All States</option>' + states.map(s=>`<option value="${s}">${s}</option>`).join('');
+}
+
+function buildQuickFilters(){
+  const box = document.getElementById('quickFilters');
+  const states = [...new Set(rawData.map(r => r.state).filter(Boolean))].slice(0,8);
+  const chips = states.concat(['🔥 ₹500 Cr+','₹100–500 Cr']);
+  box.innerHTML = chips.map(c => `<button class="chip" data-chip="${c}">${c}</button>`).join('');
+  box.querySelectorAll('.chip').forEach(ch => ch.addEventListener('click', ()=>{
+    const val = ch.getAttribute('data-chip');
+    if(val === '🔥 ₹500 Cr+') document.getElementById('valueFilter').value='gt500';
+    else if(val === '₹100–500 Cr') document.getElementById('valueFilter').value='100to500';
+    else document.getElementById('stateFilter').value = val;
+    applyFilters();
+  }));
+}
+
 function applyFilters(){
   const q = norm(document.getElementById('searchBox').value);
   const state = document.getElementById('stateFilter').value;
@@ -335,6 +315,29 @@ function applyFilters(){
   render();
 }
 
+function updateChart(data){
+  const counts = {};
+  data.forEach(r => { const k = r.state || 'Unknown'; counts[k]=(counts[k]||0)+1; });
+  const top = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const labels = top.map(x=>x[0]);
+  const vals = top.map(x=>x[1]);
+
+  const ctx = document.getElementById('stateChart').getContext('2d');
+  if(stateChart) stateChart.destroy();
+  stateChart = new Chart(ctx, {
+    type:'bar',
+    data:{ labels, datasets:[{ label:'Tenders by State', data:vals, backgroundColor:'rgba(88,166,255,.75)' }] },
+    options:{
+      responsive:true,
+      plugins:{ legend:{labels:{color:'#e8eefc'}} },
+      scales:{
+        x:{ ticks:{ color:'#91a4c7' }, grid:{ color:'rgba(255,255,255,.05)' } },
+        y:{ ticks:{ color:'#91a4c7', precision:0 }, grid:{ color:'rgba(255,255,255,.05)' } }
+      }
+    }
+  });
+}
+
 function render(){
   const total = filteredData.length;
   const startIdx = (page-1)*pageSize;
@@ -373,92 +376,48 @@ function render(){
   document.getElementById('nextPage').disabled = page >= totalPages;
 }
 
-function updateChart(data){
-  const counts = {};
-  data.forEach(r => { const k = r.state || 'Unknown'; counts[k]=(counts[k]||0)+1; });
-  const top = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  const labels = top.map(x=>x[0]);
-  const vals = top.map(x=>x[1]);
-
-  const ctx = document.getElementById('stateChart').getContext('2d');
-  if(stateChart) stateChart.destroy();
-  stateChart = new Chart(ctx, {
-    type:'bar',
-    data:{ labels, datasets:[{ label:'Tenders by State', data:vals, backgroundColor:'rgba(88,166,255,.75)' }] },
-    options:{
-      responsive:true,
-      plugins:{ legend:{labels:{color:'#e8eefc'}} },
-      scales:{
-        x:{ ticks:{ color:'#91a4c7' }, grid:{ color:'rgba(255,255,255,.05)' } },
-        y:{ ticks:{ color:'#91a4c7', precision:0 }, grid:{ color:'rgba(255,255,255,.05)' } }
-      }
-    }
-  });
-}
-
-function populateStates(){
-  const sel = document.getElementById('stateFilter');
-  const states = [...new Set(rawData.map(r => r.state).filter(Boolean))].sort();
-  sel.innerHTML = '<option value="">All States</option>' + states.map(s=>`<option value="${s}">${s}</option>`).join('');
-}
-
-function loadRows(rows){
-  rawData = rows.map(getRow);
-  filteredData = [...rawData];
-  populateStates();
-  render();
-  buildQuickFilters();
-}
-
-function buildQuickFilters(){
-  const box = document.getElementById('quickFilters');
-  const states = [...new Set(rawData.map(r => r.state).filter(Boolean))].slice(0,8);
-  const chips = states.concat(['🔥 ₹500 Cr+','₹100–500 Cr']);
-  box.innerHTML = chips.map(c => `<button class="chip" data-chip="${c}">${c}</button>`).join('');
-  box.querySelectorAll('.chip').forEach(ch => ch.addEventListener('click', ()=>{
-    const val = ch.getAttribute('data-chip');
-    if(val === '🔥 ₹500 Cr+'){ document.getElementById('valueFilter').value='gt500'; }
-    else if(val === '₹100–500 Cr'){ document.getElementById('valueFilter').value='100to500'; }
-    else { document.getElementById('stateFilter').value = val; }
+async function loadLiveCSV(){
+  try{
+    const txt = await fetch(CSV_URL, {cache:'no-store'}).then(r=>r.text());
+    const res = Papa.parse(txt, {header:true, skipEmptyLines:true});
+    rawData = res.data.map(getRow);
+    populateStates();
+    buildQuickFilters();
+    filteredData = [...rawData];
     applyFilters();
-  }));
+  }catch(e){
+    console.error(e);
+    alert('Live CSV load failed. Check the link, publishing settings, or CORS access.');
+  }
 }
 
-document.getElementById('csvFile').addEventListener('change', e => {
-  const f = e.target.files[0];
-  if(!f) return;
-  Papa.parse(f, {
-    header:true,
-    skipEmptyLines:true,
-    complete: results => loadRows(results.data)
-  });
+function startAutoRefresh(){
+  if(timer) clearInterval(timer);
+  if(autoRefresh){
+    timer = setInterval(loadLiveCSV, 300000);
+  }
+}
+
+document.getElementById('reloadLive').addEventListener('click', loadLiveCSV);
+document.getElementById('toggleAuto').addEventListener('click', ()=>{
+  autoRefresh = !autoRefresh;
+  document.getElementById('toggleAuto').textContent = 'Auto Refresh: ' + (autoRefresh ? 'ON' : 'OFF');
+  startAutoRefresh();
 });
 
 document.getElementById('loadPaste').addEventListener('click', ()=>{
   const txt = document.getElementById('csvInput').value.trim();
   if(!txt) return alert('Paste CSV content first.');
   const res = Papa.parse(txt, {header:true, skipEmptyLines:true});
-  loadRows(res.data);
+  rawData = res.data.map(getRow);
+  populateStates();
+  buildQuickFilters();
+  filteredData = [...rawData];
+  applyFilters();
 });
 
-document.getElementById('loadSample').addEventListener('click', async ()=>{
-  const txt = await fetch(sampleUrl).then(r=>r.text());
-  const res = Papa.parse(txt, {header:true, skipEmptyLines:true});
-  loadRows(res.data);
-});
-
-document.getElementById('resetAll').addEventListener('click', ()=>{
+document.getElementById('resetFallback').addEventListener('click', ()=>{
   document.getElementById('csvInput').value = '';
-  document.getElementById('csvFile').value = '';
-  document.getElementById('searchBox').value = '';
-  document.getElementById('stateFilter').value = '';
-  document.getElementById('valueFilter').value = '';
-  document.getElementById('sortBy').value = 'value_desc';
-  document.getElementById('startDate').value = '';
-  document.getElementById('endDate').value = '';
-  rawData = [];
-  filteredData = [];
-  render();
 });
 
 ['searchBox','stateFilter','valueFilter','sortBy','startDate','endDate'].forEach(id=>{
@@ -478,6 +437,11 @@ document.querySelectorAll('thead th[data-sort]').forEach(th=>{
     if(s==='title') document.getElementById('sortBy').value='title_asc';
     applyFilters();
   });
+});
+
+window.addEventListener('load', ()=>{
+  loadLiveCSV();
+  startAutoRefresh();
 });
 </script>
 </body>
