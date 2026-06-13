@@ -13,7 +13,6 @@
     :root{
       --bg:#0b1220;
       --panel:#111a2e;
-      --card:#0f1729;
       --text:#e8eefc;
       --muted:#91a4c7;
       --line:rgba(255,255,255,.08);
@@ -32,27 +31,21 @@
     .stat{background:rgba(15,23,41,.9);border:1px solid var(--line);border-radius:18px;padding:14px 16px}
     .stat .k{font-size:12px;color:var(--muted);margin-bottom:8px}
     .stat .v{font-size:22px;font-weight:800}
-    .controls{display:grid;grid-template-columns:1.7fr 1fr;gap:14px;margin-bottom:18px}
+    .controls{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
     .panel{padding:16px}
     .panel h3{margin:0 0 12px;font-size:15px}
     .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-    textarea,input,select,button{font:inherit}
-    textarea{
-      width:100%;min-height:130px;resize:vertical;background:#0b1324;color:var(--text);
-      border:1px solid var(--line);border-radius:14px;padding:12px;outline:none
-    }
     .btn{
       background:linear-gradient(135deg,var(--accent),#7c5cff);
       color:#fff;border:none;border-radius:12px;padding:11px 14px;font-weight:700;cursor:pointer
     }
     .btn.secondary{background:#1b2947}
-    .btn.green{background:linear-gradient(135deg,var(--accent2),#1dbf73)}
     .file-label{
       display:inline-flex;align-items:center;gap:8px;background:#1b2947;color:#fff;padding:11px 14px;border-radius:12px;cursor:pointer;font-weight:700
     }
     input[type=file]{display:none}
     .filters{
-      display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:12px
+      display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:12px;width:100%
     }
     .filters input,.filters select{
       width:100%;background:#0b1324;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:10px 12px;outline:none
@@ -61,7 +54,6 @@
     .chip{
       padding:9px 12px;border-radius:999px;border:1px solid var(--line);background:#0b1324;color:var(--text);cursor:pointer;font-size:13px
     }
-    .chip.active{background:rgba(88,166,255,.2);border-color:rgba(88,166,255,.45)}
     .table-wrap{padding:12px;overflow:hidden}
     .table-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 8px 14px;color:var(--muted);font-size:13px}
     table{width:100%;border-collapse:collapse}
@@ -96,8 +88,8 @@
     <div class="header">
       <div class="title">
         <h1>🏗️ Upcoming Tenders Dashboard</h1>
-        <p>Live dashboard pulled directly from your CSV link</p>
-        <p class="muted">Auto-refreshes from the published Google Sheets CSV source.</p>
+        <p>CSV dashboard with upload support</p>
+        <p class="muted">Fallback removed and filters aligned to full left width.</p>
       </div>
       <div class="stats">
         <div class="stat"><div class="k">Total Tenders</div><div class="v" id="totalTenders">0</div></div>
@@ -109,17 +101,13 @@
 
     <div class="controls">
       <div class="panel">
-        <h3>Live Source</h3>
+        <h3>Load Data</h3>
         <div class="row">
-          <button class="btn green" id="reloadLive">Reload Live CSV</button>
-          <button class="btn secondary" id="toggleAuto">Auto Refresh: ON</button>
-        </div>
-        <div style="margin-top:12px">
-          <textarea id="csvInput" placeholder="Optional fallback: paste CSV here if needed..."></textarea>
-        </div>
-        <div class="row" style="margin-top:10px">
-          <button class="btn secondary" id="loadPaste">Load Pasted CSV</button>
-          <button class="btn secondary" id="resetFallback">Clear Fallback</button>
+          <label class="file-label">
+            📁 Upload CSV
+            <input type="file" id="csvFile" accept=".csv" />
+          </label>
+          <button class="btn secondary" id="resetAll">Reset</button>
         </div>
       </div>
 
@@ -190,14 +178,10 @@
   </div>
 
 <script>
-const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSZjO-A6VhuzifXXgffaGdtD6ysazVtS1FTjeFTUxdi-q9IIfjc4DZmrS3QF7MhzKjHRqeN36ZeX_qu/pub?gid=1590006273&single=true&output=csv";
-
 let rawData = [];
 let filteredData = [];
 let page = 1;
 const pageSize = 25;
-let autoRefresh = true;
-let timer = null;
 let stateChart;
 
 const cols = {
@@ -214,7 +198,6 @@ const cols = {
 };
 
 function norm(s){ return String(s||'').trim().toLowerCase(); }
-
 function getKey(row, keys){
   const entries = Object.entries(row);
   for(const k of keys){
@@ -223,22 +206,16 @@ function getKey(row, keys){
   }
   return '';
 }
-
 function parseMoney(v){
   const n = parseFloat(String(v).replace(/[^0-9.-]/g,''));
   return isNaN(n)?0:n;
 }
-
-function fmtCr(v){
-  return '₹' + (v/10000000).toFixed(v >= 100000000 ? 0 : 1) + ' Cr';
-}
-
+function fmtCr(v){ return '₹' + (v/10000000).toFixed(v >= 100000000 ? 0 : 1) + ' Cr'; }
 function fmtDate(v){
   if(!v) return '';
   const d = new Date(v);
   return isNaN(d) ? String(v) : d.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
 }
-
 function getRow(row){
   return {
     title: getKey(row, cols.title),
@@ -254,13 +231,11 @@ function getRow(row){
     raw: row
   };
 }
-
 function populateStates(){
   const sel = document.getElementById('stateFilter');
   const states = [...new Set(rawData.map(r => r.state).filter(Boolean))].sort();
   sel.innerHTML = '<option value="">All States</option>' + states.map(s=>`<option value="${s}">${s}</option>`).join('');
 }
-
 function buildQuickFilters(){
   const box = document.getElementById('quickFilters');
   const states = [...new Set(rawData.map(r => r.state).filter(Boolean))].slice(0,8);
@@ -274,7 +249,6 @@ function buildQuickFilters(){
     applyFilters();
   }));
 }
-
 function applyFilters(){
   const q = norm(document.getElementById('searchBox').value);
   const state = document.getElementById('stateFilter').value;
@@ -314,7 +288,6 @@ function applyFilters(){
   page = 1;
   render();
 }
-
 function updateChart(data){
   const counts = {};
   data.forEach(r => { const k = r.state || 'Unknown'; counts[k]=(counts[k]||0)+1; });
@@ -337,7 +310,6 @@ function updateChart(data){
     }
   });
 }
-
 function render(){
   const total = filteredData.length;
   const startIdx = (page-1)*pageSize;
@@ -376,54 +348,42 @@ function render(){
   document.getElementById('nextPage').disabled = page >= totalPages;
 }
 
-async function loadLiveCSV(){
-  try{
-    const txt = await fetch(CSV_URL, {cache:'no-store'}).then(r=>r.text());
-    const res = Papa.parse(txt, {header:true, skipEmptyLines:true});
-    rawData = res.data.map(getRow);
-    populateStates();
-    buildQuickFilters();
-    filteredData = [...rawData];
-    applyFilters();
-  }catch(e){
-    console.error(e);
-    alert('Live CSV load failed. Check the link, publishing settings, or CORS access.');
-  }
-}
-
-function startAutoRefresh(){
-  if(timer) clearInterval(timer);
-  if(autoRefresh){
-    timer = setInterval(loadLiveCSV, 300000);
-  }
-}
-
-document.getElementById('reloadLive').addEventListener('click', loadLiveCSV);
-document.getElementById('toggleAuto').addEventListener('click', ()=>{
-  autoRefresh = !autoRefresh;
-  document.getElementById('toggleAuto').textContent = 'Auto Refresh: ' + (autoRefresh ? 'ON' : 'OFF');
-  startAutoRefresh();
+document.getElementById('csvFile').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if(!f) return;
+  Papa.parse(f, {
+    header:true,
+    skipEmptyLines:true,
+    complete: results => {
+      rawData = results.data.map(getRow);
+      populateStates();
+      buildQuickFilters();
+      filteredData = [...rawData];
+      applyFilters();
+    }
+  });
 });
 
-document.getElementById('loadPaste').addEventListener('click', ()=>{
-  const txt = document.getElementById('csvInput').value.trim();
-  if(!txt) return alert('Paste CSV content first.');
-  const res = Papa.parse(txt, {header:true, skipEmptyLines:true});
-  rawData = res.data.map(getRow);
-  populateStates();
-  buildQuickFilters();
-  filteredData = [...rawData];
-  applyFilters();
-});
-
-document.getElementById('resetFallback').addEventListener('click', ()=>{
+document.getElementById('resetAll').addEventListener('click', ()=>{
   document.getElementById('csvInput').value = '';
+  document.getElementById('csvFile').value = '';
+  document.getElementById('searchBox').value = '';
+  document.getElementById('stateFilter').value = '';
+  document.getElementById('valueFilter').value = '';
+  document.getElementById('sortBy').value = 'value_desc';
+  document.getElementById('startDate').value = '';
+  document.getElementById('endDate').value = '';
+  rawData = [];
+  filteredData = [];
+  render();
 });
 
-['searchBox','stateFilter','valueFilter','sortBy','startDate','endDate'].forEach(id=>{
-  document.getElementById(id).addEventListener('input', applyFilters);
-  document.getElementById(id).addEventListener('change', applyFilters);
-});
+document.getElementById('searchBox').addEventListener('input', applyFilters);
+document.getElementById('stateFilter').addEventListener('change', applyFilters);
+document.getElementById('valueFilter').addEventListener('change', applyFilters);
+document.getElementById('sortBy').addEventListener('change', applyFilters);
+document.getElementById('startDate').addEventListener('change', applyFilters);
+document.getElementById('endDate').addEventListener('change', applyFilters);
 
 document.getElementById('prevPage').addEventListener('click', ()=>{ if(page>1){ page--; render(); }});
 document.getElementById('nextPage').addEventListener('click', ()=>{ const tp=Math.max(1,Math.ceil(filteredData.length/pageSize)); if(page<tp){ page++; render(); }});
@@ -437,11 +397,6 @@ document.querySelectorAll('thead th[data-sort]').forEach(th=>{
     if(s==='title') document.getElementById('sortBy').value='title_asc';
     applyFilters();
   });
-});
-
-window.addEventListener('load', ()=>{
-  loadLiveCSV();
-  startAutoRefresh();
 });
 </script>
 </body>
