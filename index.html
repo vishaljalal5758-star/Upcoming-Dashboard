@@ -1,223 +1,306 @@
-<style>
-/* Force the table to fit the screen without side-scrolling */
-table, .responsive-table {
-  width: 100% !important;
-  table-layout: fixed !important; /* Locks column widths to viewport */
-  border-collapse: collapse;
-}
-
-/* Force long texts, titles, and IDs to wrap downwards instead of stretching the row */
-th, td {
-  padding: 10px;
-  text-align: left;
-  word-wrap: break-word !important;
-  overflow-wrap: break-word !important;
-  white-space: normal !important; /* Overrides absolute linear text strings */
-}
-
-/* Make headers look interactive and show they can be clicked */
-th {
-  cursor: pointer;
-  user-select: none;
-  position: relative;
-}
-th:hover {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-}
-th::after {
-  content: ' ↕';
-  font-size: 0.8em;
-  color: #777;
-}
-
-/* Style the rows so they look clickable */
-tbody tr {
-  cursor: pointer;
-  transition: background 0.15s ease-in-out;
-}
-tbody tr:hover {
-  background-color: rgba(255, 255, 255, 0.08) !important;
-}
-
-/* Detail Popup Modal Styling */
-.tender-modal {
-  display: none;
-  position: fixed;
-  z-index: 9999;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
-}
-.tender-modal-content {
-  background-color: #1a2230; /* Matches your dashboard dark profile theme */
-  color: #ffffff;
-  margin: 8% auto;
-  padding: 25px;
-  border: 1px solid #2d3748;
-  border-radius: 8px;
-  width: 85%;
-  max-width: 650px;
-  position: relative;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
-.tender-modal-close {
-  position: absolute;
-  right: 20px;
-  top: 15px;
-  font-size: 28px;
-  font-weight: bold;
-  cursor: pointer;
-  color: #a0aec0;
-}
-.tender-modal-close:hover {
-  color: #fff;
-}
-.modal-grid-row {
-  margin-bottom: 12px;
-  border-bottom: 1px solid #2d3748;
-  padding-bottom: 8px;
-}
-</style>
-
-<div id="tenderDetailsModal" class="tender-modal">
-  <div class="tender-modal-content">
-    <span class="tender-modal-close" onclick="closeTenderModal()">&times;</span>
-    <h2 style="margin-top:0; color:#4fd1c5; padding-right:20px;" id="m-title">Tender Details</h2>
-    <hr style="border:0; border-top:1px solid #2d3748; margin-bottom:15px;">
-    <div id="tenderModalBody">
-      </div>
-  </div>
-</div>
-
-<script>
-// Global tracking for sorting state
-let currentSortKey = '';
-let isAscendingOrder = true;
-
-// Bind this function to your existing setup right after your data array loads/fetches
-function setupEnhancedTableFeatures() {
-  attachHeaderSortEvents();
-  filterAndValidateTenderDates();
-  attachRowClickTriggers();
-}
-
-// Ensure columns are sortable by hooking click listeners to your <th> tags
-function attachHeaderSortEvents() {
-  const headers = document.querySelectorAll("table thead th");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upcoming Tenders Dashboard</title>
   
-  // Array mapping matching your columns: title, id, state, city, organisation, value, emd, deadline, published
-  const columnKeys = ['title', 'id', 'state', 'city', 'organisation', 'value', 'emd', 'deadline', 'published'];
-  
-  headers.forEach((th, index) => {
-    const key = columnKeys[index - 1]; // Offset index if you use a leading '#' index column
-    if (!key) return;
-    
-    th.addEventListener('click', () => {
-      let type = 'string';
-      if (key === 'value' || key === 'emd') type = 'number';
-      if (key === 'deadline' || key === 'published') type = 'date';
-      
-      executeInlineSort(key, type);
-    });
-  });
-}
-
-// Clean up NA items and enforce chronological rule: (Bid Deadline >= Published Date)
-function filterAndValidateTenderDates() {
-  // Replace 'tendersDataArray' with whatever global array name holds your rows (e.g., globalTenders)
-  if (typeof tendersDataArray !== 'undefined') {
-    tendersDataArray = tendersDataArray.filter(item => {
-      if (!item.published || !item.deadline || item.published === 'N/A' || item.deadline === 'N/A') {
-        return false; // Drops elements missing absolute date data strings
-      }
-      const pubDate = new Date(item.published);
-      const deadDate = new Date(item.deadline);
-      return (!isNaN(pubDate) && !isNaN(deadDate) && deadDate >= pubDate);
-    });
-  }
-}
-
-// Engine that sorts raw arrays inline
-function executeInlineSort(key, type) {
-  if (typeof tendersDataArray === 'undefined') return;
-  
-  if (currentSortKey === key) {
-    isAscendingOrder = !isAscendingOrder;
-  } else {
-    currentSortKey = key;
-    isAscendingOrder = true;
-  }
-  
-  tendersDataArray.sort((a, b) => {
-    let valA = a[key];
-    let valB = b[key];
-    
-    if (type === 'number') {
-      // Strips out non-numeric styling rules like '₹' or 'Cr' or commas
-      let numA = parseFloat(String(valA).replace(/[^0-9.-]+/g,"")) || 0;
-      let numB = parseFloat(String(valB).replace(/[^0-9.-]+/g,"")) || 0;
-      return isAscendingOrder ? numA - numB : numB - numA;
-    } else if (type === 'date') {
-      return isAscendingOrder ? new Date(valA) - new Date(valB) : new Date(valB) - new Date(valA);
-    } else {
-      return isAscendingOrder ? String(valA).localeCompare(String(valB)) : String(valB).localeCompare(String(valA));
+  <style>
+    /* ==========================================================================
+       1. GLOBAL RENDER & SYSTEM THEMING
+       ========================================================================== */
+    body {
+      background-color: #0f141c;
+      color: #e2e8f0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
     }
-  });
-  
-  // Call your existing table rebuilding function here to refresh visible items
-  if (typeof renderTableData === 'function') {
-    renderTableData(); 
-  }
-  attachRowClickTriggers(); // Re-apply triggers to fresh elements
-}
 
-// Dynamic injection configuration for row clicks
-function attachRowClickTriggers() {
-  const rows = document.querySelectorAll("table tbody tr");
-  rows.forEach((row, index) => {
-    row.addEventListener('click', () => {
-      // Resolves structural object directly based on global scope index context
-      const data = tendersDataArray[index]; 
-      if (data) openTenderModal(data);
+    h1 {
+      color: #4fd1c5;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    /* ==========================================================================
+       2. RESPONSIVE TABLE (FORCES NO HORIZONTAL SCROLLING)
+       ========================================================================== */
+    .table-container {
+      width: 100%;
+      overflow: hidden; /* Prevents container from stretching */
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      border: 1px solid #2d3748;
+    }
+
+    table {
+      width: 100% !important;
+      table-layout: fixed !important; /* Locks columns into the actual viewport width */
+      border-collapse: collapse;
+      background-color: #1a202c;
+    }
+
+    /* Force all text data strings to wrap downward instead of extending wide */
+    th, td {
+      padding: 14px 12px;
+      text-align: left;
+      border-bottom: 1px solid #2d3748;
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
+      white-space: normal !important; 
+      font-size: 14px;
+    }
+
+    /* Column Headers Interactive Setup */
+    th {
+      background-color: #2d3748;
+      color: #4fd1c5;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.2s ease;
+    }
+
+    th:hover {
+      background-color: #3a4a63;
+    }
+
+    th::after {
+      content: ' ↕';
+      font-size: 0.8em;
+      color: #718096;
+      margin-left: 5px;
+    }
+
+    /* Table Rows Interactive Setup */
+    tbody tr {
+      cursor: pointer;
+      transition: background 0.15s ease-in-out;
+    }
+
+    tbody tr:hover {
+      background-color: rgba(79, 209, 197, 0.08) !important;
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: #171e29;
+    }
+
+    /* ==========================================================================
+       3. MODAL POP-UP SYSTEM STYLING
+       ========================================================================== */
+    .tender-modal {
+      display: none; /* Hidden by default */
+      position: fixed;
+      z-index: 99999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(5px);
+    }
+
+    .tender-modal-content {
+      background-color: #1a2230;
+      color: #ffffff;
+      margin: 10% auto;
+      padding: 30px;
+      border: 1px solid #4fd1c5;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 600px;
+      position: relative;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .tender-modal-close {
+      position: absolute;
+      right: 20px;
+      top: 15px;
+      font-size: 32px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #a0aec0;
+      transition: color 0.2s ease;
+    }
+
+    .tender-modal-close:hover {
+      color: #fc8181;
+    }
+
+    .modal-grid-row {
+      margin-bottom: 14px;
+      border-bottom: 1px solid #2d3748;
+      padding-bottom: 10px;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .modal-grid-row strong {
+      color: #a0aec0;
+      display: inline-block;
+      width: 160px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Upcoming Tenders Dashboard</h1>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 25%;" onclick="executeInlineSort('title', 'string')">Tender Title</th>
+          <th style="width: 15%;" onclick="executeInlineSort('tenderId', 'string')">Tender ID</th>
+          <th style="width: 10%;" onclick="executeInlineSort('state', 'string')">State</th>
+          <th style="width: 20%;" onclick="executeInlineSort('organisation', 'string')">Organisation</th>
+          <th style="width: 10%;" onclick="executeInlineSort('value', 'number')">Value</th>
+          <th style="width: 10%;" onclick="executeInlineSort('publishedDate', 'date')">Published</th>
+          <th style="width: 10%;" onclick="executeInlineSort('bidDeadline', 'date')">Bid Deadline</th>
+        </tr>
+      </thead>
+      <tbody id="tenderTableBody">
+        </tbody>
+    </table>
+  </div>
+
+  <div id="tenderDetailsModal" class="tender-modal">
+    <div class="tender-modal-content">
+      <span class="tender-modal-close" onclick="closeTenderModal()">&times;</span>
+      <h2 style="margin-top:0; color:#4fd1c5; padding-right:25px; font-size: 22px;" id="m-title">Tender Title</h2>
+      <hr style="border:0; border-top:1px solid #2d3748; margin-bottom:20px;">
+      <div id="tenderModalBody">
+        </div>
+    </div>
+  </div>
+
+  <script>
+    // 1. DATA SOURCE STORAGE
+    // Replace this array content structure directly with your real API array fetch data if needed
+    let tenderData = [
+      { title: "GCB-1 Cargo Berth Upgradation Infrastructure Project", tenderId: "2026_MoS_912938_1", state: "Tamil Nadu", organisation: "Ministry of Shipping", value: 221.00, publishedDate: "2026-06-01", bidDeadline: "2026-07-15" },
+      { title: "2 Lane Rail Overbridge Construction Project Ballia", tenderId: "2026_UPSBC_1160085_1", state: "Uttar Pradesh", organisation: "UP STATE BRIDGE CORP", value: 92.50, publishedDate: "2026-06-05", bidDeadline: "2026-08-01" },
+      { title: "Water Distribution Pipeline Extention Grid Phase 2", tenderId: "2026_PHED_442110_3", state: "Bihar", organisation: "PHED Department", value: 14.10, publishedDate: "2026-06-10", bidDeadline: "2026-06-08" }, // Invalid date test row (Deadline before Published)
+      { title: "Smart City Traffic Surveillance Network Setup", tenderId: "2026_MUM_778119_2", state: "Maharashtra", organisation: "BMC Mumbai", value: 118.00, publishedDate: "2026-05-20", bidDeadline: "2026-07-20" }
+    ];
+
+    // Tracking States for Sort operations
+    let currentSortKey = '';
+    let isAscendingOrder = true;
+
+    // 2. ENGINE TO FILTER AND VALIDATE CHRONOLOGICAL DATES
+    function getValidTenders() {
+      return tenderData.filter(item => {
+        // Drop any objects that contain invalid text states or 'N/A' identifiers
+        if (!item.publishedDate || !item.bidDeadline || item.publishedDate === 'N/A' || item.bidDeadline === 'N/A') {
+          return false;
+        }
+        
+        const pubDate = new Date(item.publishedDate);
+        const deadDate = new Date(item.bidDeadline);
+        
+        // Return TRUE only if dates exist and deadline is matching or later than published date
+        return (!isNaN(pubDate) && !isNaN(deadDate) && deadDate >= pubDate);
+      });
+    }
+
+    // 3. TABLE DRAW SYSTEM
+    function renderTableData() {
+      const tbody = document.getElementById('tenderTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      const dataset = getValidTenders();
+
+      dataset.forEach((item) => {
+        const row = document.createElement('tr');
+        
+        // Connect click handling pattern directly to the row element
+        row.addEventListener('click', () => openTenderModal(item));
+
+        row.innerHTML = `
+          <td style="font-weight: 600; color: #fff;">${item.title || 'N/A'}</td>
+          <td style="color: #cbd5e0; font-family: monospace;">${item.tenderId || 'N/A'}</td>
+          <td>${item.state || 'N/A'}</td>
+          <td>${item.organisation || 'N/A'}</td>
+          <td style="color: #4fd1c5; font-weight: 600;">₹${item.value || '0'} Cr</td>
+          <td>${item.publishedDate || 'N/A'}</td>
+          <td>${item.bidDeadline || 'N/A'}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // 4. COLUMN INLINE SORT CONTROLLER
+    function executeInlineSort(key, type) {
+      if (currentSortKey === key) {
+        isAscendingOrder = !isAscendingOrder; // Flip sorting sequence order direction
+      } else {
+        currentSortKey = key;
+        isAscendingOrder = true; // Default initialization condition
+      }
+
+      tenderData.sort((a, b) => {
+        let valA = a[key];
+        let valB = b[key];
+
+        if (type === 'number') {
+          // Strips numeric string profiles clean of symbol formatting characters 
+          let numA = parseFloat(String(valA).replace(/[^0-9.-]+/g, "")) || 0;
+          let numB = parseFloat(String(b[key]).replace(/[^0-9.-]+/g, "")) || 0;
+          return isAscendingOrder ? numA - numB : numB - numA;
+        } else if (type === 'date') {
+          return isAscendingOrder ? new Date(valA) - new Date(valB) : new Date(valB) - new Date(valA);
+        } else {
+          return isAscendingOrder ? String(valA).localeCompare(String(valB)) : String(valB).localeCompare(String(valA));
+        }
+      });
+
+      renderTableData(); // Refresh display view mapping state
+    }
+
+    // 5. MODAL SYSTEM INJECTION SETUP
+    function openTenderModal(item) {
+      document.getElementById('m-title').innerText = item.title || 'Tender Project Detail View';
+      
+      const bodyHTML = `
+        <div class="modal-grid-row"><strong>Tender ID:</strong> ${item.tenderId || 'N/A'}</div>
+        <div class="modal-grid-row"><strong>State Boundary:</strong> ${item.state || 'N/A'}</div>
+        <div class="modal-grid-row"><strong>Issuing Authority:</strong> ${item.organisation || 'N/A'}</div>
+        <div class="modal-grid-row"><strong>Estimated Value:</strong> ₹${item.value || '0'} Cr</div>
+        <div class="modal-grid-row"><strong style="color: #fc8181;">Published Date:</strong> ${item.publishedDate || 'N/A'}</div>
+        <div class="modal-grid-row"><strong style="color: #68d391;">Bid Deadline:</strong> ${item.bidDeadline || 'N/A'}</div>
+      `;
+      
+      document.getElementById('tenderModalBody').innerHTML = bodyHTML;
+      document.getElementById('tenderDetailsModal').style.display = 'block';
+    }
+
+    function closeTenderModal() {
+      document.getElementById('tenderDetailsModal').style.display = 'none';
+    }
+
+    // Close the overlay natively when clicking outside of the display window profile context bounds
+    window.onclick = function(event) {
+      const modal = document.getElementById('tenderDetailsModal');
+      if (event.target === modal) {
+        modal.style.display = "none";
+      }
+    }
+
+    // Start-up initialization cycle 
+    document.addEventListener("DOMContentLoaded", () => {
+      renderTableData();
     });
-  });
-}
-
-function openTenderModal(item) {
-  document.getElementById('m-title').innerText = item.title || 'Tender Project Details';
-  
-  const bodyHTML = `
-    <div class="modal-grid-row"><strong>Tender ID:</strong> ${item.id || 'N/A'}</div>
-    <div class="modal-grid-row"><strong>State / City:</strong> ${item.state || 'N/A'} / ${item.city || 'N/A'}</div>
-    <div class="modal-grid-row"><strong>Organisation Name:</strong> ${item.organisation || 'N/A'}</div>
-    <div class="modal-grid-row"><strong>Project Total Value:</strong> ${item.value || 'N/A'}</div>
-    <div class="modal-grid-row"><strong>EMD Details:</strong> ₹${item.emd || 'N/A'}</div>
-    <div class="modal-grid-row" style="color: #fc8181;"><strong>Published Date:</strong> ${item.published || 'N/A'}</div>
-    <div class="modal-grid-row" style="color: #68d391;"><strong>Bid Submission Deadline:</strong> ${item.deadline || 'N/A'}</div>
-  `;
-  
-  document.getElementById('tenderModalBody').innerHTML = bodyHTML;
-  document.getElementById('tenderDetailsModal').style.display = 'block';
-}
-
-function closeTenderModal() {
-  document.getElementById('tenderDetailsModal').style.display = 'none';
-}
-
-// Close popup window natively if user clicks out into the blurred safe zone grid space
-window.onclick = function(event) {
-  const modal = document.getElementById('tenderDetailsModal');
-  if (event.target == modal) {
-    modal.style.display = "none";
-  }
-}
-
-// Initialize setups when your dashboard completes load sequence
-document.addEventListener("DOMContentLoaded", () => {
-  // Optional delay to wait for your remote fetch script to pull local files
-  setTimeout(setupEnhancedTableFeatures, 1000);
-});
-</script>
+  </script>
+</body>
+</html>
