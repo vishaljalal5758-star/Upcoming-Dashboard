@@ -1,306 +1,722 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Upcoming Tenders Dashboard</title>
-  
-  <style>
-    /* ==========================================================================
-       1. GLOBAL RENDER & SYSTEM THEMING
-       ========================================================================== */
-    body {
-      background-color: #0f141c;
-      color: #e2e8f0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin: 0;
-      padding: 20px;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upcoming Tenders Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0d131a;
+            --card-bg: #131c26;
+            --text-color: #ffffff;
+            --text-muted: #8b9bb4;
+            --accent-orange: #ff9f43;
+            --accent-cyan: #00d2d3;
+            --border-color: #1e293b;
+            --hover-row: #1c2836;
+        }
 
-    h1 {
-      color: #4fd1c5;
-      text-align: center;
-      margin-bottom: 30px;
-    }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
 
-    /* ==========================================================================
-       2. RESPONSIVE TABLE (FORCES NO HORIZONTAL SCROLLING)
-       ========================================================================== */
-    .table-container {
-      width: 100%;
-      overflow: hidden; /* Prevents container from stretching */
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-      border: 1px solid #2d3748;
-    }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 24px;
+        }
 
-    table {
-      width: 100% !important;
-      table-layout: fixed !important; /* Locks columns into the actual viewport width */
-      border-collapse: collapse;
-      background-color: #1a202c;
-    }
+        /* Header Styles */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+        }
 
-    /* Force all text data strings to wrap downward instead of extending wide */
-    th, td {
-      padding: 14px 12px;
-      text-align: left;
-      border-bottom: 1px solid #2d3748;
-      word-wrap: break-word !important;
-      overflow-wrap: break-word !important;
-      white-space: normal !important; 
-      font-size: 14px;
-    }
+        .header-title h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent-orange);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-    /* Column Headers Interactive Setup */
-    th {
-      background-color: #2d3748;
-      color: #4fd1c5;
-      font-weight: 600;
-      cursor: pointer;
-      user-select: none;
-      transition: background 0.2s ease;
-    }
+        .header-subtitle {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-top: 4px;
+        }
 
-    th:hover {
-      background-color: #3a4a63;
-    }
+        .header-badges {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
 
-    th::after {
-      content: ' ↕';
-      font-size: 0.8em;
-      color: #718096;
-      margin-left: 5px;
-    }
+        .badge {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            background: #1e293b;
+            color: var(--text-muted);
+        }
+        .badge.highlight {
+            background: rgba(255, 159, 67, 0.15);
+            color: var(--accent-orange);
+        }
+        .badge.cyan {
+            background: rgba(0, 210, 211, 0.15);
+            color: var(--accent-cyan);
+        }
 
-    /* Table Rows Interactive Setup */
-    tbody tr {
-      cursor: pointer;
-      transition: background 0.15s ease-in-out;
-    }
+        .total-value-display {
+            text-align: right;
+        }
+        .total-value-display .amount {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+        .total-value-display .label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
 
-    tbody tr:hover {
-      background-color: rgba(79, 209, 197, 0.08) !important;
-    }
+        /* KPI Cards Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
 
-    tbody tr:nth-child(even) {
-      background-color: #171e29;
-    }
+        .kpi-card {
+            background: var(--card-bg);
+            border-radius: 6px;
+            padding: 20px;
+            border-bottom: 3px solid transparent;
+            position: relative;
+        }
+        .kpi-card:nth-child(1) { border-bottom-color: #a29bfe; }
+        .kpi-card:nth-child(2) { border-bottom-color: #ffeaa7; }
+        .kpi-card:nth-child(3) { border-bottom-color: #00cec9; }
+        .kpi-card:nth-child(4) { border-bottom-color: #ff7675; }
+        .kpi-card:nth-child(5) { border-bottom-color: #ff9f43; }
 
-    /* ==========================================================================
-       3. MODAL POP-UP SYSTEM STYLING
-       ========================================================================== */
-    .tender-modal {
-      display: none; /* Hidden by default */
-      position: fixed;
-      z-index: 99999;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.8);
-      backdrop-filter: blur(5px);
-    }
+        .kpi-card i {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: var(--text-muted);
+            opacity: 0.6;
+            font-size: 18px;
+        }
 
-    .tender-modal-content {
-      background-color: #1a2230;
-      color: #ffffff;
-      margin: 10% auto;
-      padding: 30px;
-      border: 1px solid #4fd1c5;
-      border-radius: 12px;
-      width: 90%;
-      max-width: 600px;
-      position: relative;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-      animation: fadeIn 0.25s ease-out;
-    }
+        .kpi-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
 
-    @keyframes fadeIn {
-      from { transform: scale(0.95); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
-    }
+        .kpi-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
 
-    .tender-modal-close {
-      position: absolute;
-      right: 20px;
-      top: 15px;
-      font-size: 32px;
-      font-weight: bold;
-      cursor: pointer;
-      color: #a0aec0;
-      transition: color 0.2s ease;
-    }
+        /* Controls / Filters Container */
+        .controls-panel {
+            background: var(--card-bg);
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
 
-    .tender-modal-close:hover {
-      color: #fc8181;
-    }
+        .search-filter-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
 
-    .modal-grid-row {
-      margin-bottom: 14px;
-      border-bottom: 1px solid #2d3748;
-      padding-bottom: 10px;
-      font-size: 15px;
-      line-height: 1.5;
-    }
+        .search-box {
+            position: relative;
+            flex: 2;
+        }
+        .search-box i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+        .search-box input {
+            width: 100%;
+            background: #0d131a;
+            border: 1px solid var(--border-color);
+            padding: 10px 12px 10px 36px;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 14px;
+        }
 
-    .modal-grid-row strong {
-      color: #a0aec0;
-      display: inline-block;
-      width: 160px;
-    }
-  </style>
+        .filter-dropdown {
+            flex: 1;
+            background: #0d131a;
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .quick-filters {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            font-size: 12px;
+        }
+        .quick-filters span {
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .filter-btn {
+            background: #1c2635;
+            border: 1px solid var(--border-color);
+            color: #d1d5db;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--accent-orange);
+            color: #000;
+            border-color: var(--accent-orange);
+        }
+
+        /* Table Container (Prevents Horizontal Scroll, Forces Wrap) */
+        .table-container {
+            background: var(--card-bg);
+            border-radius: 6px;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13px;
+            table-layout: fixed; /* Hard rule to prevent running off screen */
+        }
+
+        th, td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            word-wrap: break-word; /* Forces long texts or titles to break line */
+            white-space: normal;   /* Overrides any data table rules that push content right */
+        }
+
+        /* Specific responsive column sizing to guarantee zero side-scroll */
+        th:nth-child(1), td:nth-child(1) { width: 5%; text-align: center; } /* # */
+        th:nth-child(2), td:nth-child(2) { width: 35%; color: #fff; font-weight: 500; } /* Title */
+        th:nth-child(3), td:nth-child(3) { width: 12%; } /* State */
+        th:nth-child(4), td:nth-child(4) { width: 18%; } /* Organisation */
+        th:nth-child(5), td:nth-child(5) { width: 10%; text-align: right; font-weight: 600; color: #ffbe76;} /* Value */
+        th:nth-child(6), td:nth-child(6) { width: 10%; text-align: center; } /* Bid Deadline */
+        th:nth-child(7), td:nth-child(7) { width: 10%; text-align: center; } /* Published */
+
+        th {
+            background-color: #172230;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+        th:hover {
+            background-color: #1c2a3c;
+            color: #fff;
+        }
+        th .sort-icon {
+            margin-left: 5px;
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        tbody tr {
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        tbody tr:hover {
+            background-color: var(--hover-row);
+        }
+
+        /* Details Popup Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.active .modal-card {
+            transform: scale(1);
+        }
+        .modal-header {
+            background: #172230;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .modal-header h3 {
+            color: var(--accent-orange);
+            font-size: 16px;
+        }
+        .close-modal {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .close-modal:hover { color: #fff; }
+        .modal-body {
+            padding: 20px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        .detail-item {
+            margin-bottom: 14px;
+            border-bottom: 1px solid #1c2635;
+            padding-bottom: 10px;
+        }
+        .detail-item:last-child { border: none; }
+        .detail-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .detail-value {
+            font-size: 14px;
+            color: #fff;
+            line-height: 1.4;
+        }
+
+        /* Loading Indicator */
+        .loader {
+            text-align: center;
+            padding: 40px;
+            font-size: 16px;
+            color: var(--text-muted);
+        }
+    </style>
 </head>
 <body>
 
-  <h1>Upcoming Tenders Dashboard</h1>
-
-  <div class="table-container">
-    <table>
-      <thead>
-        <tr>
-          <th style="width: 25%;" onclick="executeInlineSort('title', 'string')">Tender Title</th>
-          <th style="width: 15%;" onclick="executeInlineSort('tenderId', 'string')">Tender ID</th>
-          <th style="width: 10%;" onclick="executeInlineSort('state', 'string')">State</th>
-          <th style="width: 20%;" onclick="executeInlineSort('organisation', 'string')">Organisation</th>
-          <th style="width: 10%;" onclick="executeInlineSort('value', 'number')">Value</th>
-          <th style="width: 10%;" onclick="executeInlineSort('publishedDate', 'date')">Published</th>
-          <th style="width: 10%;" onclick="executeInlineSort('bidDeadline', 'date')">Bid Deadline</th>
-        </tr>
-      </thead>
-      <tbody id="tenderTableBody">
-        </tbody>
-    </table>
-  </div>
-
-  <div id="tenderDetailsModal" class="tender-modal">
-    <div class="tender-modal-content">
-      <span class="tender-modal-close" onclick="closeTenderModal()">&times;</span>
-      <h2 style="margin-top:0; color:#4fd1c5; padding-right:25px; font-size: 22px;" id="m-title">Tender Title</h2>
-      <hr style="border:0; border-top:1px solid #2d3748; margin-bottom:20px;">
-      <div id="tenderModalBody">
+    <div class="header">
+        <div class="header-title">
+            <h1><i class="fa-solid fa-building-columns"></i> Upcoming Tenders Dashboard</h1>
+            <div class="header-subtitle">Authority-wise project intelligence · Government of India</div>
+            <div class="header-badges">
+                <span class="badge highlight" id="badge-count">0 Tenders</span>
+                <span class="badge cyan">All India Coverage</span>
+                <span class="badge" id="badge-date">Updated Live</span>
+            </div>
+        </div>
+        <div class="total-value-display">
+            <div class="amount" id="top-total-value">₹0 Cr</div>
+            <div class="label">Total Tender Value</div>
         </div>
     </div>
-  </div>
 
-  <script>
-    // 1. DATA SOURCE STORAGE
-    // Replace this array content structure directly with your real API array fetch data if needed
-    let tenderData = [
-      { title: "GCB-1 Cargo Berth Upgradation Infrastructure Project", tenderId: "2026_MoS_912938_1", state: "Tamil Nadu", organisation: "Ministry of Shipping", value: 221.00, publishedDate: "2026-06-01", bidDeadline: "2026-07-15" },
-      { title: "2 Lane Rail Overbridge Construction Project Ballia", tenderId: "2026_UPSBC_1160085_1", state: "Uttar Pradesh", organisation: "UP STATE BRIDGE CORP", value: 92.50, publishedDate: "2026-06-05", bidDeadline: "2026-08-01" },
-      { title: "Water Distribution Pipeline Extention Grid Phase 2", tenderId: "2026_PHED_442110_3", state: "Bihar", organisation: "PHED Department", value: 14.10, publishedDate: "2026-06-10", bidDeadline: "2026-06-08" }, // Invalid date test row (Deadline before Published)
-      { title: "Smart City Traffic Surveillance Network Setup", tenderId: "2026_MUM_778119_2", state: "Maharashtra", organisation: "BMC Mumbai", value: 118.00, publishedDate: "2026-05-20", bidDeadline: "2026-07-20" }
-    ];
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <i class="fa-regular fa-file-lines"></i>
+            <div class="kpi-value" id="kpi-tenders">0</div>
+            <div class="kpi-label">Total Tenders</div>
+        </div>
+        <div class="kpi-card">
+            <i class="fa-solid fa-coins"></i>
+            <div class="kpi-value" id="kpi-value">₹0 L Cr</div>
+            <div class="kpi-label">Total Value</div>
+        </div>
+        <div class="kpi-card">
+            <i class="fa-solid fa-chart-bar"></i>
+            <div class="kpi-value" id="kpi-avg">₹0 Cr</div>
+            <div class="kpi-label">Avg Tender Value</div>
+        </div>
+        <div class="kpi-card">
+            <i class="fa-solid fa-map-location-dot"></i>
+            <div class="kpi-value" id="kpi-states">0</div>
+            <div class="kpi-label">States Covered</div>
+        </div>
+        <div class="kpi-card">
+            <i class="fa-solid fa-fire"></i>
+            <div class="kpi-value" id="kpi-large">0</div>
+            <div class="kpi-label">₹500 Cr+ Tenders</div>
+        </div>
+    </div>
 
-    // Tracking States for Sort operations
-    let currentSortKey = '';
-    let isAscendingOrder = true;
+    <div class="controls-panel">
+        <div class="search-filter-row">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="search-input" placeholder="Search title, organisation, state...">
+            </div>
+            <select class="filter-dropdown" id="state-dropdown">
+                <option value="">All States</option>
+            </select>
+            <select class="filter-dropdown" id="value-dropdown">
+                <option value="">All Values</option>
+                <option value="under5">Under ₹5 Cr</option>
+                <option value="5-25">₹5 – ₹25 Cr</option>
+                <option value="25-100">₹25 – ₹100 Cr</option>
+                <option value="100-500">₹100 – ₹500 Cr</option>
+                <option value="500plus">₹500 Cr+</option>
+            </select>
+        </div>
+        <div class="quick-filters">
+            <span>Quick Filter:</span>
+            <button class="filter-btn" onclick="setQuickState('Uttar Pradesh')">Uttar Pradesh</button>
+            <button class="filter-btn" onclick="setQuickState('Delhi')">Delhi</button>
+            <button class="filter-btn" onclick="setQuickState('Maharashtra')">Maharashtra</button>
+            <button class="filter-btn" onclick="setQuickState('Gujarat')">Gujarat</button>
+            <button class="filter-btn" onclick="setQuickValue('500plus')">🔥 ₹500 Cr+</button>
+            <button class="filter-btn" onclick="resetFilters()"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+        </div>
+    </div>
 
-    // 2. ENGINE TO FILTER AND VALIDATE CHRONOLOGICAL DATES
-    function getValidTenders() {
-      return tenderData.filter(item => {
-        // Drop any objects that contain invalid text states or 'N/A' identifiers
-        if (!item.publishedDate || !item.bidDeadline || item.publishedDate === 'N/A' || item.bidDeadline === 'N/A') {
-          return false;
+    <div class="table-container">
+        <table id="tenders-table">
+            <thead>
+                <tr>
+                    <th style="width: 5%;">#</th>
+                    <th onclick="sortTable('title')">Tender Title <i class="fa-solid fa-sort sort-icon"></i></th>
+                    <th onclick="sortTable('state')">State <i class="fa-solid fa-sort sort-icon"></i></th>
+                    <th onclick="sortTable('organisation')">Organisation <i class="fa-solid fa-sort sort-icon"></i></th>
+                    <th onclick="sortTable('value')" style="text-align: right;">Value (Cr) <i class="fa-solid fa-sort sort-icon"></i></th>
+                    <th onclick="sortTable('deadline')" style="text-align: center;">Bid Deadline <i class="fa-solid fa-sort sort-icon"></i></th>
+                    <th onclick="sortTable('published')" style="text-align: center;">Published <i class="fa-solid fa-sort sort-icon"></i></th>
+                </tr>
+            </thead>
+            <tbody id="table-body">
+                <tr>
+                    <td colspan="7" class="loader"><i class="fa-solid fa-circle-notch fa-spin"></i> Fetching Live Tender Data...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="modal-overlay" id="details-modal" onclick="closeModal(event)">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-circle-info"></i> Tender Complete Details</h3>
+                <button class="close-modal" onclick="toggleModal(false)">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-content">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSZjO-A6VhuzifXXgffaGdtD6ysazVtS1FTjeFTUxdi-q9IIfjc4DZmrS3QF7MhzKjHRqeN36ZeX_qu/pub?gid=1590006273&single=true&output=csv";
+        
+        let allData = [];
+        let filteredData = [];
+        let currentSort = { column: '', ascending: true };
+
+        // Fetch data from the Google Sheet CSV Link
+        async function fetchTenderData() {
+            try {
+                const response = await fetch(CSV_URL);
+                const csvText = await response.text();
+                
+                // Parse CSV text using PapaParse
+                Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        processRawData(results.data);
+                    }
+                });
+            } catch (error) {
+                console.error("Error loading CSV:", error);
+                document.getElementById('table-body').innerHTML = `<tr><td colspan="7" class="loader" style="color: #ff7675;">Failed to load data. Please verify the spreadsheet link settings.</td></tr>`;
+            }
         }
-        
-        const pubDate = new Date(item.publishedDate);
-        const deadDate = new Date(item.bidDeadline);
-        
-        // Return TRUE only if dates exist and deadline is matching or later than published date
-        return (!isNaN(pubDate) && !isNaN(deadDate) && deadDate >= pubDate);
-      });
-    }
 
-    // 3. TABLE DRAW SYSTEM
-    function renderTableData() {
-      const tbody = document.getElementById('tenderTableBody');
-      if (!tbody) return;
-      tbody.innerHTML = '';
+        // Process and normalize variable column configurations dynamically
+        function processRawData(rawData) {
+            allData = rawData.map((row, index) => {
+                // Autodetect title/organisation columns regardless of explicit case naming
+                const title = row['Tender Title'] || row['title'] || row['TENDER TITLE'] || Object.values(row)[0] || '';
+                const state = row['State'] || row['state'] || row['STATE'] || 'Unknown';
+                const org = row['Organisation'] || row['organisation'] || row['ORGANISATION'] || 'N/A';
+                
+                // Match "amt. in cr." column safely
+                let rawValue = row['amt. in cr.'] || row['Amt. in Cr.'] || row['Value'] || row['value'] || 0;
+                let numericValue = parseFloat(String(rawValue).replace(/,/g, '')) || 0;
 
-      const dataset = getValidTenders();
+                // Dates processing
+                let publishedStr = row['Published'] || row['published'] || row['PUBLISHED'] || '';
+                let deadlineStr = row['Bid Deadline'] || row['bid deadline'] || row['BID DEADLINE'] || '';
+                
+                let pubDate = new Date(publishedStr);
+                let deadDate = new Date(deadlineStr);
 
-      dataset.forEach((item) => {
-        const row = document.createElement('tr');
-        
-        // Connect click handling pattern directly to the row element
-        row.addEventListener('click', () => openTenderModal(item));
+                // Validation Rule: Bid deadline must logically fall after the published date
+                if (pubDate > deadDate) {
+                    // Failover rule adjustments if inverted in raw structure data
+                    let temp = publishedStr;
+                    publishedStr = deadlineStr;
+                    deadlineStr = temp;
+                }
 
-        row.innerHTML = `
-          <td style="font-weight: 600; color: #fff;">${item.title || 'N/A'}</td>
-          <td style="color: #cbd5e0; font-family: monospace;">${item.tenderId || 'N/A'}</td>
-          <td>${item.state || 'N/A'}</td>
-          <td>${item.organisation || 'N/A'}</td>
-          <td style="color: #4fd1c5; font-weight: 600;">₹${item.value || '0'} Cr</td>
-          <td>${item.publishedDate || 'N/A'}</td>
-          <td>${item.bidDeadline || 'N/A'}</td>
-        `;
-        tbody.appendChild(row);
-      });
-    }
+                return {
+                    id: index + 1,
+                    title: title,
+                    state: state.trim(),
+                    organisation: org,
+                    value: numericValue,
+                    published: publishedStr,
+                    deadline: deadlineStr,
+                    rawRow: row // Hold reference to show complete data in click modal popup
+                };
+            });
 
-    // 4. COLUMN INLINE SORT CONTROLLER
-    function executeInlineSort(key, type) {
-      if (currentSortKey === key) {
-        isAscendingOrder = !isAscendingOrder; // Flip sorting sequence order direction
-      } else {
-        currentSortKey = key;
-        isAscendingOrder = true; // Default initialization condition
-      }
-
-      tenderData.sort((a, b) => {
-        let valA = a[key];
-        let valB = b[key];
-
-        if (type === 'number') {
-          // Strips numeric string profiles clean of symbol formatting characters 
-          let numA = parseFloat(String(valA).replace(/[^0-9.-]+/g, "")) || 0;
-          let numB = parseFloat(String(b[key]).replace(/[^0-9.-]+/g, "")) || 0;
-          return isAscendingOrder ? numA - numB : numB - numA;
-        } else if (type === 'date') {
-          return isAscendingOrder ? new Date(valA) - new Date(valB) : new Date(valB) - new Date(valA);
-        } else {
-          return isAscendingOrder ? String(valA).localeCompare(String(valB)) : String(valB).localeCompare(String(valA));
+            // Populate unique dropdown list options dynamically
+            populateStateDropdown();
+            
+            // Build Initial Metrics View
+            applyFilters();
         }
-      });
 
-      renderTableData(); // Refresh display view mapping state
-    }
+        function populateStateDropdown() {
+            const dropdown = document.getElementById('state-dropdown');
+            const states = [...new Set(allData.map(d => d.state))].sort();
+            states.forEach(state => {
+                if(state) {
+                    let opt = document.createElement('option');
+                    opt.value = state;
+                    opt.innerText = state;
+                    dropdown.appendChild(opt);
+                }
+            });
+        }
 
-    // 5. MODAL SYSTEM INJECTION SETUP
-    function openTenderModal(item) {
-      document.getElementById('m-title').innerText = item.title || 'Tender Project Detail View';
-      
-      const bodyHTML = `
-        <div class="modal-grid-row"><strong>Tender ID:</strong> ${item.tenderId || 'N/A'}</div>
-        <div class="modal-grid-row"><strong>State Boundary:</strong> ${item.state || 'N/A'}</div>
-        <div class="modal-grid-row"><strong>Issuing Authority:</strong> ${item.organisation || 'N/A'}</div>
-        <div class="modal-grid-row"><strong>Estimated Value:</strong> ₹${item.value || '0'} Cr</div>
-        <div class="modal-grid-row"><strong style="color: #fc8181;">Published Date:</strong> ${item.publishedDate || 'N/A'}</div>
-        <div class="modal-grid-row"><strong style="color: #68d391;">Bid Deadline:</strong> ${item.bidDeadline || 'N/A'}</div>
-      `;
-      
-      document.getElementById('tenderModalBody').innerHTML = bodyHTML;
-      document.getElementById('tenderDetailsModal').style.display = 'block';
-    }
+        // Calculation of KPI Cards dynamically from current filtered view
+        function updateKPIs(data) {
+            const count = data.length;
+            let totalVal = 0;
+            let over500Count = 0;
+            let uniqueStates = new Set();
 
-    function closeTenderModal() {
-      document.getElementById('tenderDetailsModal').style.display = 'none';
-    }
+            data.forEach(item => {
+                totalVal += item.value;
+                if(item.value >= 500) over500Count++;
+                if(item.state) uniqueStates.add(item.state);
+            });
 
-    // Close the overlay natively when clicking outside of the display window profile context bounds
-    window.onclick = function(event) {
-      const modal = document.getElementById('tenderDetailsModal');
-      if (event.target === modal) {
-        modal.style.display = "none";
-      }
-    }
+            const avgVal = count > 0 ? (totalVal / count) : 0;
 
-    // Start-up initialization cycle 
-    document.addEventListener("DOMContentLoaded", () => {
-      renderTableData();
-    });
-  </script>
+            // Update UI Counters
+            document.getElementById('badge-count').innerText = `${count.toLocaleString()} Tenders`;
+            document.getElementById('top-total-value').innerText = `₹${Math.round(totalVal).toLocaleString()} Cr`;
+            
+            document.getElementById('kpi-tenders').innerText = count.toLocaleString();
+            document.getElementById('kpi-value').innerText = `₹${(totalVal / 10000).toFixed(1)}L Cr`;
+            document.getElementById('kpi-avg').innerText = `₹${Math.round(avgVal)} Cr`;
+            document.getElementById('kpi-states').innerText = uniqueStates.size;
+            document.getElementById('kpi-large').innerText = over500Count;
+        }
+
+        // Dynamic Filtering
+        function applyFilters() {
+            const searchVal = document.getElementById('search-input').value.toLowerCase();
+            const stateVal = document.getElementById('state-dropdown').value;
+            const valueRange = document.getElementById('value-dropdown').value;
+
+            filteredData = allData.filter(item => {
+                // Search Box check
+                const matchSearch = item.title.toLowerCase().includes(searchVal) || 
+                                    item.organisation.toLowerCase().includes(searchVal) || 
+                                    item.state.toLowerCase().includes(searchVal);
+                
+                // State Dropdown check
+                const matchState = !stateVal || item.state === stateVal;
+
+                // Value Range Bracket check
+                let matchValue = true;
+                if (valueRange === 'under5') matchValue = item.value < 5;
+                else if (valueRange === '5-25') matchValue = item.value >= 5 && item.value <= 25;
+                else if (valueRange === '25-100') matchValue = item.value > 25 && item.value <= 100;
+                else if (valueRange === '100-500') matchValue = item.value > 100 && item.value <= 500;
+                else if (valueRange === '500plus') matchValue = item.value > 500;
+
+                return matchSearch && matchState && matchValue;
+            });
+
+            updateKPIs(filteredData);
+            renderTable();
+        }
+
+        // Render Table Rows
+        function renderTable() {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+
+            if (filteredData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="loader">No matching results found.</td></tr>`;
+                return;
+            }
+
+            filteredData.forEach((item, idx) => {
+                let tr = document.createElement('tr');
+                tr.onclick = () => openDetailsModal(item);
+                
+                tr.innerHTML = `
+                    <td style="text-align: center; color: var(--text-muted);">${idx + 1}</td>
+                    <td>${item.title}</td>
+                    <td>${item.state}</td>
+                    <td>${item.organisation}</td>
+                    <td style="text-align: right;">₹${item.value.toFixed(1)} Cr</td>
+                    <td style="text-align: center;">${item.deadline}</td>
+                    <td style="text-align: center;">${item.published}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Built-in Inline Sorting functionality for column heads
+        function sortTable(columnKey) {
+            if (currentSort.column === columnKey) {
+                currentSort.ascending = !currentSort.ascending;
+            } else {
+                currentSort.column = columnKey;
+                currentSort.ascending = true;
+            }
+
+            filteredData.sort((a, b) => {
+                let valA = a[columnKey];
+                let valB = b[columnKey];
+
+                // Handle Date Sorting parsing fallback comparisons
+                if (columnKey === 'deadline' || columnKey === 'published') {
+                    return currentSort.ascending ? new Date(valA) - new Date(valB) : new Date(valB) - new Date(valA);
+                }
+
+                // Strings vs numbers safe routing
+                if (typeof valA === 'string') {
+                    return currentSort.ascending ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                } else {
+                    return currentSort.ascending ? valA - valB : valB - valA;
+                }
+            });
+
+            renderTable();
+        }
+
+        // Quick Controls Utilities
+        function setQuickState(stateName) {
+            document.getElementById('state-dropdown').value = stateName;
+            applyFilters();
+        }
+
+        function setQuickValue(rangeKey) {
+            document.getElementById('value-dropdown').value = rangeKey;
+            applyFilters();
+        }
+
+        function resetFilters() {
+            document.getElementById('search-input').value = '';
+            document.getElementById('state-dropdown').value = '';
+            document.getElementById('value-dropdown').value = '';
+            applyFilters();
+        }
+
+        // Popup Details Modal Trigger View 
+        function openDetailsModal(item) {
+            const modalContent = document.getElementById('modal-content');
+            modalContent.innerHTML = '';
+
+            // Generate clean dynamic rows matching every single property header found inside your active spreadsheet columns
+            for (const [key, value] of Object.entries(item.rawRow)) {
+                let detailBox = document.createElement('div');
+                detailBox.className = 'detail-item';
+                detailBox.innerHTML = `
+                    <div class="detail-label">${key}</div>
+                    <div class="detail-value">${value || '—'}</div>
+                `;
+                modalContent.appendChild(detailBox);
+            }
+
+            toggleModal(true);
+        }
+
+        function toggleModal(show) {
+            const modal = document.getElementById('details-modal');
+            if (show) modal.classList.add('active');
+            else modal.classList.remove('active');
+        }
+
+        function closeModal(e) {
+            if(e.target === document.getElementById('details-modal')) {
+                toggleModal(false);
+            }
+        }
+
+        // Input Observers
+        document.getElementById('search-input').addEventListener('input', applyFilters);
+        document.getElementById('state-dropdown').addEventListener('change', applyFilters);
+        document.getElementById('value-dropdown').addEventListener('change', applyFilters);
+
+        // Kickoff App load 
+        fetchTenderData();
+    </script>
 </body>
 </html>
