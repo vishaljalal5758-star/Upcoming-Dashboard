@@ -1,718 +1,247 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Dynamic CSV‑Dashboard</title>
+
+    <!-- ==== CSS ==== -->
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0f172a;
-            color: #e2e8f0;
-            min-height: 100vh;
-        }
-
-        header {
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            border-bottom: 1px solid #334155;
-            padding: 20px 30px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-
-        header h1 {
-            font-size: 1.8rem;
-            font-weight: 700;
-            background: linear-gradient(90deg, #38bdf8, #818cf8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .last-updated {
-            font-size: 0.8rem;
-            color: #64748b;
-        }
-
-        .refresh-btn {
-            background: linear-gradient(135deg, #38bdf8, #818cf8);
-            border: none;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-weight: 600;
-            transition: opacity 0.2s;
-        }
-
-        .refresh-btn:hover { opacity: 0.85; }
-
-        .loading-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(15,23,42,0.9);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid #334155;
-            border-top: 4px solid #38bdf8;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .loading-text {
-            margin-top: 15px;
-            color: #94a3b8;
-            font-size: 1rem;
-        }
-
-        .error-box {
-            background: #450a0a;
-            border: 1px solid #ef4444;
-            color: #fca5a5;
-            padding: 20px;
-            border-radius: 12px;
-            margin: 30px;
-            text-align: center;
-        }
-
-        .container {
-            padding: 30px;
-            max-width: 1600px;
-            margin: 0 auto;
-        }
-
-        /* KPI Cards */
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .kpi-card {
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            border: 1px solid #334155;
-            border-radius: 16px;
-            padding: 22px;
-            text-align: center;
-            transition: transform 0.2s, box-shadow 0.2s;
-            animation: fadeInUp 0.5s ease forwards;
-            opacity: 0;
-        }
-
-        .kpi-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 30px rgba(56,189,248,0.15);
-        }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .kpi-icon {
-            font-size: 2rem;
-            margin-bottom: 10px;
-        }
-
-        .kpi-label {
-            font-size: 0.75rem;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-        }
-
-        .kpi-value {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #f1f5f9;
-        }
-
-        .kpi-sub {
-            font-size: 0.75rem;
-            color: #94a3b8;
-            margin-top: 5px;
-        }
-
-        /* Charts Grid */
-        .charts-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
-            gap: 24px;
-            margin-bottom: 30px;
-        }
-
-        .chart-card {
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 16px;
-            padding: 24px;
-            animation: fadeInUp 0.6s ease forwards;
-            opacity: 0;
-        }
-
-        .chart-card.full-width {
-            grid-column: 1 / -1;
-        }
-
-        .chart-title {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #cbd5e1;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .chart-title span.dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #38bdf8;
-        }
-
-        .chart-wrapper {
-            position: relative;
-            height: 280px;
-        }
-
-        /* Table */
-        .table-card {
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 30px;
-            animation: fadeInUp 0.7s ease forwards;
-            opacity: 0;
-        }
-
-        .table-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-
-        .search-box {
-            background: #0f172a;
-            border: 1px solid #334155;
-            color: #e2e8f0;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            width: 260px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .search-box:focus { border-color: #38bdf8; }
-
-        .table-scroll {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-        }
-
-        thead th {
-            background: #0f172a;
-            padding: 12px 16px;
-            text-align: left;
-            color: #94a3b8;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.72rem;
-            letter-spacing: 0.8px;
-            border-bottom: 1px solid #334155;
-            cursor: pointer;
-            user-select: none;
-            white-space: nowrap;
-        }
-
-        thead th:hover { color: #38bdf8; }
-
-        tbody tr {
-            border-bottom: 1px solid #1e293b;
-            transition: background 0.15s;
-        }
-
-        tbody tr:hover { background: #0f172a; }
-
-        tbody td {
-            padding: 10px 16px;
-            color: #cbd5e1;
-            white-space: nowrap;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 0.72rem;
-            font-weight: 600;
-        }
-
-        .pagination {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 16px;
-            font-size: 0.82rem;
-            color: #64748b;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .page-buttons {
-            display: flex;
-            gap: 6px;
-        }
-
-        .page-btn {
-            background: #0f172a;
-            border: 1px solid #334155;
-            color: #94a3b8;
-            padding: 5px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            transition: all 0.2s;
-        }
-
-        .page-btn:hover, .page-btn.active {
-            background: #38bdf8;
-            color: #0f172a;
-            border-color: #38bdf8;
-        }
-
-        .page-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
-
-        @media (max-width: 768px) {
-            .charts-grid { grid-template-columns: 1fr; }
-            header h1 { font-size: 1.2rem; }
-            .container { padding: 16px; }
-        }
+        body { font-family: Arial, Helvetica, sans-serif; margin:0; padding:0; background:#f9f9f9; }
+        header { background:#2c3e50; color:#fff; padding:1rem; text-align:center; }
+        .container { width:95%; max-width:1200px; margin:2rem auto; }
+        .cards { display:flex; flex-wrap:wrap; gap:1rem; margin-bottom:2rem; }
+        .card { flex:1 1 300px; background:#fff; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,.1); padding:1rem; }
+        canvas { max-width:100%; height:auto; }
+        .loader { text-align:center; padding:2rem; font-size:1.2rem; color:#777; }
     </style>
+
+    <!-- ==== Libraries ==== -->
+    <!-- PapaParse – CSV parser -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js" integrity="sha512-eiVrTTMQn8ktUejTc4I+EEPmm3jTSS5ae2MfsM6GhKZ7woT9HdGKRj5n938w9Rl6hAJwVTX+dwUBU6gWXwKSpQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <!-- Chart.js – charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- DataTables – searchable table -->
+    <link rel="stylesheet"
+          href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+            integrity="sha256-3fpJwK8T8lD6gVSOEDhGPcKy3f1J/7N/6DQTGDL6ykM="
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
 </head>
+
 <body>
 
-<div class="loading-overlay" id="loadingOverlay">
-    <div class="spinner"></div>
-    <div class="loading-text">Loading dashboard data...</div>
-</div>
-
 <header>
-    <h1>📊 Dynamic Data Dashboard</h1>
-    <div style="display:flex;align-items:center;gap:16px;">
-        <span class="last-updated" id="lastUpdated">—</span>
-        <button class="refresh-btn" onclick="loadData()">⟳ Refresh</button>
-    </div>
+    <h1>📊 Dynamic Dashboard – CSV from Google Sheets</h1>
 </header>
 
-<div class="container" id="mainContent" style="display:none;">
-    <div class="kpi-grid" id="kpiGrid"></div>
-    <div class="charts-grid" id="chartsGrid"></div>
-    <div class="table-card">
-        <div class="table-controls">
-            <div class="chart-title"><span class="dot"></span>Full Data Table</div>
-            <input class="search-box" type="text" id="searchBox" placeholder="🔍 Search records..." oninput="filterTable()">
+<div class="container">
+
+    <!-- Loader – shown while data is being fetched -->
+    <div id="loader" class="loader">Loading data…</div>
+
+    <!-- 📈 Chart cards -->
+    <div class="cards" id="chart-area" style="display:none;">
+        <div class="card">
+            <h3>Chart #1 – Example (first numeric column vs. Row index)</h3>
+            <canvas id="chart1"></canvas>
         </div>
-        <div class="table-scroll">
-            <table id="dataTable">
-                <thead id="tableHead"></thead>
-                <tbody id="tableBody"></tbody>
-            </table>
-        </div>
-        <div class="pagination">
-            <span id="pageInfo">—</span>
-            <div class="page-buttons" id="pageButtons"></div>
+        <div class="card">
+            <h3>Chart #2 – Example (sum per category)</h3>
+            <canvas id="chart2"></canvas>
         </div>
     </div>
+
+    <!-- 📋 Table card -->
+    <div class="card" id="table-card" style="display:none;">
+        <h3>Full Table</h3>
+        <table id="csv-table" class="display" style="width:100%"></table>
+    </div>
+
 </div>
 
-<div id="errorContainer"></div>
-
 <script>
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSZjO-A6VhuzifXXgffaGdtD6ysazVtS1FTjeFTUxdi-q9IIfjc4DZmrS3QF7MhzKjHRqeN36ZeX_qu/pub?gid=1590006273&single=true&output=csv';
 
-let allData = [], headers = [], filteredData = [];
-let currentPage = 1;
-const rowsPerPage = 10;
-let charts = {};
-let sortCol = -1, sortDir = 1;
+    // -------------------------------------------------
+    // 1️⃣ SETTINGS – adjust to your data needs
+    // -------------------------------------------------
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSZjO-A6VhuzifXXgffaGdtD6ysazVtS1FTjeFTUxdi-q9IIfjc4DZmrS3QF7MhzKjHRqeN36ZeX_qu/pub?gid=1590006273&single=true&output=csv";
 
-const COLORS = [
-    'rgba(56,189,248,0.85)', 'rgba(129,140,248,0.85)', 'rgba(52,211,153,0.85)',
-    'rgba(251,191,36,0.85)', 'rgba(248,113,113,0.85)', 'rgba(167,139,250,0.85)',
-    'rgba(34,211,238,0.85)', 'rgba(74,222,128,0.85)', 'rgba(253,186,116,0.85)',
-    'rgba(196,181,253,0.85)'
-];
+    // How often (ms) we pull fresh data from the sheet
+    const REFRESH_INTERVAL = 5 * 60 * 1000;   // 5 minutes
 
-function parseCSV(text) {
-    const lines = text.trim().split('\n');
-    const hdrs = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
-    const rows = [];
-    for (let i = 1; i < lines.length; i++) {
-        const vals = smartSplit(lines[i]);
-        if (vals.length === hdrs.length) {
-            const obj = {};
-            hdrs.forEach((h, j) => obj[h] = vals[j].replace(/"/g, '').trim());
-            rows.push(obj);
+    // -------------------------------------------------
+    // 2️⃣ FETCH & PARSE CSV
+    // -------------------------------------------------
+    async function loadCSV() {
+        try {
+            const response = await fetch(CSV_URL);
+            const csvText = await response.text();
+
+            // PapaParse async parsing (handles commas, line‑breaks, etc.)
+            return new Promise((resolve, reject) => {
+                Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    dynamicTyping: true,   // convert numbers automatically
+                    complete: results => resolve(results.data),
+                    error: err => reject(err)
+                });
+            });
+        } catch (e) {
+            console.error("Error fetching CSV:", e);
+            return null;
         }
     }
-    return { hdrs, rows };
-}
 
-function smartSplit(line) {
-    const result = [];
-    let cur = '', inQuote = false;
-    for (let c of line) {
-        if (c === '"') { inQuote = !inQuote; }
-        else if (c === ',' && !inQuote) { result.push(cur); cur = ''; }
-        else cur += c;
-    }
-    result.push(cur);
-    return result;
-}
+    // -------------------------------------------------
+    // 3️⃣ RENDER TABLE (DataTables)
+    // -------------------------------------------------
+    function drawTable(data) {
+        // Build column definition from header row
+        const cols = Object.keys(data[0] || {});
+        const columnDefs = cols.map(col => ({
+            title: col,
+            data: col
+        }));
 
-function isNumeric(col) {
-    return allData.slice(0, 20).every(r => r[col] === '' || !isNaN(parseFloat(r[col])));
-}
-
-function isCategorical(col) {
-    const unique = [...new Set(allData.map(r => r[col]).filter(Boolean))];
-    return unique.length <= 20 && unique.length >= 2 && !isNumeric(col);
-}
-
-function detectDateCol() {
-    return headers.find(h => {
-        const v = allData[0]?.[h] || '';
-        return /date|time|year|month|day/i.test(h) || /\d{1,4}[-\/]\d{1,2}[-\/]\d{1,4}/.test(v);
-    });
-}
-
-function buildKPIs() {
-    const grid = document.getElementById('kpiGrid');
-    grid.innerHTML = '';
-
-    const numCols = headers.filter(isNumeric);
-    const catCols = headers.filter(isCategorical);
-
-    const icons = ['📦', '💰', '📈', '🔢', '🏷️', '🎯'];
-
-    // Total rows
-    const totalCard = createKPICard('📋', 'Total Records', allData.length.toLocaleString(), '', 0);
-    grid.appendChild(totalCard);
-
-    // Numeric KPIs
-    numCols.slice(0, 4).forEach((col, i) => {
-        const vals = allData.map(r => parseFloat(r[col])).filter(v => !isNaN(v));
-        const sum = vals.reduce((a, b) => a + b, 0);
-        const avg = sum / vals.length;
-        const card = createKPICard(icons[i % icons.length], col,
-            sum > 9999 ? sum.toLocaleString(undefined, {maximumFractionDigits: 1}) : sum.toFixed(2),
-            `Avg: ${avg.toFixed(2)}`, i + 1);
-        grid.appendChild(card);
-    });
-
-    // Categorical unique counts
-    catCols.slice(0, 2).forEach((col, i) => {
-        const unique = [...new Set(allData.map(r => r[col]).filter(Boolean))];
-        const card = createKPICard('🏷️', `Unique ${col}`, unique.length, `categories`, numCols.length + i + 1);
-        grid.appendChild(card);
-    });
-}
-
-function createKPICard(icon, label, value, sub, delay) {
-    const card = document.createElement('div');
-    card.className = 'kpi-card';
-    card.style.animationDelay = `${delay * 0.08}s`;
-    card.innerHTML = `
-        <div class="kpi-icon">${icon}</div>
-        <div class="kpi-label">${label}</div>
-        <div class="kpi-value">${value}</div>
-        <div class="kpi-sub">${sub}</div>`;
-    return card;
-}
-
-function buildCharts() {
-    Object.values(charts).forEach(c => c.destroy());
-    charts = {};
-    const grid = document.getElementById('chartsGrid');
-    grid.innerHTML = '';
-
-    const numCols = headers.filter(isNumeric);
-    const catCols = headers.filter(isCategorical);
-    const dateCol = detectDateCol();
-
-    // Bar chart: first categorical vs first numeric
-    if (catCols.length && numCols.length) {
-        const cat = catCols[0], num = numCols[0];
-        const grouped = {};
-        allData.forEach(r => {
-            const k = r[cat] || 'Unknown';
-            grouped[k] = (grouped[k] || 0) + (parseFloat(r[num]) || 0);
-        });
-        const sorted = Object.entries(grouped).sort((a, b) => b[1] - a[1]).slice(0, 12);
-        createChart('bar', `${num} by ${cat}`, sorted.map(e => e[0]), sorted.map(e => e[1]), '📊', grid, 0.1);
-    }
-
-    // Pie chart: second categorical distribution
-    const pieCat = catCols.length > 1 ? catCols[1] : catCols[0];
-    if (pieCat) {
-        const counts = {};
-        allData.forEach(r => {
-            const k = r[pieCat] || 'Unknown';
-            counts[k] = (counts[k] || 0) + 1;
-        });
-        const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8);
-        createChart('doughnut', `Distribution: ${pieCat}`, sorted.map(e => e[0]), sorted.map(e => e[1]), '🍩', grid, 0.2);
-    }
-
-    // Line chart over date or index
-    if (numCols.length) {
-        const num = numCols[0];
-        let labels, values;
-        if (dateCol) {
-            const sorted = [...allData].sort((a, b) => new Date(a[dateCol]) - new Date(b[dateCol]));
-            labels = sorted.map(r => r[dateCol]);
-            values = sorted.map(r => parseFloat(r[num]) || 0);
+        // Destroy previous instance (if any) before re‑creating
+        if ($.fn.DataTable.isDataTable('#csv-table')) {
+            $('#csv-table').DataTable().clear().rows.add(data).draw();
         } else {
-            labels = allData.map((_, i) => `#${i + 1}`);
-            values = allData.map(r => parseFloat(r[num]) || 0);
+            $('#csv-table').DataTable({
+                data: data,
+                columns: columnDefs,
+                pageLength: 15,
+                responsive: true,
+                order: []          // disable initial ordering – let user decide
+            });
         }
-        // Sample down if too many
-        if (labels.length > 60) {
-            const step = Math.ceil(labels.length / 60);
-            labels = labels.filter((_, i) => i % step === 0);
-            values = values.filter((_, i) => i % step === 0);
-        }
-        createChart('line', `${num} Trend`, labels, values, '📈', grid, 0.3, true);
     }
 
-    // Horizontal bar: another categorical
-    if (catCols.length >= 2 && numCols.length >= 2) {
-        const cat = catCols[1], num = numCols[1];
-        const grouped = {};
-        allData.forEach(r => {
-            const k = r[cat] || 'Unknown';
-            grouped[k] = (grouped[k] || 0) + (parseFloat(r[num]) || 0);
-        });
-        const sorted = Object.entries(grouped).sort((a, b) => b[1] - a[1]).slice(0, 10);
-        createChart('bar', `${num} by ${cat}`, sorted.map(e => e[0]), sorted.map(e => e[1]), '📉', grid, 0.4, false, true);
-    }
-}
+    // -------------------------------------------------
+    // 4️⃣ CHART #1 – simple line chart (index vs. a numeric column)
+    // -------------------------------------------------
+    function drawChart1(data) {
+        // Choose a numeric column – change 'YourNumericColumn' to the real name
+        const numericCol = Object.keys(data[0]).find(k => typeof data[0][k] === "number");
+        if (!numericCol) return;
 
-function createChart(type, title, labels, values, icon, parent, delay, isLine = false, horizontal = false) {
-    const card = document.createElement('div');
-    card.className = 'chart-card';
-    card.style.animationDelay = `${delay}s`;
-    const id = 'chart_' + Math.random().toString(36).substr(2, 9);
-    card.innerHTML = `<div class="chart-title"><span class="dot"></span>${icon} ${title}</div><div class="chart-wrapper"><canvas id="${id}"></canvas></div>`;
-    parent.appendChild(card);
+        const labels = data.map((_, i) => i + 1);         // Row number on X‑axis
+        const values = data.map(row => row[numericCol]); // Y‑axis values
 
-    const ctx = document.getElementById(id).getContext('2d');
-    const isDoughnut = type === 'doughnut';
+        const ctx = document.getElementById('chart1').getContext('2d');
+        if (window.chart1) window.chart1.destroy(); // reset on refresh
 
-    const chartColors = isDoughnut ? COLORS.slice(0, labels.length) : COLORS[0];
-    const borderColors = isDoughnut ? COLORS.map(c => c.replace('0.85', '1')) : COLORS[0].replace('0.85', '1');
-
-    charts[id] = new Chart(ctx, {
-        type: type,
-        data: {
-            labels,
-            datasets: [{
-                label: title,
-                data: values,
-                backgroundColor: chartColors,
-                borderColor: isDoughnut ? borderColors : COLORS[0].replace('0.85', '1'),
-                borderWidth: isDoughnut ? 2 : (isLine ? 2 : 1),
-                fill: isLine ? { target: 'origin', above: 'rgba(56,189,248,0.08)' } : false,
-                tension: 0.4,
-                pointRadius: isLine ? 2 : undefined,
-                pointHoverRadius: isLine ? 5 : undefined,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            indexAxis: horizontal ? 'y' : 'x',
-            plugins: {
-                legend: {
-                    display: isDoughnut,
-                    labels: { color: '#94a3b8', font: { size: 11 }, padding: 12 }
-                },
-                tooltip: {
-                    backgroundColor: '#1e293b',
-                    borderColor: '#334155',
-                    borderWidth: 1,
-                    titleColor: '#e2e8f0',
-                    bodyColor: '#94a3b8',
-                    callbacks: {
-                        label: ctx => ` ${ctx.formattedValue}`
-                    }
-                }
+        window.chart1 = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels,
+                datasets: [{
+                    label: numericCol,
+                    data: values,
+                    borderColor: "#3498db",
+                    backgroundColor: "rgba(52,152,219,0.2)",
+                    fill: true,
+                    tension: 0.2
+                }]
             },
-            scales: isDoughnut ? {} : {
-                x: {
-                    ticks: { color: '#64748b', maxRotation: 40, font: { size: 10 } },
-                    grid: { color: '#1e293b' }
-                },
-                y: {
-                    ticks: { color: '#64748b', font: { size: 10 } },
-                    grid: { color: '#334155' }
+            options: {
+                responsive: true,
+                plugins: { legend: { position: "top" } },
+                scales: {
+                    x: { title: { display: true, text: "Row #"} },
+                    y: { title: { display: true, text: numericCol } }
                 }
             }
+        });
+    }
+
+    // -------------------------------------------------
+    // 5️⃣ CHART #2 – example grouped bar chart (sum per category)
+    // -------------------------------------------------
+    function drawChart2(data) {
+        // Assume you have a categorical column called “Category”
+        // and a numeric column called “Value”.  If your sheet has
+        // different names, replace them below.
+        const catCol = Object.keys(data[0]).find(k => typeof data[0][k] === "string");
+        const numCol = Object.keys(data[0]).find(k => typeof data[0][k] === "number");
+
+        if (!catCol || !numCol) return;
+
+        // Group by category → sum of numeric values
+        const grouping = {};
+        data.forEach(row => {
+            const cat = row[catCol] ?? "Unknown";
+            const val = Number(row[numCol]) || 0;
+            grouping[cat] = (grouping[cat] || 0) + val;
+        });
+
+        const labels = Object.keys(grouping);
+        const values = labels.map(l => grouping[l]);
+
+        const ctx = document.getElementById('chart2').getContext('2d');
+        if (window.chart2) window.chart2.destroy();
+
+        window.chart2 = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels,
+                datasets: [{
+                    label: `Total ${numCol} per ${catCol}`,
+                    data: values,
+                    backgroundColor: "#e74c3c",
+                    borderColor: "#c0392b",
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: "top" } },
+                scales: {
+                    x: { title: { display: true, text: catCol } },
+                    y: { title: { display: true, text: `Sum of ${numCol}` },
+                         beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    // -------------------------------------------------
+    // 6️⃣ MAIN function – load → render → schedule refresh
+    // -------------------------------------------------
+    async function refreshDashboard() {
+        document.getElementById('loader').style.display = "block";
+        document.getElementById('chart-area').style.display = "none";
+        document.getElementById('table-card').style.display = "none";
+
+        const data = await loadCSV();
+        if (!data || data.length === 0) {
+            document.getElementById('loader').innerText = "❌ No data loaded.";
+            return;
         }
-    });
-}
 
-function buildTable() {
-    const head = document.getElementById('tableHead');
-    head.innerHTML = '<tr>' + headers.map((h, i) =>
-        `<th onclick="sortTable(${i})">${h} <span style="color:#475569;font-size:0.7rem;">↕</span></th>`
-    ).join('') + '</tr>';
-    filteredData = [...allData];
-    renderTable();
-}
+        // Hide loader and show sections
+        document.getElementById('loader').style.display = "none";
+        document.getElementById('chart-area').style.display = "flex";
+        document.getElementById('table-card').style.display = "block";
 
-function renderTable() {
-    const body = document.getElementById('tableBody');
-    const start = (currentPage - 1) * rowsPerPage;
-    const page = filteredData.slice(start, start + rowsPerPage);
-
-    body.innerHTML = page.map(row =>
-        '<tr>' + headers.map(h => `<td>${formatCell(h, row[h])}</td>`).join('') + '</tr>'
-    ).join('');
-
-    document.getElementById('pageInfo').textContent =
-        `Showing ${start + 1}–${Math.min(start + rowsPerPage, filteredData.length)} of ${filteredData.length} records`;
-
-    buildPagination();
-}
-
-function formatCell(col, val) {
-    if (!val) return '<span style="color:#475569">—</span>';
-    if (!isNaN(parseFloat(val)) && isFinite(val)) {
-        const n = parseFloat(val);
-        return `<span style="color:#38bdf8;font-weight:600;">${n.toLocaleString()}</span>`;
+        // Render everything
+        drawTable(data);
+        drawChart1(data);
+        drawChart2(data);
     }
-    const hue = Math.abs(val.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % 360;
-    return `<span class="badge" style="background:hsla(${hue},60%,30%,0.4);color:hsl(${hue},80%,75%);border:1px solid hsl(${hue},60%,40%)">${val}</span>`;
-}
 
-function buildPagination() {
-    const total = Math.ceil(filteredData.length / rowsPerPage);
-    const btns = document.getElementById('pageButtons');
-    btns.innerHTML = '';
+    // First load
+    refreshDashboard();
 
-    const addBtn = (label, page, disabled = false, active = false) => {
-        const b = document.createElement('button');
-        b.className = 'page-btn' + (active ? ' active' : '');
-        b.textContent = label;
-        b.disabled = disabled;
-        b.onclick = () => { currentPage = page; renderTable(); };
-        btns.appendChild(b);
-    };
+    // Auto‑refresh every REFRESH_INTERVAL ms
+    setInterval(refreshDashboard, REFRESH_INTERVAL);
 
-    addBtn('‹', currentPage - 1, currentPage === 1);
-    const start = Math.max(1, currentPage - 2);
-    const end = Math.min(total, currentPage + 2);
-    if (start > 1) addBtn('1', 1);
-    if (start > 2) { const s = document.createElement('span'); s.textContent = '…'; s.style.padding='0 4px'; s.style.color='#475569'; btns.appendChild(s); }
-    for (let i = start; i <= end; i++) addBtn(i, i, false, i === currentPage);
-    if (end < total - 1) { const s = document.createElement('span'); s.textContent = '…'; s.style.padding='0 4px'; s.style.color='#475569'; btns.appendChild(s); }
-    if (end < total) addBtn(total, total);
-    addBtn('›', currentPage + 1, currentPage === total);
-}
-
-function filterTable() {
-    const q = document.getElementById('searchBox').value.toLowerCase();
-    filteredData = allData.filter(row => headers.some(h => (row[h] || '').toLowerCase().includes(q)));
-    currentPage = 1;
-    renderTable();
-}
-
-function sortTable(colIdx) {
-    const col = headers[colIdx];
-    if (sortCol === colIdx) sortDir *= -1;
-    else { sortCol = colIdx; sortDir = 1; }
-    filteredData.sort((a, b) => {
-        const va = a[col], vb = b[col];
-        const na = parseFloat(va), nb = parseFloat(vb);
-        if (!isNaN(na) && !isNaN(nb)) return (na - nb) * sortDir;
-        return va?.localeCompare(vb) * sortDir;
-    });
-    renderTable();
-}
-
-async function loadData() {
-    document.getElementById('loadingOverlay').style.display = 'flex';
-    document.getElementById('mainContent').style.display = 'none';
-    document.getElementById('errorContainer').innerHTML = '';
-
-    try {
-        const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(CSV_URL)}`;
-        const res = await fetch(proxy);
-        if (!res.ok) throw new Error('Network error');
-        const json = await res.json();
-        const { hdrs, rows } = parseCSV(json.contents);
-
-        if (!rows.length) throw new Error('No data found in spreadsheet');
-
-        headers = hdrs;
-        allData = rows;
-        filteredData = [...rows];
-
-        buildKPIs();
-        buildCharts();
-        buildTable();
-
-        document.getElementById('lastUpdated').textContent = 'Updated: ' + new Date().toLocaleTimeString();
-        document.getElementById('mainContent').style.display = 'block';
-    } catch (err) {
-        document.getElementById('errorContainer').innerHTML = `
-            <div class="error-box">
-                <h3>⚠️ Failed to load data</h3>
-                <p style="margin-top:8px;font-size:0.9rem;">${err.message}</p>
-                <button class="refresh-btn" style="margin-top:16px;" onclick="loadData()">Try Again</button>
-            </div>`;
-    } finally {
-        document.getElementById('loadingOverlay').style.display = 'none';
-    }
-}
-
-loadData();
 </script>
+
 </body>
 </html>
