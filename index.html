@@ -1,138 +1,1024 @@
 
+```html
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Dynamic Tender Data Dashboard</title>
-  <style>
-    body {
-      font-family: sans-serif;
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: left;
-    }
-    th {
-      background-color: #f2f2f2;
-    }
-    #filterContainer {
-      margin-bottom: 10px;
-    }
-    #filterSelect {
-      padding: 5px;
-      margin-right: 10px;
-    }
-    #filterInput {
-      padding: 5px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+
+        .dashboard-header {
+            text-align: center;
+            padding: 30px 20px;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .dashboard-header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(120deg, #00d2ff, #3a7bd5, #00d2ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .dashboard-header p {
+            color: #a0a0a0;
+            font-size: 1.1rem;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            font-size: 1.5rem;
+            color: #00d2ff;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(0, 210, 255, 0.2);
+            border-top: 4px solid #00d2ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-group label {
+            font-size: 0.85rem;
+            color: #a0a0a0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select, input {
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s;
+            min-width: 150px;
+        }
+
+        select:hover, input:hover {
+            border-color: #00d2ff;
+        }
+
+        select:focus, input:focus {
+            border-color: #00d2ff;
+            box-shadow: 0 0 10px rgba(0, 210, 255, 0.3);
+        }
+
+        select option {
+            background: #1a1a2e;
+            color: #e0e0e0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #00d2ff, #3a7bd5);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 210, 255, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 210, 255, 0.1);
+        }
+
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #00d2ff;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.9rem;
+            color: #a0a0a0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+        }
+
+        .chart-card:hover {
+            border-color: rgba(0, 210, 255, 0.3);
+        }
+
+        .chart-card h3 {
+            margin-bottom: 20px;
+            color: #e0e0e0;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-card h3::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(180deg, #00d2ff, #3a7bd5);
+            border-radius: 2px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .data-table-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-x: auto;
+            margin-bottom: 30px;
+        }
+
+        .data-table-container h3 {
+            margin-bottom: 20px;
+            color: #e0e0e0;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .data-table-container h3::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(180deg, #00d2ff, #3a7bd5);
+            border-radius: 2px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        thead th {
+            padding: 12px 15px;
+            text-align: left;
+            background: rgba(0, 210, 255, 0.1);
+            color: #00d2ff;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.8rem;
+            border-bottom: 2px solid rgba(0, 210, 255, 0.3);
+            cursor: pointer;
+            transition: background 0.3s;
+            white-space: nowrap;
+        }
+
+        thead th:hover {
+            background: rgba(0, 210, 255, 0.2);
+        }
+
+        tbody tr {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.3s;
+        }
+
+        tbody tr:hover {
+            background: rgba(0, 210, 255, 0.05);
+        }
+
+        tbody td {
+            padding: 10px 15px;
+            color: #c0c0c0;
+            white-space: nowrap;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .pagination button {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: rgba(0, 210, 255, 0.2);
+            border-color: #00d2ff;
+        }
+
+        .pagination button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .pagination span {
+            color: #a0a0a0;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            padding-left: 35px;
+        }
+
+        .search-box::before {
+            content: '🔍';
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.9rem;
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 40px;
+            color: #ff6b6b;
+            font-size: 1.2rem;
+        }
+
+        .refresh-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 210, 255, 0.5);
+            background: rgba(0, 210, 255, 0.1);
+            color: #00d2ff;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.95rem;
+        }
+
+        .refresh-btn:hover {
+            background: rgba(0, 210, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .sort-indicator {
+            margin-left: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard-header h1 {
+                font-size: 1.8rem;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            select, input {
+                width: 100%;
+            }
+        }
+
+        .chart-type-btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: #a0a0a0;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.8rem;
+        }
+
+        .chart-type-btn.active {
+            background: rgba(0, 210, 255, 0.2);
+            border-color: #00d2ff;
+            color: #00d2ff;
+        }
+
+        .chart-type-btn:hover {
+            border-color: #00d2ff;
+            color: #00d2ff;
+        }
+
+        .chart-controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+    </style>
 </head>
 <body>
+    <div class="dashboard-header">
+        <h1>📊 Dynamic Data Dashboard</h1>
+        <p>Real-time visualization from Google Sheets</p>
+    </div>
 
-  <h1>Tender Data Dashboard</h1>
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <span>Loading data...</span>
+    </div>
 
-  <div id="filterContainer">
-    <label for="filterSelect">Filter by:</label>
-    <select id="filterSelect"></select>
-    <label for="filterInput">Search:</label>
-    <input type="text" id="filterInput">
-  </div>
+    <div id="dashboard-content" style="display: none;">
+        <div class="controls" id="controls">
+            <div class="control-group search-box">
+                <label>Search</label>
+                <input type="text" id="searchInput" placeholder="Search data...">
+            </div>
+            <div class="control-group">
+                <label>Filter Column</label>
+                <select id="filterColumn"></select>
+            </div>
+            <div class="control-group">
+                <label>Filter Value</label>
+                <select id="filterValue">
+                    <option value="">All</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Rows per page</label>
+                <select id="rowsPerPage">
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>&nbsp;</label>
+                <button class="refresh-btn" onclick="fetchData()">🔄 Refresh</button>
+            </div>
+        </div>
 
-  <table id="tenderTable">
-    <thead>
-      <tr>
-        <!-- Column headers will be dynamically added here -->
-      </tr>
-    </thead>
-    <tbody>
-      <!-- Data rows will be dynamically added here -->
-    </tbody>
-  </table>
+        <div class="stats-grid" id="statsGrid"></div>
 
-  <script>
-    let data = []; // Store the fetched data
-    let headers = []; // Store the headers
+        <div class="charts-grid" id="chartsGrid"></div>
 
-    async function fetchData() {
-      try {
-        const response = await fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vSZjO-A6VhuzifXXgffaGdtD6ysazVtS1FTjeFTUxdi-q9IIfjc4DZmrS3QF7MhzKjHRqeN36ZeX_qu/pub?gid=1590006273&single=true&output=csv');
-        const csvText = await response.text();
-        const rows = csvText.split('\n').filter(row => row.trim() !== '');
+        <div class="data-table-container">
+            <h3>Data Table</h3>
+            <table id="dataTable">
+                <thead id="tableHead"></thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+            <div class="pagination" id="pagination"></div>
+        </div>
+    </div>
 
-        headers = rows[0].split(',').map(header => header.trim());
-        data = rows.slice(1).map(row => row.split(',').map(item => item.trim()));
+    <div id="error" class="error-message" style="display: none;"></div>
 
-        createTable();
-        createFilterOptions();
-        applyFilters();
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        document.getElementById('tenderTable').innerHTML = '<p>Error loading data.</p>';
-      }
-    }
+    <script>
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSZjO-A6VhuzifXXgffaGdtD6ysazVtS1FTjeFTUxdi-q9IIfjc4DZmrS3QF7MhzKjHRqeN36ZeX_qu/pub?gid=1590006273&single=true&output=csv';
 
-    function createTable() {
-      const table = document.getElementById('tenderTable');
-      table.innerHTML = ''; // Clear existing table
+        let rawData = [];
+        let filteredData = [];
+        let headers = [];
+        let numericColumns = [];
+        let categoricalColumns = [];
+        let currentPage = 1;
+        let rowsPerPage = 10;
+        let sortColumn = -1;
+        let sortDirection = 'asc';
+        let charts = {};
 
-      const thead = document.createElement('thead');
-      const headerRow = document.createElement('tr');
-      headers.forEach(header => {
-        const th = document.createElement('th');
-        th.textContent = header;
-        headerRow.appendChild(th);
-      });
-      thead.appendChild(headerRow);
-      table.appendChild(thead);
+        async function fetchData() {
+            document.getElementById('loading').style.display = 'flex';
+            document.getElementById('dashboard-content').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
 
-      const tbody = document.createElement('tbody');
-      data.forEach(row => {
-        const rowElement = document.createElement('tr');
-        row.forEach(item => {
-          const td = document.createElement('td');
-          td.textContent = item;
-          rowElement.appendChild(td);
-        });
-        tbody.appendChild(rowElement);
-      });
-      table.appendChild(tbody);
-    }
+            try {
+                const response = await new Promise((resolve, reject) => {
+                    Papa.parse(CSV_URL, {
+                        download: true,
+                        header: true,
+                        dynamicTyping: true,
+                        skipEmptyLines: true,
+                        complete: resolve,
+                        error: reject
+                    });
+                });
 
-    function createFilterOptions() {
-      const select = document.getElementById('filterSelect');
-      headers.forEach((header, index) => {
-        const option = document.createElement('option');
-        option.value = index;
-        option.textContent = header;
-        select.appendChild(option);
-      });
-    }
+                if (response.errors.length > 0 && response.data.length === 0) {
+                    throw new Error('Failed to parse CSV data');
+                }
 
-    function applyFilters() {
-      const filterInput = document.getElementById('filterInput');
-      const filterSelect = document.getElementById('filterSelect');
-      const filterColumnIndex = parseInt(filterSelect.value, 10);
-      const filterText = filterInput.value.toLowerCase();
+                rawData = response.data;
+                headers = response.meta.fields || [];
 
-      const tableRows = document.querySelectorAll('#tenderTable tbody tr');
-      tableRows.forEach(row => {
-        const cellValue = row.cells[filterColumnIndex].textContent.toLowerCase();
-        row.style.display = (cellValue.indexOf(filterText) > -1) ? '' : 'none';
-      });
-    }
+                analyzeColumns();
+                filteredData = [...rawData];
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('dashboard-content').style.display = 'block';
 
-    // Event listeners for filtering
-    document.getElementById('filterSelect').addEventListener('change', applyFilters);
-    document.getElementById('filterInput').addEventListener('keyup', applyFilters);
+                setupControls();
+                renderStats();
+                renderCharts();
+                renderTable();
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = `Error loading data: ${error.message}. Please check the CSV URL and try again.`;
+                console.error(error);
+            }
+        }
 
+        function analyzeColumns() {
+            numericColumns = [];
+            categoricalColumns = [];
 
-    // Call the function to fetch and display the data when the page loads
-    fetchData();
-  </script>
+            headers.forEach(header => {
+                let numCount = 0;
+                let totalValid = 0;
 
+                rawData.forEach(row => {
+                    const val = row[header];
+                    if (val !== null && val !== undefined && val !== '') {
+                        totalValid++;
+                        if (typeof val === 'number' && !isNaN(val)) {
+                            numCount++;
+                        }
+                    }
+                });
+
+                if (totalValid > 0 && numCount / totalValid > 0.7) {
+                    numericColumns.push(header);
+                } else {
+                    categoricalColumns.push(header);
+                }
+            });
+        }
+
+        function setupControls() {
+            const filterColumnSelect = document.getElementById('filterColumn');
+            filterColumnSelect.innerHTML = '<option value="">Select Column</option>';
+            headers.forEach(header => {
+                const option = document.createElement('option');
+                option.value = header;
+                option.textContent = header;
+                filterColumnSelect.appendChild(option);
+            });
+
+            filterColumnSelect.addEventListener('change', function() {
+                updateFilterValues(this.value);
+            });
+
+            document.getElementById('filterValue').addEventListener('change', applyFilters);
+            document.getElementById('searchInput').addEventListener('input', applyFilters);
+            document.getElementById('rowsPerPage').addEventListener('change', function() {
+                rowsPerPage = parseInt(this.value);
+                currentPage = 1;
+                renderTable();
+            });
+        }
+
+        function updateFilterValues(column) {
+            const filterValueSelect = document.getElementById('filterValue');
+            filterValueSelect.innerHTML = '<option value="">All</option>';
+
+            if (!column) return;
+
+            const uniqueValues = [...new Set(rawData.map(row => row[column]))].filter(v => v !== null && v !== undefined && v !== '');
+            uniqueValues.sort().forEach(val => {
+                const option = document.createElement('option');
+                option.value = val;
+                option.textContent = val;
+                filterValueSelect.appendChild(option);
+            });
+        }
+
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filterColumn = document.getElementById('filterColumn').value;
+            const filterValue = document.getElementById('filterValue').value;
+
+            filteredData = rawData.filter(row => {
+                let matchesSearch = true;
+                let matchesFilter = true;
+
+                if (searchTerm) {
+                    matchesSearch = Object.values(row).some(val => 
+                        String(val).toLowerCase().includes(searchTerm)
+                    );
+                }
+
+                if (filterColumn && filterValue) {
+                    matchesFilter = String(row[filterColumn]) === filterValue;
+                }
+
+                return matchesSearch && matchesFilter;
+            });
+
+            currentPage = 1;
+            renderStats();
+            renderCharts();
+            renderTable();
+        }
+
+        function renderStats() {
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = '';
+
+            // Total rows
+            const totalCard = createStatCard('Total Records', filteredData.length, '📋');
+            statsGrid.appendChild(totalCard);
+
+            // Stats for numeric columns (max 5)
+            numericColumns.slice(0, 5).forEach(col => {
+                const values = filteredData.map(row => row[col]).filter(v => typeof v === 'number' && !isNaN(v));
+                if (values.length > 0) {
+                    const sum = values.reduce((a, b) => a + b, 0);
+                    const avg = sum / values.length;
+                    const card = createStatCard(`Avg ${col}`, avg % 1 === 0 ? avg.toLocaleString() : avg.toFixed(2), '📈');
+                    statsGrid.appendChild(card);
+                }
+            });
+
+            // Unique values for first categorical
+            if (categoricalColumns.length > 0) {
+                const uniqueCount = new Set(filteredData.map(row => row[categoricalColumns[0]])).size;
+                const card = createStatCard(`Unique ${categoricalColumns[0]}`, uniqueCount, '🏷️');
+                statsGrid.appendChild(card);
+            }
+        }
+
+        function createStatCard(label, value, icon) {
+            const card = document.createElement('div');
+            card.className = 'stat-card';
+            card.innerHTML = `
+                <div class="stat-value">${icon} ${value}</div>
+                <div class="stat-label">${label}</div>
+            `;
+            return card;
+        }
+
+        function renderCharts() {
+            const chartsGrid = document.getElementById('chartsGrid');
+            chartsGrid.innerHTML = '';
+
+            // Destroy existing charts
+            Object.values(charts).forEach(chart => chart.destroy());
+            charts = {};
+
+            const colors = [
+                'rgba(0, 210, 255, 0.7)',
+                'rgba(58, 123, 213, 0.7)',
+                'rgba(0, 255, 157, 0.7)',
+                'rgba(255, 107, 107, 0.7)',
+                'rgba(255, 193, 7, 0.7)',
+                'rgba(156, 39, 176, 0.7)',
+                'rgba(255, 152, 0, 0.7)',
+                'rgba(76, 175, 80, 0.7)',
+                'rgba(233, 30, 99, 0.7)',
+                'rgba(0, 188, 212, 0.7)'
+            ];
+
+            const borderColors = colors.map(c => c.replace('0.7', '1'));
+
+            // Chart 1: Bar chart for first numeric column grouped by first categorical
+            if (categoricalColumns.length > 0 && numericColumns.length > 0) {
+                const catCol = categoricalColumns[0];
+                const numCol = numericColumns[0];
+                
+                const grouped = {};
+                filteredData.forEach(row => {
+                    const key = String(row[catCol] || 'N/A');
+                    if (!grouped[key]) grouped[key] = [];
+                    const val = row[numCol];
+                    if (typeof val === 'number' && !isNaN(val)) {
+                        grouped[key].push(val);
+                    }
+                });
+
+                const labels = Object.keys(grouped).slice(0, 15);
+                const data = labels.map(l => {
+                    const vals = grouped[l];
+                    return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+                });
+
+                const chartCard = createChartCard(`Average ${numCol} by ${catCol}`, 'chart1');
+                chartsGrid.appendChild(chartCard);
+
+                const ctx = document.getElementById('chart1').getContext('2d');
+                charts['chart1'] = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: `Avg ${numCol}`,
+                            data: data,
+                            backgroundColor: colors.slice(0, labels.length),
+                            borderColor: borderColors.slice(0, labels.length),
+                            borderWidth: 1
+                        }]
+                    },
+                    options: getChartOptions()
+                });
+            }
+
+            // Chart 2: Pie/Doughnut for categorical distribution
+            if (categoricalColumns.length > 0) {
+                const catCol = categoricalColumns[0];
+                const counts = {};
+                filteredData.forEach(row => {
+                    const key = String(row[catCol] || 'N/A');
+                    counts[key] = (counts[key] || 0) + 1;
+                });
+
+                const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+                const labels = sorted.map(e => e[0]);
+                const data = sorted.map(e => e[1]);
+
+                const chartCard = createChartCard(`Distribution of ${catCol}`, 'chart2');
+                chartsGrid.appendChild(chartCard);
+
+                const ctx = document.getElementById('chart2').getContext('2d');
+                charts['chart2'] = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: colors.slice(0, labels.length),
+                            borderColor: 'rgba(26, 26, 46, 0.8)',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        ...getChartOptions(),
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: { color: '#a0a0a0', font: { size: 11 } }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Chart 3: Line chart if there are multiple numeric columns
+            if (numericColumns.length >= 2) {
+                const chartCard = createChartCard(`${numericColumns[0]} vs ${numericColumns[1]} (First 50 records)`, 'chart3');
+                chartsGrid.appendChild(chartCard);
+
+                const subset = filteredData.slice(0, 50);
+                const labels = subset.map((_, i) => i + 1);
+
+                const ctx = document.getElementById('chart3').getContext('2d');
+                charts['chart3'] = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: numericColumns[0],
+                            data: subset.map(row => row[numericColumns[0]]),
+                            borderColor: '#00d2ff',
+                            backgroundColor: 'rgba(0, 210, 255, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 2
+                        }, {
+                            label: numericColumns[1],
+                            data: subset.map(row => row[numericColumns[1]]),
+                            borderColor: '#3a7bd5',
+                            backgroundColor: 'rgba(58, 123, 213, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 2
+                        }]
+                    },
+                    options: getChartOptions()
+                });
+            }
+
+            // Chart 4: Horizontal bar for second categorical if available
+            if (categoricalColumns.length > 1 && numericColumns.length > 0) {
+                const catCol = categoricalColumns[1];
+                const numCol = numericColumns[0];
+                
+                const grouped = {};
+                filteredData.forEach(row => {
+                    const key = String(row[catCol] || 'N/A');
+                    if (!grouped[key]) grouped[key] = [];
+                    const val = row[numCol];
+                    if (typeof val === 'number' && !isNaN(val)) {
+                        grouped[key].push(val);
+                    }
+                });
+
+                const sorted = Object.entries(grouped)
+                    .map(([key, vals]) => [key, vals.reduce((a, b) => a + b, 0)])
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 10);
+
+                const labels = sorted.map(e => e[0]);
+                const data = sorted.map(e => e[1]);
+
+                const chartCard = createChartCard(`Total ${numCol} by ${catCol}`, 'chart4');
+                chartsGrid.appendChild(chartCard);
+
+                const ctx = document.getElementById('chart4').getContext('2d');
+                charts['chart4'] = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: `Total ${numCol}`,
+                            data: data,
+                            backgroundColor: 'rgba(0, 255, 157, 0.6)',
+                            borderColor: 'rgba(0, 255, 157, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        ...getChartOptions(),
+                        indexAxis: 'y'
+                    }
+                });
+            }
+
+            // Chart 5: Scatter plot if 2+ numeric columns
+            if (numericColumns.length >= 2) {
+                const chartCard = createChartCard(`${numericColumns[0]} vs ${numericColumns[1]} Scatter`, 'chart5');
+                chartsGrid.appendChild(chartCard);
+
+                const scatterData = filteredData.slice(0, 100).map(row => ({
+                    x: row[numericColumns[0]],
+                    y: row[numericColumns[1]]
+                })).filter(p => typeof p.x === 'number' && typeof p.y === 'number');
+
+                const ctx = document.getElementById('chart5').getContext('2d');
+                charts['chart5'] = new Chart(ctx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [{
+                            label: `${numericColumns[0]} vs ${numericColumns[1]}`,
+                            data: scatterData,
+                            backgroundColor: 'rgba(255, 107, 107, 0.6)',
+                            borderColor: 'rgba(255, 107, 107, 1)',
+                            pointRadius: 4
+                        }]
+                    },
+                    options: {
+                        ...getChartOptions(),
+                        scales: {
+                            x: {
+                                title: { display: true, text: numericColumns[0], color: '#a0a0a0' },
+                                ticks: { color: '#a0a0a0' },
+                                grid: { color: 'rgba(255,255,255,0.05)' }
+                            },
+                            y: {
+                                title: { display: true, text: numericColumns[1], color: '#a0a0a0' },
+                                ticks: { color: '#a0a0a0' },
+                                grid: { color: 'rgba(255,255,255,0.05)' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Chart 6: Polar area if numeric columns >= 3
+            if (numericColumns.length >= 3) {
+                const chartCard = createChartCard(`Numeric Columns Summary (Averages)`, 'chart6');
+                chartsGrid.appendChild(chartCard);
+
+                const labels = numericColumns.slice(0, 8);
+                const data = labels.map(col => {
+                    const vals = filteredData.map(row => row[col]).filter(v => typeof v === 'number' && !isNaN(v));
+                    return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+                });
+
+                const ctx = document.getElementById('chart6').getContext('2d');
+                charts['chart6'] = new Chart(ctx, {
+                    type: 'polarArea',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: colors.slice(0, labels.length)
+                        }]
+                    },
+                    options: {
+                        ...getChartOptions(),
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: { color: '#a0a0a0', font: { size: 11 } }
+                            }
+                        },
+                        scales: {
+                            r: {
+                                ticks: { color: '#a0a0a0' },
+                                grid: { color: 'rgba(255,255,255,0.1)' }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function createChartCard(title, canvasId) {
+            const card = document.createElement('div');
+            card.className = 'chart-card';
+            card.innerHTML = `
+                <h3>${title}</h3>
+                <div class="chart-container">
+                    <canvas id="${canvasId}"></canvas>
+                </div>
+            `;
+            return card;
+        }
+
+        function getChartOptions() {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#a0a0a0' }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#a0a0a0', maxRotation: 45 },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    },
+                    y: {
+                        ticks: { color: '#a0a0a0' },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    }
+                }
+            };
+        }
+
+        function renderTable() {
+            const tableHead = document.getElementById('tableHead');
+            const tableBody = document.getElementById('tableBody');
+
+            // Render header
+            tableHead.innerHTML = '<tr>' + headers.map((h, i) => 
+                `<th onclick="sortTable(${i})">${h} <span class="sort-indicator">${sortColumn === i ? (sortDirection === 'asc' ? '↑' : '↓') : '↕'}</span></th>`
+            ).join('') + '</tr>';
+
+            // Sort data
+            let sortedData = [...filteredData];
+            if (sortColumn >= 0) {
+                const col = headers[sortColumn];
+                sortedData.sort((a, b) => {
+                    let aVal = a[col];
+                    let bVal = b[col];
+                    if (aVal === null || aVal === undefined) aVal = '';
+                    if (bVal === null || bVal === undefined) bVal = '';
+                    
+                    if (typeof aVal === 'number' && typeof bVal === 'number') {
+                        return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+                    }
+                    return sortDirection === 'asc' 
+                        ? String(aVal).localeCompare(String(bVal))
+                        : String(bVal).localeCompare(String(aVal));
+                });
+            }
+
+            // Pagination
+            const totalPages = Math.ceil(sortedData.length / rowsPerPage);
+            const start = (currentPage - 1) * rowsPerPage;
+            const pageData = sortedData.slice(start, start + rowsPerPage);
+
+            // Render body
+            tableBody.innerHTML = pageData.map(row => 
+                '<tr>' + headers.map(h => `<td>${row[h] !== null && row[h] !== undefined ? row[h] : ''}</td>`).join('') + '</tr>'
+            ).join('');
+
+            // Render pagination
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = `
+                <button onclick="changePage(1)" ${currentPage === 1 ? 'disabled' : ''}>⟪</button>
+                <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>⟨</button>
+                <span>Page ${currentPage} of ${totalPages} (${sortedData.length} records)</span>
+                <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>⟩</button>
+                <button onclick="changePage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}>⟫</button>
+            `;
+        }
+
+        function sortTable(colIndex) {
+            if (sortColumn === colIndex) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = colIndex;
+                sortDirection = 'asc';
+            }
+            renderTable();
+        }
+
+        function changePage(page) {
+            const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                renderTable();
+            }
+        }
+
+        // Initialize
+        fetchData();
+
+        // Auto-refresh every 5 minutes
+        setInterval(fetchData, 300000);
+    </script>
 </body>
 </html>
+```
