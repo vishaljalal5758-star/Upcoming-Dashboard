@@ -1,352 +1,223 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upcoming Tenders Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        darkBg: '#0b111e',
-                        cardBg: '#151f32',
-                        accentOrange: '#f97316',
-                        accentTeal: '#38bdf8',
-                        accentGreen: '#10b981',
-                        borderSlate: '#1e293b'
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        /* Smooth custom scrollbar for data tables */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0b111e; }
-        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #334155; }
-    </style>
-</head>
-<body class="bg-darkBg text-slate-100 min-h-screen font-sans p-6">
+<style>
+/* Force the table to fit the screen without side-scrolling */
+table, .responsive-table {
+  width: 100% !important;
+  table-layout: fixed !important; /* Locks column widths to viewport */
+  border-collapse: collapse;
+}
 
-    <div class="max-w-7xl mx-auto space-y-6">
-        
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-5 gap-4">
-            <div>
-                <h1 class="text-3xl font-bold text-slate-100 flex items-center gap-2 tracking-tight">
-                    <span class="text-accentOrange">🏗️</span> Upcoming Tenders Dashboard
-                </h1>
-                <p class="text-slate-400 text-xs mt-1 font-medium">Authority-wise project intelligence · Government of India</p>
-                <div class="flex gap-2 mt-3 text-[11px] font-semibold">
-                    <span id="badgeCount" class="bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2.5 py-1 rounded">0 Tenders</span>
-                    <span class="bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2.5 py-1 rounded">All India Coverage</span>
-                    <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded">Live Sync</span>
-                </div>
-            </div>
-            <div class="text-left md:text-right">
-                <div id="topTotalValue" class="text-3xl font-black text-accentGreen tracking-tight">₹0 Cr</div>
-                <div class="text-[10px] uppercase tracking-widest text-slate-400 font-bold mt-0.5">Total Tender Value</div>
-            </div>
-        </div>
+/* Force long texts, titles, and IDs to wrap downwards instead of stretching the row */
+th, td {
+  padding: 10px;
+  text-align: left;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important; /* Overrides absolute linear text strings */
+}
 
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div class="bg-cardBg p-4 rounded-xl border border-borderSlate shadow-xl">
-                <div class="text-xl">📋</div>
-                <div id="kpiTotalCount" class="text-2xl font-black mt-1 tracking-tight">0</div>
-                <div class="text-[10px] text-slate-400 uppercase tracking-wider font-bold mt-1">Total Tenders</div>
-            </div>
-            <div class="bg-cardBg p-4 rounded-xl border border-borderSlate shadow-xl">
-                <div class="text-xl">💰</div>
-                <div id="kpiTotalValue" class="text-2xl font-black mt-1 tracking-tight">₹0 Cr</div>
-                <div class="text-[10px] text-slate-400 uppercase tracking-wider font-bold mt-1">Total Value</div>
-            </div>
-            <div class="bg-cardBg p-4 rounded-xl border border-borderSlate shadow-xl">
-                <div class="text-xl">📊</div>
-                <div id="kpiAvgValue" class="text-2xl font-black mt-1 tracking-tight">₹0 Cr</div>
-                <div class="text-[10px] text-slate-400 uppercase tracking-wider font-bold mt-1">Avg Tender Value</div>
-            </div>
-            <div class="bg-cardBg p-4 rounded-xl border border-borderSlate shadow-xl">
-                <div class="text-xl">🗺️</div>
-                <div id="kpiStatesCount" class="text-2xl font-black mt-1 tracking-tight">0</div>
-                <div class="text-[10px] text-slate-400 uppercase tracking-wider font-bold mt-1">States Covered</div>
-            </div>
-            <div class="bg-cardBg p-4 rounded-xl border border-borderSlate shadow-xl">
-                <div class="text-xl">🔥</div>
-                <div id="kpiHighValueCount" class="text-2xl font-black mt-1 text-orange-400 tracking-tight">0</div>
-                <div class="text-[10px] text-slate-400 uppercase tracking-wider font-bold mt-1">₹500 Cr+ Tenders</div>
-            </div>
-        </div>
+/* Make headers look interactive and show they can be clicked */
+th {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+th:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+th::after {
+  content: ' ↕';
+  font-size: 0.8em;
+  color: #777;
+}
 
-        <div class="bg-cardBg p-4 rounded-xl border border-borderSlate flex flex-wrap gap-3 items-center shadow-lg">
-            <div class="flex-1 min-w-[280px] relative">
-                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-xs">🔍</span>
-                <input type="text" id="searchInput" placeholder="Search title, Tender ID, organisation, city..." 
-                       class="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-700/60 rounded-lg text-xs text-slate-100 focus:outline-none focus:border-accentTeal transition-colors placeholder-slate-500">
-            </div>
+/* Style the rows so they look clickable */
+tbody tr {
+  cursor: pointer;
+  transition: background 0.15s ease-in-out;
+}
+tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
 
-            <select id="stateFilter" class="bg-slate-900 border border-slate-700/60 rounded-lg text-xs px-3 py-2 text-slate-200 min-w-[150px] focus:outline-none focus:border-accentTeal cursor-pointer">
-                <option value="All">All States</option>
-            </select>
+/* Detail Popup Modal Styling */
+.tender-modal {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+}
+.tender-modal-content {
+  background-color: #1a2230; /* Matches your dashboard dark profile theme */
+  color: #ffffff;
+  margin: 8% auto;
+  padding: 25px;
+  border: 1px solid #2d3748;
+  border-radius: 8px;
+  width: 85%;
+  max-width: 650px;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+.tender-modal-close {
+  position: absolute;
+  right: 20px;
+  top: 15px;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  color: #a0aec0;
+}
+.tender-modal-close:hover {
+  color: #fff;
+}
+.modal-grid-row {
+  margin-bottom: 12px;
+  border-bottom: 1px solid #2d3748;
+  padding-bottom: 8px;
+}
+</style>
 
-            <select id="valueFilter" class="bg-slate-900 border border-slate-700/60 rounded-lg text-xs px-3 py-2 text-slate-200 min-w-[150px] focus:outline-none focus:border-accentTeal cursor-pointer">
-                <option value="All">All Values</option>
-                <option value="Under 5">Under ₹5 Cr</option>
-                <option value="5-25">₹5 – ₹25 Cr</option>
-                <option value="25-100">₹25 – ₹100 Cr</option>
-                <option value="100-500">₹100 – ₹500 Cr</option>
-                <option value="500+">₹500 Cr+</option>
-            </select>
+<div id="tenderDetailsModal" class="tender-modal">
+  <div class="tender-modal-content">
+    <span class="tender-modal-close" onclick="closeTenderModal()">&times;</span>
+    <h2 style="margin-top:0; color:#4fd1c5; padding-right:20px;" id="m-title">Tender Details</h2>
+    <hr style="border:0; border-top:1px solid #2d3748; margin-bottom:15px;">
+    <div id="tenderModalBody">
+      </div>
+  </div>
+</div>
 
-            <select id="sortFilter" class="bg-slate-900 border border-slate-700/60 rounded-lg text-xs px-3 py-2 text-slate-200 min-w-[140px] focus:outline-none focus:border-accentTeal cursor-pointer">
-                <option value="default">Sort By</option>
-                <option value="valHighLow">Value: High → Low</option>
-                <option value="valLowHigh">Value: Low → High</option>
-                <option value="titleAZ">Title A–Z</option>
-            </select>
+<script>
+// Global tracking for sorting state
+let currentSortKey = '';
+let isAscendingOrder = true;
 
-            <button id="resetBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 text-xs font-semibold rounded-lg transition-colors border border-slate-700">
-                ✕ Reset
-            </button>
-        </div>
+// Bind this function to your existing setup right after your data array loads/fetches
+function setupEnhancedTableFeatures() {
+  attachHeaderSortEvents();
+  filterAndValidateTenderDates();
+  attachRowClickTriggers();
+}
 
-        <div class="flex flex-wrap items-center gap-2 text-xs text-slate-400">
-            <span class="font-bold uppercase tracking-wider text-[10px]">Quick Filter:</span>
-            <button class="quick-state bg-slate-800/50 hover:bg-slate-800 border border-slate-700 px-3 py-1 rounded-md transition-colors" data-state="Uttar Pradesh">Uttar Pradesh</button>
-            <button class="quick-state bg-slate-800/50 hover:bg-slate-800 border border-slate-700 px-3 py-1 rounded-md transition-colors" data-state="Delhi">Delhi</button>
-            <button class="quick-state bg-slate-800/50 hover:bg-slate-800 border border-slate-700 px-3 py-1 rounded-md transition-colors" data-state="Haryana">Haryana</button>
-            <button class="quick-state bg-slate-800/50 hover:bg-slate-800 border border-slate-700 px-3 py-1 rounded-md transition-colors" data-state="Maharashtra">Maharashtra</button>
-            <button class="quick-state bg-slate-800/50 hover:bg-slate-800 border border-slate-700 px-3 py-1 rounded-md transition-colors" data-state="Gujarat">Gujarat</button>
-            <button class="quick-val bg-slate-800/50 hover:bg-slate-800 border border-slate-700 px-3 py-1 rounded-md transition-colors text-orange-400 font-medium" data-val="500+">🔥 ₹500 Cr+</button>
-            <button class="quick-val bg-slate-800/50 hover:bg-slate-800 border border-slate-700 px-3 py-1 rounded-md transition-colors text-sky-400 font-medium" data-val="100-500">₹100–500 Cr</button>
-        </div>
+// Ensure columns are sortable by hooking click listeners to your <th> tags
+function attachHeaderSortEvents() {
+  const headers = document.querySelectorAll("table thead th");
+  
+  // Array mapping matching your columns: title, id, state, city, organisation, value, emd, deadline, published
+  const columnKeys = ['title', 'id', 'state', 'city', 'organisation', 'value', 'emd', 'deadline', 'published'];
+  
+  headers.forEach((th, index) => {
+    const key = columnKeys[index - 1]; // Offset index if you use a leading '#' index column
+    if (!key) return;
+    
+    th.addEventListener('click', () => {
+      let type = 'string';
+      if (key === 'value' || key === 'emd') type = 'number';
+      if (key === 'deadline' || key === 'published') type = 'date';
+      
+      executeInlineSort(key, type);
+    });
+  });
+}
 
-        <div class="flex justify-end items-center">
-            <div class="bg-orange-500/10 text-orange-400 border border-orange-500/20 px-3 py-1 rounded-full text-xs font-bold">
-                <span id="filteredCount">0</span> tenders matched
-            </div>
-        </div>
+// Clean up NA items and enforce chronological rule: (Bid Deadline >= Published Date)
+function filterAndValidateTenderDates() {
+  // Replace 'tendersDataArray' with whatever global array name holds your rows (e.g., globalTenders)
+  if (typeof tendersDataArray !== 'undefined') {
+    tendersDataArray = tendersDataArray.filter(item => {
+      if (!item.published || !item.deadline || item.published === 'N/A' || item.deadline === 'N/A') {
+        return false; // Drops elements missing absolute date data strings
+      }
+      const pubDate = new Date(item.published);
+      const deadDate = new Date(item.deadline);
+      return (!isNaN(pubDate) && !isNaN(deadDate) && deadDate >= pubDate);
+    });
+  }
+}
 
-        <div class="bg-cardBg rounded-xl border border-borderSlate shadow-2xl overflow-hidden">
-            <div class="overflow-x-auto w-full">
-                <table class="w-full text-left border-collapse table-fixed">
-                    <thead>
-                        <tr class="bg-slate-900/60 text-slate-400 border-b border-slate-800 text-[11px] font-bold tracking-wider uppercase">
-                            <th class="p-4 w-12 text-center">#</th>
-                            <th class="p-4 w-72">Tender Title</th>
-                            <th class="p-4 w-32">Tender ID</th>
-                            <th class="p-4 w-32">State</th>
-                            <th class="p-4 w-28">City</th>
-                            <th class="p-4 w-48">Organisation</th>
-                            <th class="p-4 w-32 text-right text-slate-300">Value</th>
-                            <th class="p-4 w-28">EMD</th>
-                            <th class="p-4 w-32">Bid Deadline</th>
-                            <th class="p-4 w-32">Published</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody" class="divide-y divide-slate-800/60 text-xs text-slate-300">
-                        <tr>
-                            <td colspan="10" class="p-12 text-center text-slate-400 font-medium tracking-wide animate-pulse">
-                                🔄 Pulling live project intelligence from Google Sheets database...
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+// Engine that sorts raw arrays inline
+function executeInlineSort(key, type) {
+  if (typeof tendersDataArray === 'undefined') return;
+  
+  if (currentSortKey === key) {
+    isAscendingOrder = !isAscendingOrder;
+  } else {
+    currentSortKey = key;
+    isAscendingOrder = true;
+  }
+  
+  tendersDataArray.sort((a, b) => {
+    let valA = a[key];
+    let valB = b[key];
+    
+    if (type === 'number') {
+      // Strips out non-numeric styling rules like '₹' or 'Cr' or commas
+      let numA = parseFloat(String(valA).replace(/[^0-9.-]+/g,"")) || 0;
+      let numB = parseFloat(String(valB).replace(/[^0-9.-]+/g,"")) || 0;
+      return isAscendingOrder ? numA - numB : numB - numA;
+    } else if (type === 'date') {
+      return isAscendingOrder ? new Date(valA) - new Date(valB) : new Date(valB) - new Date(valA);
+    } else {
+      return isAscendingOrder ? String(valA).localeCompare(String(valB)) : String(valB).localeCompare(String(valA));
+    }
+  });
+  
+  // Call your existing table rebuilding function here to refresh visible items
+  if (typeof renderTableData === 'function') {
+    renderTableData(); 
+  }
+  attachRowClickTriggers(); // Re-apply triggers to fresh elements
+}
 
-    <script>
-        const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSZjO-A6VhuzifXXgffaGdtD6ysazVtS1FTjeFTUxdi-q9IIfjc4DZmrS3QF7MhzKjHRqeN36ZeX_qu/pub?gid=1590006273&single=true&output=csv";
-        
-        let allData = [];
+// Dynamic injection configuration for row clicks
+function attachRowClickTriggers() {
+  const rows = document.querySelectorAll("table tbody tr");
+  rows.forEach((row, index) => {
+    row.addEventListener('click', () => {
+      // Resolves structural object directly based on global scope index context
+      const data = tendersDataArray[index]; 
+      if (data) openTenderModal(data);
+    });
+  });
+}
 
-        // UI Target references
-        const elTableBody = document.getElementById('tableBody');
-        const elSearchInput = document.getElementById('searchInput');
-        const elStateFilter = document.getElementById('stateFilter');
-        const elValueFilter = document.getElementById('valueFilter');
-        const elSortFilter = document.getElementById('sortFilter');
-        const elResetBtn = document.getElementById('resetBtn');
+function openTenderModal(item) {
+  document.getElementById('m-title').innerText = item.title || 'Tender Project Details';
+  
+  const bodyHTML = `
+    <div class="modal-grid-row"><strong>Tender ID:</strong> ${item.id || 'N/A'}</div>
+    <div class="modal-grid-row"><strong>State / City:</strong> ${item.state || 'N/A'} / ${item.city || 'N/A'}</div>
+    <div class="modal-grid-row"><strong>Organisation Name:</strong> ${item.organisation || 'N/A'}</div>
+    <div class="modal-grid-row"><strong>Project Total Value:</strong> ${item.value || 'N/A'}</div>
+    <div class="modal-grid-row"><strong>EMD Details:</strong> ₹${item.emd || 'N/A'}</div>
+    <div class="modal-grid-row" style="color: #fc8181;"><strong>Published Date:</strong> ${item.published || 'N/A'}</div>
+    <div class="modal-grid-row" style="color: #68d391;"><strong>Bid Submission Deadline:</strong> ${item.deadline || 'N/A'}</div>
+  `;
+  
+  document.getElementById('tenderModalBody').innerHTML = bodyHTML;
+  document.getElementById('tenderDetailsModal').style.display = 'block';
+}
 
-        window.addEventListener('DOMContentLoaded', initializeDashboard);
+function closeTenderModal() {
+  document.getElementById('tenderDetailsModal').style.display = 'none';
+}
 
-        function initializeDashboard() {
-            Papa.parse(csvUrl, {
-                download: true,
-                header: true,
-                skipEmptyLines: true,
-                complete: function(results) {
-                    allData = processRawData(results.data);
-                    populateStateDropdown(allData);
-                    setupEventHandlers();
-                    runFiltersAndMetrics(); // Calculate metrics and render first batch together
-                },
-                error: function(err) {
-                    elTableBody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-red-400 font-medium">❌ Failed to stream live data. Check spreadsheet configuration.</td></tr>`;
-                }
-            });
-        }
+// Close popup window natively if user clicks out into the blurred safe zone grid space
+window.onclick = function(event) {
+  const modal = document.getElementById('tenderDetailsModal');
+  if (event.target == modal) {
+    modal.style.display = "none";
+  }
+}
 
-        // Process data map directly targeting 'Amt. in Cr.' column
-        function processRawData(rawRows) {
-            return rawRows.map(row => {
-                const getVal = (keys) => {
-                    const foundKey = Object.keys(row).find(k => keys.includes(k.trim().toLowerCase()));
-                    return foundKey ? row[foundKey].trim() : '';
-                };
-
-                // Targets 'amt. in cr.' specifically as requested
-                const rawValue = getVal(['amt. in cr.', 'amt in cr', 'value', 'value (cr)']);
-                let parsedNumericValue = parseFloat(rawValue.replace(/,/g, '')) || 0;
-
-                return {
-                    title: getVal(['tender title', 'title', 'name']),
-                    id: getVal(['tender id', 'id', 'tender code']),
-                    state: getVal(['state', 'region']) || 'Unknown',
-                    city: getVal(['city', 'location']) || 'N/A',
-                    org: getVal(['organisation', 'organization', 'authority']),
-                    value: parsedNumericValue,
-                    emd: getVal(['emd', 'emd value']) || 'N/A',
-                    deadline: getVal(['bid deadline', 'deadline', 'bid deadline ↕']) || 'N/A',
-                    published: getVal(['published', 'published ↕', 'date']) || 'N/A'
-                };
-            });
-        }
-
-        function populateStateDropdown(data) {
-            const states = [...new Set(data.map(item => item.state))].sort();
-            states.forEach(state => {
-                if(state && state !== 'Unknown') {
-                    const opt = document.createElement('option');
-                    opt.value = state;
-                    opt.textContent = state;
-                    elStateFilter.appendChild(opt);
-                }
-            });
-        }
-
-        // Dynamic Metric Engine recalculating on the active context data subset
-        function updateDynamicMetrics(filteredData) {
-            const totalCount = filteredData.length;
-            const totalSum = filteredData.reduce((sum, item) => sum + item.value, 0);
-            const avgVal = totalCount > 0 ? (totalSum / totalCount) : 0;
-            const distinctStates = new Set(filteredData.map(item => item.state)).size;
-            const highValueItemsCount = filteredData.filter(item => item.value >= 500).length;
-
-            // Update DOM counters instantly
-            document.getElementById('topTotalValue').textContent = `₹${formatNumber(totalSum)} Cr`;
-            document.getElementById('kpiTotalCount').textContent = totalCount.toLocaleString('en-IN');
-            document.getElementById('kpiTotalValue').textContent = `₹${formatNumber(totalSum)} Cr`;
-            document.getElementById('kpiAvgValue').textContent = `₹${formatNumber(avgVal)} Cr`;
-            document.getElementById('kpiStatesCount').textContent = distinctStates;
-            document.getElementById('kpiHighValueCount').textContent = highValueItemsCount;
-            
-            document.getElementById('badgeCount').textContent = `${totalCount.toLocaleString('en-IN')} Tenders`;
-            document.getElementById('filteredCount').textContent = totalCount.toLocaleString('en-IN');
-        }
-
-        function formatNumber(num) {
-            if (num >= 100000) return `${(num / 100000).toFixed(1)}L`;
-            return num.toLocaleString('en-IN', { maximumFractionDigits: 0 });
-        }
-
-        // Reactive filter loop architecture
-        function runFiltersAndMetrics() {
-            const searchQ = elSearchInput.value.toLowerCase().trim();
-            const selectedState = elStateFilter.value;
-            const selectedBracket = elValueFilter.value;
-            const activeSort = elSortFilter.value;
-
-            let filteredResults = allData.filter(item => {
-                const matchesSearch = !searchQ || 
-                    item.title.toLowerCase().includes(searchQ) ||
-                    item.id.toLowerCase().includes(searchQ) ||
-                    item.org.toLowerCase().includes(searchQ) ||
-                    item.city.toLowerCase().includes(searchQ);
-
-                const matchesState = (selectedState === 'All' || item.state === selectedState);
-
-                let matchesBracket = true;
-                if (selectedBracket === 'Under 5') matchesBracket = item.value < 5;
-                else if (selectedBracket === '5-25') matchesBracket = (item.value >= 5 && item.value <= 25);
-                else if (selectedBracket === '25-100') matchesBracket = (item.value > 25 && item.value <= 100);
-                else if (selectedBracket === '100-500') matchesBracket = (item.value > 100 && item.value < 500);
-                else if (selectedBracket === '500+') matchesBracket = item.value >= 500;
-
-                return matchesSearch && matchesState && matchesBracket;
-            });
-
-            // Sort logic
-            if (activeSort === 'valHighLow') filteredResults.sort((a, b) => b.value - a.value);
-            else if (activeSort === 'valLowHigh') filteredResults.sort((a, b) => a.value - b.value);
-            else if (activeSort === 'titleAZ') filteredResults.sort((a, b) => a.title.localeCompare(b.title));
-
-            // Sync metrics cards with currently active array view
-            updateDynamicMetrics(filteredResults);
-            renderDashboardTable(filteredResults);
-        }
-
-        function renderDashboardTable(data) {
-            if (data.length === 0) {
-                elTableBody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-500">No records found matching your filter selections.</td></tr>`;
-                return;
-            }
-
-            elTableBody.innerHTML = data.map((item, index) => `
-                <tr class="hover:bg-slate-800/30 transition-colors border-b border-slate-800/40">
-                    <td class="p-4 text-center font-semibold text-slate-600">${index + 1}</td>
-                    <td class="p-4 font-bold text-slate-100 truncate" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</td>
-                    <td class="p-4 text-slate-400 font-mono text-[11px] tracking-wide">${escapeHtml(item.id)}</td>
-                    <td class="p-4"><span class="px-2 py-0.5 bg-slate-800 text-[11px] font-semibold text-slate-300 rounded border border-slate-700/60">${escapeHtml(item.state)}</span></td>
-                    <td class="p-4 text-slate-400 truncate">${escapeHtml(item.city)}</td>
-                    <td class="p-4 text-slate-400 truncate font-medium" title="${escapeHtml(item.org)}">${escapeHtml(item.org)}</td>
-                    <td class="p-4 text-right font-black tracking-tight text-sm ${item.value >= 500 ? 'text-amber-500' : 'text-emerald-400'}">₹${item.value.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Cr</td>
-                    <td class="p-4 text-slate-400 truncate">${escapeHtml(item.emd)}</td>
-                    <td class="p-4 text-slate-400 text-[11px]">${escapeHtml(item.deadline)}</td>
-                    <td class="p-4 text-slate-500 text-[11px]">${escapeHtml(item.published)}</td>
-                </tr>
-            `).join('');
-        }
-
-        function escapeHtml(str) {
-            if(!str) return '';
-            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-        }
-
-        function setupEventHandlers() {
-            // Dropdown & input event loops
-            elSearchInput.addEventListener('input', runFiltersAndMetrics);
-            elStateFilter.addEventListener('change', runFiltersAndMetrics);
-            elValueFilter.addEventListener('change', runFiltersAndMetrics);
-            elSortFilter.addEventListener('change', runFiltersAndMetrics);
-
-            // Click interaction for Quick Filter pills
-            document.querySelectorAll('.quick-state').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    elStateFilter.value = btn.getAttribute('data-state');
-                    runFiltersAndMetrics();
-                });
-            });
-
-            document.querySelectorAll('.quick-val').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    elValueFilter.value = btn.getAttribute('data-val');
-                    runFiltersAndMetrics();
-                });
-            });
-
-            // Reset interaction clear path
-            elResetBtn.addEventListener('click', () => {
-                elSearchInput.value = '';
-                elStateFilter.value = 'All';
-                elValueFilter.value = 'All';
-                elSortFilter.value = 'default';
-                runFiltersAndMetrics();
-            });
-        }
-    </script>
-</body>
-</html>
+// Initialize setups when your dashboard completes load sequence
+document.addEventListener("DOMContentLoaded", () => {
+  // Optional delay to wait for your remote fetch script to pull local files
+  setTimeout(setupEnhancedTableFeatures, 1000);
+});
+</script>
