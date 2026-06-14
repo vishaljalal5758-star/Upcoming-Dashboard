@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Tender Data Dashboard</title>
+  <title>Dynamic Tender Data Dashboard</title>
   <style>
     body {
       font-family: sans-serif;
@@ -19,11 +19,28 @@
     th {
       background-color: #f2f2f2;
     }
+    #filterContainer {
+      margin-bottom: 10px;
+    }
+    #filterSelect {
+      padding: 5px;
+      margin-right: 10px;
+    }
+    #filterInput {
+      padding: 5px;
+    }
   </style>
 </head>
 <body>
 
   <h1>Tender Data Dashboard</h1>
+
+  <div id="filterContainer">
+    <label for="filterSelect">Filter by:</label>
+    <select id="filterSelect"></select>
+    <label for="filterInput">Search:</label>
+    <input type="text" id="filterInput">
+  </div>
 
   <table id="tenderTable">
     <thead>
@@ -37,46 +54,81 @@
   </table>
 
   <script>
-    // Function to fetch and display the data (requires a server-side component - see notes below)
+    let data = []; // Store the fetched data
+    let headers = []; // Store the headers
+
     async function fetchData() {
       try {
         const response = await fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vSZjO-A6VhuzifXXgffaGdtD6ysazVtS1FTjeFTUxdi-q9IIfjc4DZmrS3QF7MhzKjHRqeN36ZeX_qu/pub?gid=1590006273&single=true&output=csv');
         const csvText = await response.text();
-        const rows = csvText.split('\n').filter(row => row.trim() !== ''); // Remove empty rows
+        const rows = csvText.split('\n').filter(row => row.trim() !== '');
 
-        const headers = rows[0].split(',').map(header => header.trim());
+        headers = rows[0].split(',').map(header => header.trim());
+        data = rows.slice(1).map(row => row.split(',').map(item => item.trim()));
 
-        // Create table header
-        const thead = document.querySelector('thead');
-        const headerRow = document.createElement('tr');
-        headers.forEach(header => {
-          const th = document.createElement('th');
-          th.textContent = header;
-          headerRow.appendChild(th);
-        });
-        thead.appendChild(headerRow);
-
-
-        // Create table body
-        const tbody = document.querySelector('tbody');
-        rows.slice(1).forEach(row => {  // Skip the header row
-          const data = row.split(',').map(item => item.trim());
-          const rowElement = document.createElement('tr');
-
-          data.forEach(item => {
-            const td = document.createElement('td');
-            td.textContent = item;
-            rowElement.appendChild(td);
-          });
-
-          tbody.appendChild(rowElement);
-        });
-
+        createTable();
+        createFilterOptions();
+        applyFilters();
       } catch (error) {
         console.error('Error fetching data:', error);
-        document.getElementById('tenderTable').innerHTML = '<p>Error loading data.</p>'; // Show an error message
+        document.getElementById('tenderTable').innerHTML = '<p>Error loading data.</p>';
       }
     }
+
+    function createTable() {
+      const table = document.getElementById('tenderTable');
+      table.innerHTML = ''; // Clear existing table
+
+      const thead = document.createElement('thead');
+      const headerRow = document.createElement('tr');
+      headers.forEach(header => {
+        const th = document.createElement('th');
+        th.textContent = header;
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      data.forEach(row => {
+        const rowElement = document.createElement('tr');
+        row.forEach(item => {
+          const td = document.createElement('td');
+          td.textContent = item;
+          rowElement.appendChild(td);
+        });
+        tbody.appendChild(rowElement);
+      });
+      table.appendChild(tbody);
+    }
+
+    function createFilterOptions() {
+      const select = document.getElementById('filterSelect');
+      headers.forEach((header, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = header;
+        select.appendChild(option);
+      });
+    }
+
+    function applyFilters() {
+      const filterInput = document.getElementById('filterInput');
+      const filterSelect = document.getElementById('filterSelect');
+      const filterColumnIndex = parseInt(filterSelect.value, 10);
+      const filterText = filterInput.value.toLowerCase();
+
+      const tableRows = document.querySelectorAll('#tenderTable tbody tr');
+      tableRows.forEach(row => {
+        const cellValue = row.cells[filterColumnIndex].textContent.toLowerCase();
+        row.style.display = (cellValue.indexOf(filterText) > -1) ? '' : 'none';
+      });
+    }
+
+    // Event listeners for filtering
+    document.getElementById('filterSelect').addEventListener('change', applyFilters);
+    document.getElementById('filterInput').addEventListener('keyup', applyFilters);
+
 
     // Call the function to fetch and display the data when the page loads
     fetchData();
@@ -84,6 +136,3 @@
 
 </body>
 </html>
-
-
-**To reiterate:** Building a fully dynamic and interactive dashboard from a CSV requires a server-side component and, most likely, a JavaScript library like DataTables or Tabulator.  This example provides a foundation for getting the data into a table, but you'll need to build upon it to achieve the desired level of functionality. Make sure you understand the CORS restrictions and implement a server-side proxy to securely access the Google Sheets data.
