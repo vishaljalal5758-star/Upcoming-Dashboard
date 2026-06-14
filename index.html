@@ -11,74 +11,87 @@
             theme: {
                 extend: {
                     colors: {
-                        darkBg: '#0f172a',
-                        cardBg: '#1e293b',
+                        darkBg: '#0b111e',
+                        cardBg: '#151f32',
                         accentOrange: '#f97316',
-                        accentTeal: '#0ea5e9',
+                        accentTeal: '#38bdf8',
                         accentGreen: '#10b981',
+                        borderSlate: '#1e293b'
                     }
                 }
             }
         }
     </script>
+    <style>
+        /* Smooth custom scrollbar for data tables */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0b111e; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    </style>
 </head>
 <body class="bg-darkBg text-slate-100 min-h-screen font-sans p-6">
 
     <div class="max-w-7xl mx-auto space-y-6">
         
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-700 pb-4 gap-4">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-5 gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-accentOrange flex items-center gap-2">
-                    🏗️ Upcoming Tenders Dashboard
+                <h1 class="text-3xl font-bold text-slate-100 flex items-center gap-2 tracking-tight">
+                    <span class="text-accentOrange">🏗️</span> Upcoming Tenders Dashboard
                 </h1>
-                <p class="text-slate-400 text-sm mt-1">Authority-wise project intelligence · Government of India</p>
+                <p class="text-slate-400 text-xs mt-1 font-medium">Authority-wise project intelligence · Government of India</p>
+                <div class="flex gap-2 mt-3 text-[11px] font-semibold">
+                    <span id="badgeCount" class="bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2.5 py-1 rounded">0 Tenders</span>
+                    <span class="bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2.5 py-1 rounded">All India Coverage</span>
+                    <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded">Live Sync</span>
+                </div>
             </div>
-            <div class="text-right">
-                <div id="topTotalValue" class="text-3xl font-extrabold text-accentGreen">₹0 Cr</div>
-                <div class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Total Tender Value</div>
+            <div class="text-left md:text-right">
+                <div id="topTotalValue" class="text-3xl font-black text-accentGreen tracking-tight">₹0 Cr</div>
+                <div class="text-[10px] uppercase tracking-widest text-slate-400 font-bold mt-0.5">Total Tender Value</div>
             </div>
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div class="bg-cardBg p-4 rounded-xl border border-slate-700/50 shadow-lg">
+            <div class="bg-cardBg p-4 rounded-xl border border-borderSlate shadow-xl">
                 <div class="text-xl">📋</div>
-                <div id="kpiTotalCount" class="text-2xl font-bold mt-1">0</div>
-                <div class="text-xs text-slate-400 uppercase tracking-wider font-medium">Total Tenders</div>
+                <div id="kpiTotalCount" class="text-2xl font-black mt-1 tracking-tight">0</div>
+                <div class="text-[10px] text-slate-400 uppercase tracking-wider font-bold mt-1">Total Tenders</div>
             </div>
-            <div class="bg-cardBg p-4 rounded-xl border border-slate-700/50 shadow-lg">
+            <div class="bg-cardBg p-4 rounded-xl border border-borderSlate shadow-xl">
                 <div class="text-xl">💰</div>
-                <div id="kpiTotalValue" class="text-2xl font-bold mt-1">₹0 Cr</div>
-                <div class="text-xs text-slate-400 uppercase tracking-wider font-medium">Total Value</div>
+                <div id="kpiTotalValue" class="text-2xl font-black mt-1 tracking-tight">₹0 Cr</div>
+                <div class="text-[10px] text-slate-400 uppercase tracking-wider font-bold mt-1">Total Value</div>
             </div>
-            <div class="bg-cardBg p-4 rounded-xl border border-slate-700/50 shadow-lg">
+            <div class="bg-cardBg p-4 rounded-xl border border-borderSlate shadow-xl">
                 <div class="text-xl">📊</div>
-                <div id="kpiAvgValue" class="text-2xl font-bold mt-1">₹0 Cr</div>
-                <div class="text-xs text-slate-400 uppercase tracking-wider font-medium">Avg Tender Value</div>
+                <div id="kpiAvgValue" class="text-2xl font-black mt-1 tracking-tight">₹0 Cr</div>
+                <div class="text-[10px] text-slate-400 uppercase tracking-wider font-bold mt-1">Avg Tender Value</div>
             </div>
-            <div class="bg-cardBg p-4 rounded-xl border border-slate-700/50 shadow-lg">
+            <div class="bg-cardBg p-4 rounded-xl border border-borderSlate shadow-xl">
                 <div class="text-xl">🗺️</div>
-                <div id="kpiStatesCount" class="text-2xl font-bold mt-1">0</div>
-                <div class="text-xs text-slate-400 uppercase tracking-wider font-medium">States Covered</div>
+                <div id="kpiStatesCount" class="text-2xl font-black mt-1 tracking-tight">0</div>
+                <div class="text-[10px] text-slate-400 uppercase tracking-wider font-bold mt-1">States Covered</div>
             </div>
-            <div class="bg-cardBg p-4 rounded-xl border border-slate-700/50 shadow-lg col-span-2 md:col-span-1">
+            <div class="bg-cardBg p-4 rounded-xl border border-borderSlate shadow-xl">
                 <div class="text-xl">🔥</div>
-                <div id="kpiHighValueCount" class="text-2xl font-bold mt-1 text-orange-400">0</div>
-                <div class="text-xs text-slate-400 uppercase tracking-wider font-medium">₹500 Cr+ Tenders</div>
+                <div id="kpiHighValueCount" class="text-2xl font-black mt-1 text-orange-400 tracking-tight">0</div>
+                <div class="text-[10px] text-slate-400 uppercase tracking-wider font-bold mt-1">₹500 Cr+ Tenders</div>
             </div>
         </div>
 
-        <div class="bg-cardBg/60 p-4 rounded-xl border border-slate-700/50 flex flex-wrap gap-3 items-center">
-            <div class="flex-1 min-w-[260px] relative">
-                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">🔍</span>
+        <div class="bg-cardBg p-4 rounded-xl border border-borderSlate flex flex-wrap gap-3 items-center shadow-lg">
+            <div class="flex-1 min-w-[280px] relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-xs">🔍</span>
                 <input type="text" id="searchInput" placeholder="Search title, Tender ID, organisation, city..." 
-                       class="w-full pl-9 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-100 focus:outline-none focus:border-accentTeal transition-colors">
+                       class="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-700/60 rounded-lg text-xs text-slate-100 focus:outline-none focus:border-accentTeal transition-colors placeholder-slate-500">
             </div>
 
-            <select id="stateFilter" class="bg-slate-800 border border-slate-700 rounded-lg text-sm px-3 py-2 text-slate-100 min-w-[160px] focus:outline-none focus:border-accentTeal">
+            <select id="stateFilter" class="bg-slate-900 border border-slate-700/60 rounded-lg text-xs px-3 py-2 text-slate-200 min-w-[150px] focus:outline-none focus:border-accentTeal cursor-pointer">
                 <option value="All">All States</option>
             </select>
 
-            <select id="valueFilter" class="bg-slate-800 border border-slate-700 rounded-lg text-sm px-3 py-2 text-slate-100 min-w-[160px] focus:outline-none focus:border-accentTeal">
+            <select id="valueFilter" class="bg-slate-900 border border-slate-700/60 rounded-lg text-xs px-3 py-2 text-slate-200 min-w-[150px] focus:outline-none focus:border-accentTeal cursor-pointer">
                 <option value="All">All Values</option>
                 <option value="Under 5">Under ₹5 Cr</option>
                 <option value="5-25">₹5 – ₹25 Cr</option>
@@ -87,57 +100,70 @@
                 <option value="500+">₹500 Cr+</option>
             </select>
 
-            <select id="sortFilter" class="bg-slate-800 border border-slate-700 rounded-lg text-sm px-3 py-2 text-slate-100 min-w-[150px] focus:outline-none focus:border-accentTeal">
+            <select id="sortFilter" class="bg-slate-900 border border-slate-700/60 rounded-lg text-xs px-3 py-2 text-slate-200 min-w-[140px] focus:outline-none focus:border-accentTeal cursor-pointer">
                 <option value="default">Sort By</option>
                 <option value="valHighLow">Value: High → Low</option>
                 <option value="valLowHigh">Value: Low → High</option>
                 <option value="titleAZ">Title A–Z</option>
             </select>
 
-            <button id="resetBtn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 text-sm font-medium rounded-lg transition-colors">
+            <button id="resetBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 text-xs font-semibold rounded-lg transition-colors border border-slate-700">
                 ✕ Reset
             </button>
         </div>
 
-        <div class="flex justify-between items-center px-1">
-            <div class="text-sm text-slate-400">
-                Showing <span id="filteredCount" class="text-accentOrange font-semibold">0</span> items
+        <div class="flex flex-wrap items-center gap-2 text-xs text-slate-400">
+            <span class="font-bold uppercase tracking-wider text-[10px]">Quick Filter:</span>
+            <button class="quick-state bg-slate-800/50 hover:bg-slate-800 border border-slate-700 px-3 py-1 rounded-md transition-colors" data-state="Uttar Pradesh">Uttar Pradesh</button>
+            <button class="quick-state bg-slate-800/50 hover:bg-slate-800 border border-slate-700 px-3 py-1 rounded-md transition-colors" data-state="Delhi">Delhi</button>
+            <button class="quick-state bg-slate-800/50 hover:bg-slate-800 border border-slate-700 px-3 py-1 rounded-md transition-colors" data-state="Haryana">Haryana</button>
+            <button class="quick-state bg-slate-800/50 hover:bg-slate-800 border border-slate-700 px-3 py-1 rounded-md transition-colors" data-state="Maharashtra">Maharashtra</button>
+            <button class="quick-state bg-slate-800/50 hover:bg-slate-800 border border-slate-700 px-3 py-1 rounded-md transition-colors" data-state="Gujarat">Gujarat</button>
+            <button class="quick-val bg-slate-800/50 hover:bg-slate-800 border border-slate-700 px-3 py-1 rounded-md transition-colors text-orange-400 font-medium" data-val="500+">🔥 ₹500 Cr+</button>
+            <button class="quick-val bg-slate-800/50 hover:bg-slate-800 border border-slate-700 px-3 py-1 rounded-md transition-colors text-sky-400 font-medium" data-val="100-500">₹100–500 Cr</button>
+        </div>
+
+        <div class="flex justify-end items-center">
+            <div class="bg-orange-500/10 text-orange-400 border border-orange-500/20 px-3 py-1 rounded-full text-xs font-bold">
+                <span id="filteredCount">0</span> tenders matched
             </div>
         </div>
 
-        <div class="bg-cardBg rounded-xl border border-slate-700/50 shadow-xl overflow-hidden overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-slate-800/80 text-slate-300 border-b border-slate-700 text-xs font-semibold tracking-wider uppercase">
-                        <th class="p-4 w-12 text-center">#</th>
-                        <th class="p-4 min-w-[280px]">Tender Title</th>
-                        <th class="p-4">Tender ID</th>
-                        <th class="p-4">State</th>
-                        <th class="p-4">City</th>
-                        <th class="p-4">Organisation</th>
-                        <th class="p-4 text-right">Value (Cr)</th>
-                        <th class="p-4">Bid Deadline</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody" class="divide-y divide-slate-800 text-sm text-slate-300">
-                    <tr>
-                        <td colspan="8" class="p-8 text-center text-slate-400 tracking-wide animate-pulse">
-                            🔄 Fetching live database records from Google Sheets, please wait...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="bg-cardBg rounded-xl border border-borderSlate shadow-2xl overflow-hidden">
+            <div class="overflow-x-auto w-full">
+                <table class="w-full text-left border-collapse table-fixed">
+                    <thead>
+                        <tr class="bg-slate-900/60 text-slate-400 border-b border-slate-800 text-[11px] font-bold tracking-wider uppercase">
+                            <th class="p-4 w-12 text-center">#</th>
+                            <th class="p-4 w-72">Tender Title</th>
+                            <th class="p-4 w-32">Tender ID</th>
+                            <th class="p-4 w-32">State</th>
+                            <th class="p-4 w-28">City</th>
+                            <th class="p-4 w-48">Organisation</th>
+                            <th class="p-4 w-32 text-right text-slate-300">Value</th>
+                            <th class="p-4 w-28">EMD</th>
+                            <th class="p-4 w-32">Bid Deadline</th>
+                            <th class="p-4 w-32">Published</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-slate-800/60 text-xs text-slate-300">
+                        <tr>
+                            <td colspan="10" class="p-12 text-center text-slate-400 font-medium tracking-wide animate-pulse">
+                                🔄 Pulling live project intelligence from Google Sheets database...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <script>
-        // Directly pointing to your published Google Sheet CSV link
         const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSZjO-A6VhuzifXXgffaGdtD6ysazVtS1FTjeFTUxdi-q9IIfjc4DZmrS3QF7MhzKjHRqeN36ZeX_qu/pub?gid=1590006273&single=true&output=csv";
         
         let allData = [];
-        let activeData = [];
 
-        // Dynamic element references
+        // UI Target references
         const elTableBody = document.getElementById('tableBody');
         const elSearchInput = document.getElementById('searchInput');
         const elStateFilter = document.getElementById('stateFilter');
@@ -145,56 +171,52 @@
         const elSortFilter = document.getElementById('sortFilter');
         const elResetBtn = document.getElementById('resetBtn');
 
-        // Initial launch sequence
-        window.addEventListener('DOMContentLoaded', fetchAndInitializeData);
+        window.addEventListener('DOMContentLoaded', initializeDashboard);
 
-        function fetchAndInitializeData() {
+        function initializeDashboard() {
             Papa.parse(csvUrl, {
                 download: true,
                 header: true,
                 skipEmptyLines: true,
                 complete: function(results) {
                     allData = processRawData(results.data);
-                    activeData = [...allData];
-                    
                     populateStateDropdown(allData);
-                    calculateDashboardMetrics(allData);
-                    renderDashboardTable(activeData);
                     setupEventHandlers();
+                    runFiltersAndMetrics(); // Calculate metrics and render first batch together
                 },
                 error: function(err) {
-                    elTableBody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-red-400 font-medium">❌ Failed to retrieve live data stream. Verify your Google Sheet share settings.</td></tr>`;
+                    elTableBody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-red-400 font-medium">❌ Failed to stream live data. Check spreadsheet configuration.</td></tr>`;
                 }
             });
         }
 
-        // Standardize unpredictable column names/cases directly from the spreadsheet source
+        // Process data map directly targeting 'Amt. in Cr.' column
         function processRawData(rawRows) {
             return rawRows.map(row => {
-                // Find column values regardless of variations in spelling or casing
                 const getVal = (keys) => {
                     const foundKey = Object.keys(row).find(k => keys.includes(k.trim().toLowerCase()));
                     return foundKey ? row[foundKey].trim() : '';
                 };
 
-                const rawValue = getVal(['value', 'tender value', 'value (cr)', 'amount']);
-                // Sanitize numerical strings for mathematical calculations
+                // Targets 'amt. in cr.' specifically as requested
+                const rawValue = getVal(['amt. in cr.', 'amt in cr', 'value', 'value (cr)']);
                 let parsedNumericValue = parseFloat(rawValue.replace(/,/g, '')) || 0;
 
                 return {
-                    title: getVal(['tender title', 'title', 'name', 'tender']),
+                    title: getVal(['tender title', 'title', 'name']),
                     id: getVal(['tender id', 'id', 'tender code']),
                     state: getVal(['state', 'region']) || 'Unknown',
                     city: getVal(['city', 'location']) || 'N/A',
-                    org: getVal(['organisation', 'organization', 'authority', 'dept']),
+                    org: getVal(['organisation', 'organization', 'authority']),
                     value: parsedNumericValue,
-                    deadline: getVal(['bid deadline', 'deadline', 'end date', 'bid date']) || 'N/A'
+                    emd: getVal(['emd', 'emd value']) || 'N/A',
+                    deadline: getVal(['bid deadline', 'deadline', 'bid deadline ↕']) || 'N/A',
+                    published: getVal(['published', 'published ↕', 'date']) || 'N/A'
                 };
             });
         }
 
         function populateStateDropdown(data) {
-            // Collect distinct unique list of states
             const states = [...new Set(data.map(item => item.state))].sort();
             states.forEach(state => {
                 if(state && state !== 'Unknown') {
@@ -206,46 +228,85 @@
             });
         }
 
-        function calculateDashboardMetrics(data) {
-            const totalCount = data.length;
-            const totalSum = data.reduce((sum, item) => sum + item.value, 0);
+        // Dynamic Metric Engine recalculating on the active context data subset
+        function updateDynamicMetrics(filteredData) {
+            const totalCount = filteredData.length;
+            const totalSum = filteredData.reduce((sum, item) => sum + item.value, 0);
             const avgVal = totalCount > 0 ? (totalSum / totalCount) : 0;
-            const distinctStates = new Set(data.map(item => item.state)).size;
-            const highValueItemsCount = data.filter(item => item.value >= 500).length;
+            const distinctStates = new Set(filteredData.map(item => item.state)).size;
+            const highValueItemsCount = filteredData.filter(item => item.value >= 500).length;
 
-            // Update DOM metrics components
+            // Update DOM counters instantly
             document.getElementById('topTotalValue').textContent = `₹${formatNumber(totalSum)} Cr`;
             document.getElementById('kpiTotalCount').textContent = totalCount.toLocaleString('en-IN');
             document.getElementById('kpiTotalValue').textContent = `₹${formatNumber(totalSum)} Cr`;
             document.getElementById('kpiAvgValue').textContent = `₹${formatNumber(avgVal)} Cr`;
             document.getElementById('kpiStatesCount').textContent = distinctStates;
             document.getElementById('kpiHighValueCount').textContent = highValueItemsCount;
+            
+            document.getElementById('badgeCount').textContent = `${totalCount.toLocaleString('en-IN')} Tenders`;
+            document.getElementById('filteredCount').textContent = totalCount.toLocaleString('en-IN');
         }
 
         function formatNumber(num) {
-            if (num >= 100000) return `${(num / 100000).toFixed(2)}L`;
-            return num.toLocaleString('en-IN', { maximumFractionDigits: 1 });
+            if (num >= 100000) return `${(num / 100000).toFixed(1)}L`;
+            return num.toLocaleString('en-IN', { maximumFractionDigits: 0 });
         }
 
-        // Render rows dynamically safely preventing XSS injections
+        // Reactive filter loop architecture
+        function runFiltersAndMetrics() {
+            const searchQ = elSearchInput.value.toLowerCase().trim();
+            const selectedState = elStateFilter.value;
+            const selectedBracket = elValueFilter.value;
+            const activeSort = elSortFilter.value;
+
+            let filteredResults = allData.filter(item => {
+                const matchesSearch = !searchQ || 
+                    item.title.toLowerCase().includes(searchQ) ||
+                    item.id.toLowerCase().includes(searchQ) ||
+                    item.org.toLowerCase().includes(searchQ) ||
+                    item.city.toLowerCase().includes(searchQ);
+
+                const matchesState = (selectedState === 'All' || item.state === selectedState);
+
+                let matchesBracket = true;
+                if (selectedBracket === 'Under 5') matchesBracket = item.value < 5;
+                else if (selectedBracket === '5-25') matchesBracket = (item.value >= 5 && item.value <= 25);
+                else if (selectedBracket === '25-100') matchesBracket = (item.value > 25 && item.value <= 100);
+                else if (selectedBracket === '100-500') matchesBracket = (item.value > 100 && item.value < 500);
+                else if (selectedBracket === '500+') matchesBracket = item.value >= 500;
+
+                return matchesSearch && matchesState && matchesBracket;
+            });
+
+            // Sort logic
+            if (activeSort === 'valHighLow') filteredResults.sort((a, b) => b.value - a.value);
+            else if (activeSort === 'valLowHigh') filteredResults.sort((a, b) => a.value - b.value);
+            else if (activeSort === 'titleAZ') filteredResults.sort((a, b) => a.title.localeCompare(b.title));
+
+            // Sync metrics cards with currently active array view
+            updateDynamicMetrics(filteredResults);
+            renderDashboardTable(filteredResults);
+        }
+
         function renderDashboardTable(data) {
-            document.getElementById('filteredCount').textContent = data.length.toLocaleString('en-IN');
-            
             if (data.length === 0) {
-                elTableBody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-500">No records match your filter criteria.</td></tr>`;
+                elTableBody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-500">No records found matching your filter selections.</td></tr>`;
                 return;
             }
 
             elTableBody.innerHTML = data.map((item, index) => `
-                <tr class="hover:bg-slate-800/40 transition-colors">
-                    <td class="p-4 text-center font-medium text-slate-500">${index + 1}</td>
-                    <td class="p-4 font-semibold text-slate-100 max-w-sm truncate" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</td>
-                    <td class="p-4 text-slate-400 font-mono text-xs">${escapeHtml(item.id)}</td>
-                    <td class="p-4"><span class="px-2 py-1 bg-slate-800 rounded text-xs text-slate-300 border border-slate-700">${escapeHtml(item.state)}</span></td>
-                    <td class="p-4 text-slate-400">${escapeHtml(item.city)}</td>
-                    <td class="p-4 text-slate-400 truncate max-w-xs" title="${escapeHtml(item.org)}">${escapeHtml(item.org)}</td>
-                    <td class="p-4 text-right font-bold ${item.value >= 500 ? 'text-orange-400' : 'text-emerald-400'}">₹${item.value.toLocaleString('en-IN')} Cr</td>
-                    <td class="p-4 text-slate-400 text-xs">${escapeHtml(item.deadline)}</td>
+                <tr class="hover:bg-slate-800/30 transition-colors border-b border-slate-800/40">
+                    <td class="p-4 text-center font-semibold text-slate-600">${index + 1}</td>
+                    <td class="p-4 font-bold text-slate-100 truncate" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</td>
+                    <td class="p-4 text-slate-400 font-mono text-[11px] tracking-wide">${escapeHtml(item.id)}</td>
+                    <td class="p-4"><span class="px-2 py-0.5 bg-slate-800 text-[11px] font-semibold text-slate-300 rounded border border-slate-700/60">${escapeHtml(item.state)}</span></td>
+                    <td class="p-4 text-slate-400 truncate">${escapeHtml(item.city)}</td>
+                    <td class="p-4 text-slate-400 truncate font-medium" title="${escapeHtml(item.org)}">${escapeHtml(item.org)}</td>
+                    <td class="p-4 text-right font-black tracking-tight text-sm ${item.value >= 500 ? 'text-amber-500' : 'text-emerald-400'}">₹${item.value.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Cr</td>
+                    <td class="p-4 text-slate-400 truncate">${escapeHtml(item.emd)}</td>
+                    <td class="p-4 text-slate-400 text-[11px]">${escapeHtml(item.deadline)}</td>
+                    <td class="p-4 text-slate-500 text-[11px]">${escapeHtml(item.published)}</td>
                 </tr>
             `).join('');
         }
@@ -256,54 +317,34 @@
         }
 
         function setupEventHandlers() {
-            const runFilters = () => {
-                const searchQ = elSearchInput.value.toLowerCase().trim();
-                const selectedState = elStateFilter.value;
-                const selectedBracket = elValueFilter.value;
-                const activeSort = elSortFilter.value;
+            // Dropdown & input event loops
+            elSearchInput.addEventListener('input', runFiltersAndMetrics);
+            elStateFilter.addEventListener('change', runFiltersAndMetrics);
+            elValueFilter.addEventListener('change', runFiltersAndMetrics);
+            elSortFilter.addEventListener('change', runFiltersAndMetrics);
 
-                let output = allData.filter(item => {
-                    // Match Search Query
-                    const matchesSearch = !searchQ || 
-                        item.title.toLowerCase().includes(searchQ) ||
-                        item.id.toLowerCase().includes(searchQ) ||
-                        item.org.toLowerCase().includes(searchQ) ||
-                        item.city.toLowerCase().includes(searchQ);
-
-                    // Match State Dropdown
-                    const matchesState = (selectedState === 'All' || item.state === selectedState);
-
-                    // Match Value Bracket Dropdown
-                    let matchesBracket = true;
-                    if (selectedBracket === 'Under 5') matchesBracket = item.value < 5;
-                    else if (selectedBracket === '5-25') matchesBracket = (item.value >= 5 && item.value <= 25);
-                    else if (selectedBracket === '25-100') matchesBracket = (item.value > 25 && item.value <= 100);
-                    else if (selectedBracket === '100-500') matchesBracket = (item.value > 100 && item.value < 500);
-                    else if (selectedBracket === '500+') matchesBracket = item.value >= 500;
-
-                    return matchesSearch && matchesState && matchesBracket;
+            // Click interaction for Quick Filter pills
+            document.querySelectorAll('.quick-state').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    elStateFilter.value = btn.getAttribute('data-state');
+                    runFiltersAndMetrics();
                 });
+            });
 
-                // Apply dynamic array sorting
-                if (activeSort === 'valHighLow') output.sort((a, b) => b.value - a.value);
-                else if (activeSort === 'valLowHigh') output.sort((a, b) => a.value - b.value);
-                else if (activeSort === 'titleAZ') output.sort((a, b) => a.title.localeCompare(b.title));
+            document.querySelectorAll('.quick-val').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    elValueFilter.value = btn.getAttribute('data-val');
+                    runFiltersAndMetrics();
+                });
+            });
 
-                renderDashboardTable(output);
-            };
-
-            // Hook reactive functional triggers
-            elSearchInput.addEventListener('input', runFilters);
-            elStateFilter.addEventListener('change', runFilters);
-            elValueFilter.addEventListener('change', runFilters);
-            elSortFilter.addEventListener('change', runFilters);
-
+            // Reset interaction clear path
             elResetBtn.addEventListener('click', () => {
                 elSearchInput.value = '';
                 elStateFilter.value = 'All';
                 elValueFilter.value = 'All';
                 elSortFilter.value = 'default';
-                runFilters();
+                runFiltersAndMetrics();
             });
         }
     </script>
