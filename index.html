@@ -1,356 +1,196 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dynamic Tender Dashboard</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <style>
-    body {
-      font-family: Inter, system-ui, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #f4f7fb;
-      color: #1f2937;
-    }
-    .app-shell {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 2rem 1rem 4rem;
-    }
-    .header {
-      display: grid;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-    .header h1 {
-      margin: 0;
-      font-size: 2rem;
-      letter-spacing: -0.02em;
-    }
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-    .card {
-      background: white;
-      border-radius: 20px;
-      padding: 1.25rem;
-      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.06);
-    }
-    .card strong {
-      display: block;
-      font-size: 1.25rem;
-      margin-bottom: 0.5rem;
-    }
-    .filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-    .filters label {
-      display: flex;
-      flex-direction: column;
-      font-size: 0.95rem;
-      gap: 0.5rem;
-    }
-    .filters select,
-    .filters input {
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 0.8rem 1rem;
-      font-size: 0.95rem;
-      background: white;
-      min-width: 220px;
-    }
-    .grid-charts {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-    .table-wrapper {
-      background: white;
-      border-radius: 24px;
-      overflow: hidden;
-      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.06);
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    thead {
-      background: #111827;
-      color: white;
-    }
-    th, td {
-      text-align: left;
-      padding: 0.85rem 1rem;
-      border-bottom: 1px solid #e5e7eb;
-      font-size: 0.95rem;
-    }
-    tbody tr:hover {
-      background: #f8fafc;
-    }
-    .small {
-      font-size: 0.85rem;
-      color: #6b7280;
-    }
-    @media (max-width: 900px) {
-      .grid-charts {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Analytics Dashboard</title>
+    <!-- Tailwind CSS for sleek interface design -->
+    <script src="https://tailwindcss.com"></script>
+    <!-- Chart.js for data visualization generation -->
+    <script src="https://jsdelivr.net"></script>
 </head>
-<body>
-  <div class="app-shell">
-    <div class="header">
-      <div>
-        <h1>Dynamic Tender Dashboard</h1>
-        <p class="small">Live data loaded from the published Google Sheets CSV.</p>
-      </div>
-    </div>
+<body class="bg-gray-50 text-gray-800 font-sans leading-normal tracking-normal">
 
-    <div class="summary-grid">
-      <div class="card">
-        <strong id="total-tenders">0</strong>
-        Total Tenders
-      </div>
-      <div class="card">
-        <strong id="total-value">₹0</strong>
-        Total Tender Value
-      </div>
-      <div class="card">
-        <strong id="upcoming-count">0</strong>
-        Upcoming Tenders
-      </div>
-      <div class="card">
-        <strong id="published-states">0</strong>
-        Unique States
-      </div>
-    </div>
+    <!-- Top Navigation Header -->
+    <nav class="bg-slate-900 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold tracking-wide">📊 Live Data Interface Engine</h1>
+            <button onclick="fetchAndRenderData()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded transition font-medium shadow">
+                🔄 Sync Live Data
+            </button>
+        </div>
+    </nav>
 
-    <div class="filters">
-      <label>
-        Status Filter
-        <select id="status-filter">
-          <option value="all">All</option>
-        </select>
-      </label>
-      <label>
-        State Filter
-        <select id="state-filter">
-          <option value="all">All</option>
-        </select>
-      </label>
-      <label>
-        Search Title
-        <input id="text-filter" type="search" placeholder="Search tender title or description" />
-      </label>
-    </div>
+    <!-- Main Dashboard Body -->
+    <main class="container mx-auto px-4 py-8">
+        
+        <!-- Scorecard Summary KPIs -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Evaluated Elements</span>
+                <div id="kpi-total-rows" class="text-3xl font-extrabold text-slate-950 mt-1">--</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Primary Tracking Dimension</span>
+                <div id="kpi-x-axis" class="text-xl font-bold text-blue-600 truncate mt-2">--</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Numerical Target Variable</span>
+                <div id="kpi-y-axis" class="text-xl font-bold text-green-600 truncate mt-2">--</div>
+            </div>
+        </section>
 
-    <div class="grid-charts">
-      <div class="card">
-        <h3>By Tender Status</h3>
-        <canvas id="statusChart" height="280"></canvas>
-      </div>
-      <div class="card">
-        <h3>Top States by Tender Count</h3>
-        <canvas id="stateChart" height="280"></canvas>
-      </div>
-    </div>
+        <!-- Main Chart Graphical Element -->
+        <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-lg font-bold text-slate-800">Dynamic Distribution Frequency Chart</h2>
+                <div class="flex space-x-2">
+                    <button onclick="switchChartType('bar')" class="px-3 py-1 text-xs font-medium bg-slate-100 hover:bg-slate-200 rounded">Bar</button>
+                    <button onclick="switchChartType('line')" class="px-3 py-1 text-xs font-medium bg-slate-100 hover:bg-slate-200 rounded">Line</button>
+                </div>
+            </div>
+            <div class="relative w-full h-[400px]">
+                <canvas id="analyticsCanvas"></canvas>
+            </div>
+        </section>
 
-    <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Tender ID</th>
-            <th>Status</th>
-            <th>State</th>
-            <th>Organisation</th>
-            <th>Tender Value</th>
-            <th>Published</th>
-            <th>End Date</th>
-          </tr>
-        </thead>
-        <tbody id="data-body">
-        </tbody>
-      </table>
-    </div>
-  </div>
+        <!-- Dynamic Data Source Table Grid -->
+        <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 overflow-hidden">
+            <h2 class="text-lg font-bold text-slate-800 mb-4">Granular Data Table Ledger</h2>
+            <div class="overflow-x-auto max-h-96">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr id="table-headers" class="bg-slate-50 text-slate-400 uppercase text-xs font-bold tracking-wider border-b border-gray-100">
+                            <!-- Dynamic Row Injection -->
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="text-sm divide-y divide-gray-100">
+                        <tr>
+                            <td class="p-4 text-center text-gray-400" colspan="100%">Awaiting live data streams...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
 
-  <script>
-    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSZjO-A6VhuzifXXgffaGdtD6ysazVtS1FTjeFTUxdi-q9IIfjc4DZmrS3QF7MhzKjHRqeN36ZeX_qu/pub?gid=1590006273&single=true&output=csv';
+    <script>
+        // Your designated target Google Sheets CSV Source Endpoint
+        const csvSourceUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSZjO-A6VhuzifXXgffaGdtD6ysazVtS1FTjeFTUxdi-q9IIfjc4DZmrS3QF7MhzKjHRqeN36ZeX_qu/pub?gid=1590006273&single=true&output=csv";
+        
+        let globallyStoredParsedData = [];
+        let runningChartReferenceInstance = null;
+        let activeRenderingLayoutType = 'bar';
 
-    const parseCsv = (text) => {
-      const rows = [];
-      const lines = text.split(/\r?\n/).filter(Boolean);
-      const headers = lines.shift().split(/,(?=(?:[^"]*"[^"]*")*(?![^"]*"))/);
-      for (const line of lines) {
-        const values = line.match(/(,|^)(?:"([^"]*(?:""[^"]*)*)"|([^",]*))/g).map(cell => {
-          const value = cell.replace(/^,?/, '');
-          if (value.startsWith('"') && value.endsWith('"')) {
-            return value.slice(1, -1).replace(/""/g, '"');
-          }
-          return value;
-        });
-        if (values.length === headers.length) {
-          const row = Object.fromEntries(headers.map((h, i) => [h.trim(), values[i]?.trim()]));
-          rows.push(row);
+        // Custom parser to map CSV structure into clean JS objects
+        function parseCSVStringData(rawTextString) {
+            const rowArrays = rawTextString.split(/\r?\n/).map(row => row.trim()).filter(row => row.length > 0);
+            if(rowArrays.length === 0) return { headers: [], data: [] };
+
+            // Simple comma separation parser matching your CSV layout schema
+            const headers = rowArrays[0].split(',').map(header => header.replace(/^"|"$/g, '').trim());
+            
+            const standardDataRows = rowArrays.slice(1).map(rowString => {
+                const columnValues = rowString.split(',').map(val => val.replace(/^"|"$/g, '').trim());
+                let rowEntityItem = {};
+                headers.forEach((headerKey, cellIndex) => {
+                    rowEntityItem[headerKey] = columnValues[cellIndex] || "";
+                });
+                return rowEntityItem;
+            });
+
+            return { headers, data: standardDataRows };
         }
-      }
-      return rows;
-    };
 
-    const formatCurrency = (num) => {
-      if (Number.isNaN(num)) return '₹0';
-      return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(num);
-    };
+        async function fetchAndRenderData() {
+            try {
+                const structuralResponse = await fetch(csvSourceUrl);
+                const rawCsvTextText = await structuralResponse.text();
+                const { headers, data } = parseCSVStringData(rawCsvTextText);
+                
+                if(!data || data.length === 0) throw new Error("Dataset is empty.");
+                globallyStoredParsedData = data;
 
-    const getNumber = (value) => {
-      if (!value) return 0;
-      const cleaned = value.replace(/[^0-9.\-]/g, '');
-      return parseFloat(cleaned) || 0;
-    };
+                // Dynamically extract primary structure from tracking document keys
+                const columnKeys = Object.keys(data[0]);
+                const xAxisDimensionKey = columnKeys[0]; 
+                const yAxisMetricsValueKey = columnKeys[1] || columnKeys[0];
 
-    const buildOptions = (id, values) => {
-      const select = document.querySelector(id);
-      const sorted = [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b));
-      for (const value of sorted) {
-        const option = document.createElement('option');
-        option.value = value;
-        option.textContent = value;
-        select.appendChild(option);
-      }
-    };
+                // Render Summary Metric KPI Blocks
+                document.getElementById('kpi-total-rows').innerText = data.length;
+                document.getElementById('kpi-x-axis').innerText = xAxisDimensionKey;
+                document.getElementById('kpi-y-axis').innerText = `${yAxisMetricsValueKey} Metrics`;
 
-    const renderMetrics = (rows) => {
-      const totalTenders = rows.length;
-      const totalValue = rows.reduce((sum, row) => sum + getNumber(row['Tender Value']), 0);
-      const upcomingCount = rows.filter(row => row['Tender Status']?.toLowerCase() === 'upcoming').length;
-      const uniqueStates = new Set(rows.map(row => row['State']).filter(Boolean)).size;
-      document.getElementById('total-tenders').innerText = totalTenders;
-      document.getElementById('total-value').innerText = formatCurrency(totalValue);
-      document.getElementById('upcoming-count').innerText = upcomingCount;
-      document.getElementById('published-states').innerText = uniqueStates;
-    };
+                // Run Interface Construction Cycles
+                generateChartVisuals(data, xAxisDimensionKey, yAxisMetricsValueKey);
+                generateDynamicTableLedger(headers, data);
 
-    const createChart = (ctx, type, labels, data, options = {}) => {
-      return new Chart(ctx, {
-        type,
-        data: {
-          labels,
-          datasets: [{
-            label: 'Count',
-            data,
-            backgroundColor: labels.map((_, index) => `hsl(${index * 40 % 360}, 72%, 58%)`),
-            borderWidth: 0,
-          }],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { position: 'bottom' },
-            tooltip: { mode: 'index', intersect: false }
-          },
-          ...options,
+            } catch (runtimeFaultException) {
+                console.error("Dashboard core failure:", runtimeFaultException);
+                alert("Data fetch execution collapsed. Verify spreadsheet link properties.");
+            }
         }
-      });
-    };
 
-    let statusChart;
-    let stateChart;
+        function generateChartVisuals(dataset, xAxisKey, yAxisKey) {
+            const uniqueLabels = dataset.map(item => item[xAxisKey]);
+            const targetValues = dataset.map(item => parseFloat(item[yAxisKey]) || 0);
 
-    const renderCharts = (rows) => {
-      const statusCounts = {};
-      const stateCounts = {};
-      rows.forEach(row => {
-        const status = row['Tender Status'] || 'Unknown';
-        const state = row['State'] || 'Unknown';
-        statusCounts[status] = (statusCounts[status] || 0) + 1;
-        stateCounts[state] = (stateCounts[state] || 0) + 1;
-      });
-      const statusLabels = Object.keys(statusCounts);
-      const statusData = statusLabels.map(key => statusCounts[key]);
-      const stateLabels = Object.entries(stateCounts)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 10)
-        .map(([state]) => state);
-      const stateData = stateLabels.map(label => stateCounts[label]);
+            const canvasContext = document.getElementById('analyticsCanvas').getContext('2d');
 
-      const ctxStatus = document.getElementById('statusChart').getContext('2d');
-      const ctxState = document.getElementById('stateChart').getContext('2d');
-      if (statusChart) statusChart.destroy();
-      if (stateChart) stateChart.destroy();
-      statusChart = createChart(ctxStatus, 'doughnut', statusLabels, statusData, { plugins: { legend: { position: 'right' } } });
-      stateChart = createChart(ctxState, 'bar', stateLabels, stateData, {
-        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-      });
-    };
+            if (runningChartReferenceInstance) {
+                runningChartReferenceInstance.destroy();
+            }
 
-    const renderTable = (rows) => {
-      const tbody = document.getElementById('data-body');
-      tbody.innerHTML = '';
-      rows.forEach((row, index) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${index + 1}</td>
-          <td>${row['Tender ID'] || ''}</td>
-          <td>${row['Tender Status'] || ''}</td>
-          <td>${row['State'] || ''}</td>
-          <td>${row['Organisation'] || ''}</td>
-          <td>${formatCurrency(getNumber(row['Tender Value']))}</td>
-          <td>${row['Published Date'] || ''}</td>
-          <td>${row['Bid Submission End Date'] || ''}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    };
+            runningChartReferenceInstance = new Chart(canvasContext, {
+                type: activeRenderingLayoutType,
+                data: {
+                    labels: uniqueLabels,
+                    datasets: [{
+                        label: yAxisKey,
+                        data: targetValues,
+                        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                        borderColor: 'rgba(37, 99, 235, 1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: true, position: 'top' } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f3f4f6' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
 
-    const applyFilters = (rows) => {
-      const status = document.getElementById('status-filter').value;
-      const state = document.getElementById('state-filter').value;
-      const text = document.getElementById('text-filter').value.trim().toLowerCase();
-      return rows.filter(row => {
-        const matchStatus = status === 'all' || row['Tender Status'] === status;
-        const matchState = state === 'all' || row['State'] === state;
-        const matchText = text === '' || [row['Title'], row['Description'], row['Organisation'], row['Tender ID']]
-          .filter(Boolean)
-          .some(value => value.toLowerCase().includes(text));
-        return matchStatus && matchState && matchText;
-      });
-    };
+        function generateDynamicTableLedger(headers, dataset) {
+            const headContainer = document.getElementById('table-headers');
+            const bodyContainer = document.getElementById('table-body');
 
-    const initFilters = (rows) => {
-      buildOptions('#status-filter', rows.map(row => row['Tender Status']));
-      buildOptions('#state-filter', rows.map(row => row['State']));
-      const updateUI = () => {
-        const filtered = applyFilters(rows);
-        renderMetrics(filtered);
-        renderCharts(filtered);
-        renderTable(filtered);
-      };
-      document.getElementById('status-filter').addEventListener('change', updateUI);
-      document.getElementById('state-filter').addEventListener('change', updateUI);
-      document.getElementById('text-filter').addEventListener('input', updateUI);
-      updateUI();
-    };
+            // Inject structural table database headers
+            headContainer.innerHTML = headers.map(header => `<th class="p-4">${header}</th>`).join('');
 
-    fetch(csvUrl)
-      .then(response => response.text())
-      .then(text => {
-        const data = parseCsv(text);
-        initFilters(data);
-      })
-      .catch(error => {
-        document.body.innerHTML = `<div style="padding:2rem; color:#b91c1c;"><h2>Unable to load dashboard data</h2><p>${error.message}</p></div>`;
-      });
-  </script>
+            // Inject structured contextual text data values
+            bodyContainer.innerHTML = dataset.map(rowItem => {
+                return `<tr class="hover:bg-slate-50 transition">
+                    ${headers.map(headerKey => `<td class="p-4 text-gray-600 font-medium">${rowItem[headerKey]}</td>`).join('')}
+                </tr>`;
+            }).join('');
+        }
+
+        function switchChartType(selectedType) {
+            if(activeRenderingLayoutType === selectedType || globallyStoredParsedData.length === 0) return;
+            activeRenderingLayoutType = selectedType;
+            const operationalKeys = Object.keys(globallyStoredParsedData[0]);
+            generateChartVisuals(globallyStoredParsedData, operationalKeys[0], operationalKeys[1] || operationalKeys[0]);
+        }
+
+        // Automatic dashboard processing lifecycle initialization
+        window.addEventListener('DOMContentLoaded', fetchAndRenderData);
+    </script>
 </body>
 </html>
