@@ -3,194 +3,309 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic Analytics Dashboard</title>
-    <!-- Tailwind CSS for sleek interface design -->
-    <script src="https://tailwindcss.com"></script>
-    <!-- Chart.js for data visualization generation -->
-    <script src="https://jsdelivr.net"></script>
+    <title>Upcoming Tenders Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0f172a',
+                        cardBg: '#1e293b',
+                        accentOrange: '#f97316',
+                        accentTeal: '#0ea5e9',
+                        accentGreen: '#10b981',
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans leading-normal tracking-normal">
+<body class="bg-darkBg text-slate-100 min-h-screen font-sans p-6">
 
-    <!-- Top Navigation Header -->
-    <nav class="bg-slate-900 text-white p-4 shadow-md">
-        <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold tracking-wide">📊 Live Data Interface Engine</h1>
-            <button onclick="fetchAndRenderData()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded transition font-medium shadow">
-                🔄 Sync Live Data
+    <div class="max-w-7xl mx-auto space-y-6">
+        
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-700 pb-4 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-accentOrange flex items-center gap-2">
+                    🏗️ Upcoming Tenders Dashboard
+                </h1>
+                <p class="text-slate-400 text-sm mt-1">Authority-wise project intelligence · Government of India</p>
+            </div>
+            <div class="text-right">
+                <div id="topTotalValue" class="text-3xl font-extrabold text-accentGreen">₹0 Cr</div>
+                <div class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Total Tender Value</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div class="bg-cardBg p-4 rounded-xl border border-slate-700/50 shadow-lg">
+                <div class="text-xl">📋</div>
+                <div id="kpiTotalCount" class="text-2xl font-bold mt-1">0</div>
+                <div class="text-xs text-slate-400 uppercase tracking-wider font-medium">Total Tenders</div>
+            </div>
+            <div class="bg-cardBg p-4 rounded-xl border border-slate-700/50 shadow-lg">
+                <div class="text-xl">💰</div>
+                <div id="kpiTotalValue" class="text-2xl font-bold mt-1">₹0 Cr</div>
+                <div class="text-xs text-slate-400 uppercase tracking-wider font-medium">Total Value</div>
+            </div>
+            <div class="bg-cardBg p-4 rounded-xl border border-slate-700/50 shadow-lg">
+                <div class="text-xl">📊</div>
+                <div id="kpiAvgValue" class="text-2xl font-bold mt-1">₹0 Cr</div>
+                <div class="text-xs text-slate-400 uppercase tracking-wider font-medium">Avg Tender Value</div>
+            </div>
+            <div class="bg-cardBg p-4 rounded-xl border border-slate-700/50 shadow-lg">
+                <div class="text-xl">🗺️</div>
+                <div id="kpiStatesCount" class="text-2xl font-bold mt-1">0</div>
+                <div class="text-xs text-slate-400 uppercase tracking-wider font-medium">States Covered</div>
+            </div>
+            <div class="bg-cardBg p-4 rounded-xl border border-slate-700/50 shadow-lg col-span-2 md:col-span-1">
+                <div class="text-xl">🔥</div>
+                <div id="kpiHighValueCount" class="text-2xl font-bold mt-1 text-orange-400">0</div>
+                <div class="text-xs text-slate-400 uppercase tracking-wider font-medium">₹500 Cr+ Tenders</div>
+            </div>
+        </div>
+
+        <div class="bg-cardBg/60 p-4 rounded-xl border border-slate-700/50 flex flex-wrap gap-3 items-center">
+            <div class="flex-1 min-w-[260px] relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">🔍</span>
+                <input type="text" id="searchInput" placeholder="Search title, Tender ID, organisation, city..." 
+                       class="w-full pl-9 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-100 focus:outline-none focus:border-accentTeal transition-colors">
+            </div>
+
+            <select id="stateFilter" class="bg-slate-800 border border-slate-700 rounded-lg text-sm px-3 py-2 text-slate-100 min-w-[160px] focus:outline-none focus:border-accentTeal">
+                <option value="All">All States</option>
+            </select>
+
+            <select id="valueFilter" class="bg-slate-800 border border-slate-700 rounded-lg text-sm px-3 py-2 text-slate-100 min-w-[160px] focus:outline-none focus:border-accentTeal">
+                <option value="All">All Values</option>
+                <option value="Under 5">Under ₹5 Cr</option>
+                <option value="5-25">₹5 – ₹25 Cr</option>
+                <option value="25-100">₹25 – ₹100 Cr</option>
+                <option value="100-500">₹100 – ₹500 Cr</option>
+                <option value="500+">₹500 Cr+</option>
+            </select>
+
+            <select id="sortFilter" class="bg-slate-800 border border-slate-700 rounded-lg text-sm px-3 py-2 text-slate-100 min-w-[150px] focus:outline-none focus:border-accentTeal">
+                <option value="default">Sort By</option>
+                <option value="valHighLow">Value: High → Low</option>
+                <option value="valLowHigh">Value: Low → High</option>
+                <option value="titleAZ">Title A–Z</option>
+            </select>
+
+            <button id="resetBtn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 text-sm font-medium rounded-lg transition-colors">
+                ✕ Reset
             </button>
         </div>
-    </nav>
 
-    <!-- Main Dashboard Body -->
-    <main class="container mx-auto px-4 py-8">
-        
-        <!-- Scorecard Summary KPIs -->
-        <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Evaluated Elements</span>
-                <div id="kpi-total-rows" class="text-3xl font-extrabold text-slate-950 mt-1">--</div>
+        <div class="flex justify-between items-center px-1">
+            <div class="text-sm text-slate-400">
+                Showing <span id="filteredCount" class="text-accentOrange font-semibold">0</span> items
             </div>
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Primary Tracking Dimension</span>
-                <div id="kpi-x-axis" class="text-xl font-bold text-blue-600 truncate mt-2">--</div>
-            </div>
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Numerical Target Variable</span>
-                <div id="kpi-y-axis" class="text-xl font-bold text-green-600 truncate mt-2">--</div>
-            </div>
-        </section>
+        </div>
 
-        <!-- Main Chart Graphical Element -->
-        <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-lg font-bold text-slate-800">Dynamic Distribution Frequency Chart</h2>
-                <div class="flex space-x-2">
-                    <button onclick="switchChartType('bar')" class="px-3 py-1 text-xs font-medium bg-slate-100 hover:bg-slate-200 rounded">Bar</button>
-                    <button onclick="switchChartType('line')" class="px-3 py-1 text-xs font-medium bg-slate-100 hover:bg-slate-200 rounded">Line</button>
-                </div>
-            </div>
-            <div class="relative w-full h-[400px]">
-                <canvas id="analyticsCanvas"></canvas>
-            </div>
-        </section>
-
-        <!-- Dynamic Data Source Table Grid -->
-        <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 overflow-hidden">
-            <h2 class="text-lg font-bold text-slate-800 mb-4">Granular Data Table Ledger</h2>
-            <div class="overflow-x-auto max-h-96">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr id="table-headers" class="bg-slate-50 text-slate-400 uppercase text-xs font-bold tracking-wider border-b border-gray-100">
-                            <!-- Dynamic Row Injection -->
-                        </tr>
-                    </thead>
-                    <tbody id="table-body" class="text-sm divide-y divide-gray-100">
-                        <tr>
-                            <td class="p-4 text-center text-gray-400" colspan="100%">Awaiting live data streams...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-    </main>
+        <div class="bg-cardBg rounded-xl border border-slate-700/50 shadow-xl overflow-hidden overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-800/80 text-slate-300 border-b border-slate-700 text-xs font-semibold tracking-wider uppercase">
+                        <th class="p-4 w-12 text-center">#</th>
+                        <th class="p-4 min-w-[280px]">Tender Title</th>
+                        <th class="p-4">Tender ID</th>
+                        <th class="p-4">State</th>
+                        <th class="p-4">City</th>
+                        <th class="p-4">Organisation</th>
+                        <th class="p-4 text-right">Value (Cr)</th>
+                        <th class="p-4">Bid Deadline</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody" class="divide-y divide-slate-800 text-sm text-slate-300">
+                    <tr>
+                        <td colspan="8" class="p-8 text-center text-slate-400 tracking-wide animate-pulse">
+                            🔄 Fetching live database records from Google Sheets, please wait...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
     <script>
-        // Your designated target Google Sheets CSV Source Endpoint
-        const csvSourceUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSZjO-A6VhuzifXXgffaGdtD6ysazVtS1FTjeFTUxdi-q9IIfjc4DZmrS3QF7MhzKjHRqeN36ZeX_qu/pub?gid=1590006273&single=true&output=csv";
+        // Directly pointing to your published Google Sheet CSV link
+        const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSZjO-A6VhuzifXXgffaGdtD6ysazVtS1FTjeFTUxdi-q9IIfjc4DZmrS3QF7MhzKjHRqeN36ZeX_qu/pub?gid=1590006273&single=true&output=csv";
         
-        let globallyStoredParsedData = [];
-        let runningChartReferenceInstance = null;
-        let activeRenderingLayoutType = 'bar';
+        let allData = [];
+        let activeData = [];
 
-        // Custom parser to map CSV structure into clean JS objects
-        function parseCSVStringData(rawTextString) {
-            const rowArrays = rawTextString.split(/\r?\n/).map(row => row.trim()).filter(row => row.length > 0);
-            if(rowArrays.length === 0) return { headers: [], data: [] };
+        // Dynamic element references
+        const elTableBody = document.getElementById('tableBody');
+        const elSearchInput = document.getElementById('searchInput');
+        const elStateFilter = document.getElementById('stateFilter');
+        const elValueFilter = document.getElementById('valueFilter');
+        const elSortFilter = document.getElementById('sortFilter');
+        const elResetBtn = document.getElementById('resetBtn');
 
-            // Simple comma separation parser matching your CSV layout schema
-            const headers = rowArrays[0].split(',').map(header => header.replace(/^"|"$/g, '').trim());
-            
-            const standardDataRows = rowArrays.slice(1).map(rowString => {
-                const columnValues = rowString.split(',').map(val => val.replace(/^"|"$/g, '').trim());
-                let rowEntityItem = {};
-                headers.forEach((headerKey, cellIndex) => {
-                    rowEntityItem[headerKey] = columnValues[cellIndex] || "";
-                });
-                return rowEntityItem;
-            });
+        // Initial launch sequence
+        window.addEventListener('DOMContentLoaded', fetchAndInitializeData);
 
-            return { headers, data: standardDataRows };
-        }
-
-        async function fetchAndRenderData() {
-            try {
-                const structuralResponse = await fetch(csvSourceUrl);
-                const rawCsvTextText = await structuralResponse.text();
-                const { headers, data } = parseCSVStringData(rawCsvTextText);
-                
-                if(!data || data.length === 0) throw new Error("Dataset is empty.");
-                globallyStoredParsedData = data;
-
-                // Dynamically extract primary structure from tracking document keys
-                const columnKeys = Object.keys(data[0]);
-                const xAxisDimensionKey = columnKeys[0]; 
-                const yAxisMetricsValueKey = columnKeys[1] || columnKeys[0];
-
-                // Render Summary Metric KPI Blocks
-                document.getElementById('kpi-total-rows').innerText = data.length;
-                document.getElementById('kpi-x-axis').innerText = xAxisDimensionKey;
-                document.getElementById('kpi-y-axis').innerText = `${yAxisMetricsValueKey} Metrics`;
-
-                // Run Interface Construction Cycles
-                generateChartVisuals(data, xAxisDimensionKey, yAxisMetricsValueKey);
-                generateDynamicTableLedger(headers, data);
-
-            } catch (runtimeFaultException) {
-                console.error("Dashboard core failure:", runtimeFaultException);
-                alert("Data fetch execution collapsed. Verify spreadsheet link properties.");
-            }
-        }
-
-        function generateChartVisuals(dataset, xAxisKey, yAxisKey) {
-            const uniqueLabels = dataset.map(item => item[xAxisKey]);
-            const targetValues = dataset.map(item => parseFloat(item[yAxisKey]) || 0);
-
-            const canvasContext = document.getElementById('analyticsCanvas').getContext('2d');
-
-            if (runningChartReferenceInstance) {
-                runningChartReferenceInstance.destroy();
-            }
-
-            runningChartReferenceInstance = new Chart(canvasContext, {
-                type: activeRenderingLayoutType,
-                data: {
-                    labels: uniqueLabels,
-                    datasets: [{
-                        label: yAxisKey,
-                        data: targetValues,
-                        backgroundColor: 'rgba(59, 130, 246, 0.5)',
-                        borderColor: 'rgba(37, 99, 235, 1)',
-                        borderWidth: 2,
-                        tension: 0.3,
-                        fill: true
-                    }]
+        function fetchAndInitializeData() {
+            Papa.parse(csvUrl, {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    allData = processRawData(results.data);
+                    activeData = [...allData];
+                    
+                    populateStateDropdown(allData);
+                    calculateDashboardMetrics(allData);
+                    renderDashboardTable(activeData);
+                    setupEventHandlers();
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: true, position: 'top' } },
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: '#f3f4f6' } },
-                        x: { grid: { display: false } }
-                    }
+                error: function(err) {
+                    elTableBody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-red-400 font-medium">❌ Failed to retrieve live data stream. Verify your Google Sheet share settings.</td></tr>`;
                 }
             });
         }
 
-        function generateDynamicTableLedger(headers, dataset) {
-            const headContainer = document.getElementById('table-headers');
-            const bodyContainer = document.getElementById('table-body');
+        // Standardize unpredictable column names/cases directly from the spreadsheet source
+        function processRawData(rawRows) {
+            return rawRows.map(row => {
+                // Find column values regardless of variations in spelling or casing
+                const getVal = (keys) => {
+                    const foundKey = Object.keys(row).find(k => keys.includes(k.trim().toLowerCase()));
+                    return foundKey ? row[foundKey].trim() : '';
+                };
 
-            // Inject structural table database headers
-            headContainer.innerHTML = headers.map(header => `<th class="p-4">${header}</th>`).join('');
+                const rawValue = getVal(['value', 'tender value', 'value (cr)', 'amount']);
+                // Sanitize numerical strings for mathematical calculations
+                let parsedNumericValue = parseFloat(rawValue.replace(/,/g, '')) || 0;
 
-            // Inject structured contextual text data values
-            bodyContainer.innerHTML = dataset.map(rowItem => {
-                return `<tr class="hover:bg-slate-50 transition">
-                    ${headers.map(headerKey => `<td class="p-4 text-gray-600 font-medium">${rowItem[headerKey]}</td>`).join('')}
-                </tr>`;
-            }).join('');
+                return {
+                    title: getVal(['tender title', 'title', 'name', 'tender']),
+                    id: getVal(['tender id', 'id', 'tender code']),
+                    state: getVal(['state', 'region']) || 'Unknown',
+                    city: getVal(['city', 'location']) || 'N/A',
+                    org: getVal(['organisation', 'organization', 'authority', 'dept']),
+                    value: parsedNumericValue,
+                    deadline: getVal(['bid deadline', 'deadline', 'end date', 'bid date']) || 'N/A'
+                };
+            });
         }
 
-        function switchChartType(selectedType) {
-            if(activeRenderingLayoutType === selectedType || globallyStoredParsedData.length === 0) return;
-            activeRenderingLayoutType = selectedType;
-            const operationalKeys = Object.keys(globallyStoredParsedData[0]);
-            generateChartVisuals(globallyStoredParsedData, operationalKeys[0], operationalKeys[1] || operationalKeys[0]);
+        function populateStateDropdown(data) {
+            // Collect distinct unique list of states
+            const states = [...new Set(data.map(item => item.state))].sort();
+            states.forEach(state => {
+                if(state && state !== 'Unknown') {
+                    const opt = document.createElement('option');
+                    opt.value = state;
+                    opt.textContent = state;
+                    elStateFilter.appendChild(opt);
+                }
+            });
         }
 
-        // Automatic dashboard processing lifecycle initialization
-        window.addEventListener('DOMContentLoaded', fetchAndRenderData);
+        function calculateDashboardMetrics(data) {
+            const totalCount = data.length;
+            const totalSum = data.reduce((sum, item) => sum + item.value, 0);
+            const avgVal = totalCount > 0 ? (totalSum / totalCount) : 0;
+            const distinctStates = new Set(data.map(item => item.state)).size;
+            const highValueItemsCount = data.filter(item => item.value >= 500).length;
+
+            // Update DOM metrics components
+            document.getElementById('topTotalValue').textContent = `₹${formatNumber(totalSum)} Cr`;
+            document.getElementById('kpiTotalCount').textContent = totalCount.toLocaleString('en-IN');
+            document.getElementById('kpiTotalValue').textContent = `₹${formatNumber(totalSum)} Cr`;
+            document.getElementById('kpiAvgValue').textContent = `₹${formatNumber(avgVal)} Cr`;
+            document.getElementById('kpiStatesCount').textContent = distinctStates;
+            document.getElementById('kpiHighValueCount').textContent = highValueItemsCount;
+        }
+
+        function formatNumber(num) {
+            if (num >= 100000) return `${(num / 100000).toFixed(2)}L`;
+            return num.toLocaleString('en-IN', { maximumFractionDigits: 1 });
+        }
+
+        // Render rows dynamically safely preventing XSS injections
+        function renderDashboardTable(data) {
+            document.getElementById('filteredCount').textContent = data.length.toLocaleString('en-IN');
+            
+            if (data.length === 0) {
+                elTableBody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-500">No records match your filter criteria.</td></tr>`;
+                return;
+            }
+
+            elTableBody.innerHTML = data.map((item, index) => `
+                <tr class="hover:bg-slate-800/40 transition-colors">
+                    <td class="p-4 text-center font-medium text-slate-500">${index + 1}</td>
+                    <td class="p-4 font-semibold text-slate-100 max-w-sm truncate" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</td>
+                    <td class="p-4 text-slate-400 font-mono text-xs">${escapeHtml(item.id)}</td>
+                    <td class="p-4"><span class="px-2 py-1 bg-slate-800 rounded text-xs text-slate-300 border border-slate-700">${escapeHtml(item.state)}</span></td>
+                    <td class="p-4 text-slate-400">${escapeHtml(item.city)}</td>
+                    <td class="p-4 text-slate-400 truncate max-w-xs" title="${escapeHtml(item.org)}">${escapeHtml(item.org)}</td>
+                    <td class="p-4 text-right font-bold ${item.value >= 500 ? 'text-orange-400' : 'text-emerald-400'}">₹${item.value.toLocaleString('en-IN')} Cr</td>
+                    <td class="p-4 text-slate-400 text-xs">${escapeHtml(item.deadline)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function escapeHtml(str) {
+            if(!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        function setupEventHandlers() {
+            const runFilters = () => {
+                const searchQ = elSearchInput.value.toLowerCase().trim();
+                const selectedState = elStateFilter.value;
+                const selectedBracket = elValueFilter.value;
+                const activeSort = elSortFilter.value;
+
+                let output = allData.filter(item => {
+                    // Match Search Query
+                    const matchesSearch = !searchQ || 
+                        item.title.toLowerCase().includes(searchQ) ||
+                        item.id.toLowerCase().includes(searchQ) ||
+                        item.org.toLowerCase().includes(searchQ) ||
+                        item.city.toLowerCase().includes(searchQ);
+
+                    // Match State Dropdown
+                    const matchesState = (selectedState === 'All' || item.state === selectedState);
+
+                    // Match Value Bracket Dropdown
+                    let matchesBracket = true;
+                    if (selectedBracket === 'Under 5') matchesBracket = item.value < 5;
+                    else if (selectedBracket === '5-25') matchesBracket = (item.value >= 5 && item.value <= 25);
+                    else if (selectedBracket === '25-100') matchesBracket = (item.value > 25 && item.value <= 100);
+                    else if (selectedBracket === '100-500') matchesBracket = (item.value > 100 && item.value < 500);
+                    else if (selectedBracket === '500+') matchesBracket = item.value >= 500;
+
+                    return matchesSearch && matchesState && matchesBracket;
+                });
+
+                // Apply dynamic array sorting
+                if (activeSort === 'valHighLow') output.sort((a, b) => b.value - a.value);
+                else if (activeSort === 'valLowHigh') output.sort((a, b) => a.value - b.value);
+                else if (activeSort === 'titleAZ') output.sort((a, b) => a.title.localeCompare(b.title));
+
+                renderDashboardTable(output);
+            };
+
+            // Hook reactive functional triggers
+            elSearchInput.addEventListener('input', runFilters);
+            elStateFilter.addEventListener('change', runFilters);
+            elValueFilter.addEventListener('change', runFilters);
+            elSortFilter.addEventListener('change', runFilters);
+
+            elResetBtn.addEventListener('click', () => {
+                elSearchInput.value = '';
+                elStateFilter.value = 'All';
+                elValueFilter.value = 'All';
+                elSortFilter.value = 'default';
+                runFilters();
+            });
+        }
     </script>
 </body>
 </html>
