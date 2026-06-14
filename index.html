@@ -22,7 +22,7 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
         body {
@@ -31,7 +31,7 @@
             padding: 24px;
         }
 
-        /* Header Styles */
+        /* Top Header */
         .header {
             display: flex;
             justify-content: space-between;
@@ -62,10 +62,11 @@
 
         .badge {
             font-size: 11px;
-            padding: 4px 10px;
+            padding: 6px 12px;
             border-radius: 4px;
             background: #1e293b;
             color: var(--text-muted);
+            font-weight: 600;
         }
         .badge.highlight {
             background: rgba(255, 159, 67, 0.15);
@@ -89,6 +90,7 @@
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            margin-top: 2px;
         }
 
         /* KPI Cards Grid */
@@ -117,7 +119,7 @@
             top: 20px;
             right: 20px;
             color: var(--text-muted);
-            opacity: 0.6;
+            opacity: 0.4;
             font-size: 18px;
         }
 
@@ -163,7 +165,7 @@
             width: 100%;
             background: #0d131a;
             border: 1px solid var(--border-color);
-            padding: 10px 12px 10px 36px;
+            padding: 12px 12px 12px 38px;
             border-radius: 4px;
             color: #fff;
             font-size: 14px;
@@ -173,7 +175,7 @@
             flex: 1;
             background: #0d131a;
             border: 1px solid var(--border-color);
-            padding: 10px;
+            padding: 12px;
             border-radius: 4px;
             color: #fff;
             font-size: 14px;
@@ -203,12 +205,22 @@
             transition: all 0.2s;
         }
         .filter-btn:hover, .filter-btn.active {
-            background: var(--accent-orange);
-            color: #000;
+            background: rgba(255, 159, 67, 0.2);
+            color: var(--accent-orange);
             border-color: var(--accent-orange);
         }
+        .filter-btn.reset-btn {
+            background: transparent;
+            border-color: #ff7675;
+            color: #ff7675;
+            margin-left: auto;
+        }
+        .filter-btn.reset-btn:hover {
+            background: #ff7675;
+            color: #fff;
+        }
 
-        /* Table Container (Prevents Horizontal Scroll, Forces Wrap) */
+        /* Table Area - No Horizontal Scrolling */
         .table-container {
             background: var(--card-bg);
             border-radius: 6px;
@@ -221,24 +233,25 @@
             border-collapse: collapse;
             text-align: left;
             font-size: 13px;
-            table-layout: fixed; /* Hard rule to prevent running off screen */
+            table-layout: fixed;
         }
 
         th, td {
-            padding: 12px 16px;
+            padding: 14px 12px;
             border-bottom: 1px solid var(--border-color);
-            word-wrap: break-word; /* Forces long texts or titles to break line */
-            white-space: normal;   /* Overrides any data table rules that push content right */
+            word-wrap: break-word;
+            white-space: normal;
         }
 
-        /* Specific responsive column sizing to guarantee zero side-scroll */
-        th:nth-child(1), td:nth-child(1) { width: 5%; text-align: center; } /* # */
-        th:nth-child(2), td:nth-child(2) { width: 35%; color: #fff; font-weight: 500; } /* Title */
-        th:nth-child(3), td:nth-child(3) { width: 12%; } /* State */
-        th:nth-child(4), td:nth-child(4) { width: 18%; } /* Organisation */
-        th:nth-child(5), td:nth-child(5) { width: 10%; text-align: right; font-weight: 600; color: #ffbe76;} /* Value */
-        th:nth-child(6), td:nth-child(6) { width: 10%; text-align: center; } /* Bid Deadline */
-        th:nth-child(7), td:nth-child(7) { width: 10%; text-align: center; } /* Published */
+        /* Strict column allocations to guarantee absolute wrap */
+        th:nth-child(1), td:nth-child(1) { width: 4%; text-align: center; color: var(--text-muted); } /* # */
+        th:nth-child(2), td:nth-child(2) { width: 30%; color: var(--accent-orange); font-weight: 500; } /* Title */
+        th:nth-child(3), td:nth-child(3) { width: 12%; color: #fff; } /* Tender ID */
+        th:nth-child(4), td:nth-child(4) { width: 12%; } /* State */
+        th:nth-child(5), td:nth-child(5) { width: 18%; } /* Organisation */
+        th:nth-child(6), td:nth-child(6) { width: 10%; text-align: right; font-weight: 600; color: #ffeaa7; } /* Value */
+        th:nth-child(7), td:nth-child(7) { width: 12%; text-align: center; } /* Bid Deadline */
+        th:nth-child(8), td:nth-child(8) { width: 12%; text-align: center; } /* Published */
 
         th {
             background-color: #172230;
@@ -249,14 +262,13 @@
             letter-spacing: 0.5px;
             cursor: pointer;
             user-select: none;
-            position: relative;
         }
         th:hover {
             background-color: #1c2a3c;
             color: #fff;
         }
         th .sort-icon {
-            margin-left: 5px;
+            margin-left: 4px;
             font-size: 10px;
             color: var(--text-muted);
         }
@@ -269,14 +281,14 @@
             background-color: var(--hover-row);
         }
 
-        /* Details Popup Modal */
+        /* Modal / Dialog Popup Details overlay */
         .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.75);
             backdrop-filter: blur(4px);
             display: flex;
             justify-content: center;
@@ -284,7 +296,7 @@
             z-index: 1000;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.2s ease;
         }
         .modal-overlay.active {
             opacity: 1;
@@ -294,12 +306,12 @@
             background: var(--card-bg);
             border-radius: 8px;
             width: 90%;
-            max-width: 600px;
+            max-width: 650px;
             border: 1px solid var(--border-color);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.6);
             overflow: hidden;
-            transform: scale(0.9);
-            transition: transform 0.3s ease;
+            transform: scale(0.95);
+            transition: transform 0.2s ease;
         }
         .modal-overlay.active .modal-card {
             transform: scale(1);
@@ -315,18 +327,22 @@
         .modal-header h3 {
             color: var(--accent-orange);
             font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         .close-modal {
             background: none;
             border: none;
             color: var(--text-muted);
-            font-size: 20px;
+            font-size: 24px;
             cursor: pointer;
+            line-height: 1;
         }
         .close-modal:hover { color: #fff; }
         .modal-body {
             padding: 20px;
-            max-height: 70vh;
+            max-height: 75vh;
             overflow-y: auto;
         }
         .detail-item {
@@ -340,18 +356,19 @@
             color: var(--text-muted);
             text-transform: uppercase;
             margin-bottom: 4px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
         }
         .detail-value {
             font-size: 14px;
             color: #fff;
-            line-height: 1.4;
+            line-height: 1.5;
         }
 
-        /* Loading Indicator */
         .loader {
             text-align: center;
-            padding: 40px;
-            font-size: 16px;
+            padding: 60px;
+            font-size: 15px;
             color: var(--text-muted);
         }
     </style>
@@ -365,7 +382,7 @@
             <div class="header-badges">
                 <span class="badge highlight" id="badge-count">0 Tenders</span>
                 <span class="badge cyan">All India Coverage</span>
-                <span class="badge" id="badge-date">Updated Live</span>
+                <span class="badge" id="badge-date">Live Database View</span>
             </div>
         </div>
         <div class="total-value-display">
@@ -382,7 +399,7 @@
         </div>
         <div class="kpi-card">
             <i class="fa-solid fa-coins"></i>
-            <div class="kpi-value" id="kpi-value">₹0 L Cr</div>
+            <div class="kpi-value" id="kpi-value">₹0.0L Cr</div>
             <div class="kpi-label">Total Value</div>
         </div>
         <div class="kpi-card">
@@ -406,7 +423,7 @@
         <div class="search-filter-row">
             <div class="search-box">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="search-input" placeholder="Search title, organisation, state...">
+                <input type="text" id="search-input" placeholder="Search title, Tender ID, organisation, state...">
             </div>
             <select class="filter-dropdown" id="state-dropdown">
                 <option value="">All States</option>
@@ -427,7 +444,8 @@
             <button class="filter-btn" onclick="setQuickState('Maharashtra')">Maharashtra</button>
             <button class="filter-btn" onclick="setQuickState('Gujarat')">Gujarat</button>
             <button class="filter-btn" onclick="setQuickValue('500plus')">🔥 ₹500 Cr+</button>
-            <button class="filter-btn" onclick="resetFilters()"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+            <button class="filter-btn" onclick="setQuickValue('100-500')">₹100–500 Cr</button>
+            <button class="filter-btn reset-btn" onclick="resetFilters()"><i class="fa-solid fa-rotate-left"></i> Reset</button>
         </div>
     </div>
 
@@ -435,8 +453,9 @@
         <table id="tenders-table">
             <thead>
                 <tr>
-                    <th style="width: 5%;">#</th>
+                    <th style="width: 4%;">#</th>
                     <th onclick="sortTable('title')">Tender Title <i class="fa-solid fa-sort sort-icon"></i></th>
+                    <th onclick="sortTable('tenderId')">Tender ID <i class="fa-solid fa-sort sort-icon"></i></th>
                     <th onclick="sortTable('state')">State <i class="fa-solid fa-sort sort-icon"></i></th>
                     <th onclick="sortTable('organisation')">Organisation <i class="fa-solid fa-sort sort-icon"></i></th>
                     <th onclick="sortTable('value')" style="text-align: right;">Value (Cr) <i class="fa-solid fa-sort sort-icon"></i></th>
@@ -446,7 +465,7 @@
             </thead>
             <tbody id="table-body">
                 <tr>
-                    <td colspan="7" class="loader"><i class="fa-solid fa-circle-notch fa-spin"></i> Fetching Live Tender Data...</td>
+                    <td colspan="8" class="loader"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading data streams from Google Sheets...</td>
                 </tr>
             </tbody>
         </table>
@@ -455,7 +474,7 @@
     <div class="modal-overlay" id="details-modal" onclick="closeModal(event)">
         <div class="modal-card" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <h3><i class="fa-solid fa-circle-info"></i> Tender Complete Details</h3>
+                <h3><i class="fa-solid fa-circle-info"></i> Full Tender Details Breakdown</h3>
                 <button class="close-modal" onclick="toggleModal(false)">&times;</button>
             </div>
             <div class="modal-body" id="modal-content">
@@ -470,13 +489,12 @@
         let filteredData = [];
         let currentSort = { column: '', ascending: true };
 
-        // Fetch data from the Google Sheet CSV Link
+        // Core data pipeline fetch
         async function fetchTenderData() {
             try {
                 const response = await fetch(CSV_URL);
                 const csvText = await response.text();
                 
-                // Parse CSV text using PapaParse
                 Papa.parse(csvText, {
                     header: true,
                     skipEmptyLines: true,
@@ -485,71 +503,74 @@
                     }
                 });
             } catch (error) {
-                console.error("Error loading CSV:", error);
-                document.getElementById('table-body').innerHTML = `<tr><td colspan="7" class="loader" style="color: #ff7675;">Failed to load data. Please verify the spreadsheet link settings.</td></tr>`;
+                console.error("CSV loading error:", error);
+                document.getElementById('table-body').innerHTML = `<tr><td colspan="8" class="loader" style="color: #ff7675;">Failed to pull current Google sheet configurations. Check connection access.</td></tr>`;
             }
         }
 
-        // Process and normalize variable column configurations dynamically
+        // Helper function to safely find values inside columns regardless of trailing/leading spaces or casing variations
+        function getRowValueByKeys(row, keysArray) {
+            const rowKeys = Object.keys(row);
+            for (let k of keysArray) {
+                // Find matching column string via trimming and casing normalization
+                let matchedKey = rowKeys.find(rk => rk.trim().toLowerCase() === k.toLowerCase());
+                if (matchedKey) return row[matchedKey];
+            }
+            return '';
+        }
+
+        // Process data safely maps all columns dynamically
         function processRawData(rawData) {
             allData = rawData.map((row, index) => {
-                // Autodetect title/organisation columns regardless of explicit case naming
-                const title = row['Tender Title'] || row['title'] || row['TENDER TITLE'] || Object.values(row)[0] || '';
-                const state = row['State'] || row['state'] || row['STATE'] || 'Unknown';
-                const org = row['Organisation'] || row['organisation'] || row['ORGANISATION'] || 'N/A';
+                // Extract keys with fallback array logic to intercept trailing spreadsheet spaces
+                const title = getRowValueByKeys(row, ['Tender Title', 'Title', 'TENDER TITLE']);
+                const tenderId = getRowValueByKeys(row, ['Tender ID', 'ID', 'TENDER ID']);
+                const state = getRowValueByKeys(row, ['State', 'STATE']) || 'Unknown';
+                const org = getRowValueByKeys(row, ['Organisation', 'Organization', 'ORGANISATION']) || 'N/A';
                 
-                // Match "amt. in cr." column safely
-                let rawValue = row['amt. in cr.'] || row['Amt. in Cr.'] || row['Value'] || row['value'] || 0;
+                let rawValue = getRowValueByKeys(row, ['amt. in cr.', 'Amt. in Cr.', 'Value', 'value']) || 0;
                 let numericValue = parseFloat(String(rawValue).replace(/,/g, '')) || 0;
 
-                // Dates processing
-                let publishedStr = row['Published'] || row['published'] || row['PUBLISHED'] || '';
-                let deadlineStr = row['Bid Deadline'] || row['bid deadline'] || row['BID DEADLINE'] || '';
+                let publishedStr = getRowValueByKeys(row, ['Published', 'PUBLISHED', 'Published Date']) || '';
+                let deadlineStr = getRowValueByKeys(row, ['Bid Deadline', 'BID DEADLINE', 'Deadline']) || '';
                 
+                // Chronological sorting failover logic rule evaluation
                 let pubDate = new Date(publishedStr);
                 let deadDate = new Date(deadlineStr);
-
-                // Validation Rule: Bid deadline must logically fall after the published date
-                if (pubDate > deadDate) {
-                    // Failover rule adjustments if inverted in raw structure data
-                    let temp = publishedStr;
+                if (!isNaN(pubDate) && !isNaN(deadDate) && pubDate > deadDate) {
+                    let swap = publishedStr;
                     publishedStr = deadlineStr;
-                    deadlineStr = temp;
+                    deadlineStr = swap;
                 }
 
                 return {
                     id: index + 1,
-                    title: title,
+                    title: title || '—',
+                    tenderId: tenderId || '—',
                     state: state.trim(),
                     organisation: org,
                     value: numericValue,
-                    published: publishedStr,
-                    deadline: deadlineStr,
-                    rawRow: row // Hold reference to show complete data in click modal popup
+                    published: publishedStr || '—',
+                    deadline: deadlineStr || '—',
+                    rawRow: row 
                 };
             });
 
-            // Populate unique dropdown list options dynamically
             populateStateDropdown();
-            
-            // Build Initial Metrics View
             applyFilters();
         }
 
         function populateStateDropdown() {
             const dropdown = document.getElementById('state-dropdown');
-            const states = [...new Set(allData.map(d => d.state))].sort();
+            const states = [...new Set(allData.map(d => d.state).filter(Boolean))].sort();
             states.forEach(state => {
-                if(state) {
-                    let opt = document.createElement('option');
-                    opt.value = state;
-                    opt.innerText = state;
-                    dropdown.appendChild(opt);
-                }
+                let opt = document.createElement('option');
+                opt.value = state;
+                opt.innerText = state;
+                dropdown.appendChild(opt);
             });
         }
 
-        // Calculation of KPI Cards dynamically from current filtered view
         function updateKPIs(data) {
             const count = data.length;
             let totalVal = 0;
@@ -559,44 +580,40 @@
             data.forEach(item => {
                 totalVal += item.value;
                 if(item.value >= 500) over500Count++;
-                if(item.state) uniqueStates.add(item.state);
+                if(item.state && item.state !== 'Unknown') uniqueStates.add(item.state);
             });
 
             const avgVal = count > 0 ? (totalVal / count) : 0;
 
-            // Update UI Counters
             document.getElementById('badge-count').innerText = `${count.toLocaleString()} Tenders`;
             document.getElementById('top-total-value').innerText = `₹${Math.round(totalVal).toLocaleString()} Cr`;
             
             document.getElementById('kpi-tenders').innerText = count.toLocaleString();
-            document.getElementById('kpi-value').innerText = `₹${(totalVal / 10000).toFixed(1)}L Cr`;
+            document.getElementById('kpi-value').innerText = `₹${(totalVal / 100000).toFixed(1)}L Cr`;
             document.getElementById('kpi-avg').innerText = `₹${Math.round(avgVal)} Cr`;
             document.getElementById('kpi-states').innerText = uniqueStates.size;
             document.getElementById('kpi-large').innerText = over500Count;
         }
 
-        // Dynamic Filtering
         function applyFilters() {
             const searchVal = document.getElementById('search-input').value.toLowerCase();
             const stateVal = document.getElementById('state-dropdown').value;
             const valueRange = document.getElementById('value-dropdown').value;
 
             filteredData = allData.filter(item => {
-                // Search Box check
                 const matchSearch = item.title.toLowerCase().includes(searchVal) || 
+                                    item.tenderId.toLowerCase().includes(searchVal) ||
                                     item.organisation.toLowerCase().includes(searchVal) || 
                                     item.state.toLowerCase().includes(searchVal);
                 
-                // State Dropdown check
                 const matchState = !stateVal || item.state === stateVal;
 
-                // Value Range Bracket check
                 let matchValue = true;
                 if (valueRange === 'under5') matchValue = item.value < 5;
                 else if (valueRange === '5-25') matchValue = item.value >= 5 && item.value <= 25;
                 else if (valueRange === '25-100') matchValue = item.value > 25 && item.value <= 100;
                 else if (valueRange === '100-500') matchValue = item.value > 100 && item.value <= 500;
-                else if (valueRange === '500plus') matchValue = item.value > 500;
+                else if (valueRange === '500plus') matchValue = item.value >= 500;
 
                 return matchSearch && matchState && matchValue;
             });
@@ -605,13 +622,12 @@
             renderTable();
         }
 
-        // Render Table Rows
         function renderTable() {
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = '';
 
             if (filteredData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="loader">No matching results found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="loader">No current matching records found in this view.</td></tr>`;
                 return;
             }
 
@@ -620,11 +636,12 @@
                 tr.onclick = () => openDetailsModal(item);
                 
                 tr.innerHTML = `
-                    <td style="text-align: center; color: var(--text-muted);">${idx + 1}</td>
+                    <td style="text-align: center;">${idx + 1}</td>
                     <td>${item.title}</td>
+                    <td>${item.tenderId}</td>
                     <td>${item.state}</td>
                     <td>${item.organisation}</td>
-                    <td style="text-align: right;">₹${item.value.toFixed(1)} Cr</td>
+                    <td style="text-align: right;">₹${item.value.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})} Cr</td>
                     <td style="text-align: center;">${item.deadline}</td>
                     <td style="text-align: center;">${item.published}</td>
                 `;
@@ -632,7 +649,7 @@
             });
         }
 
-        // Built-in Inline Sorting functionality for column heads
+        // Inline Grid Column Sort mechanics 
         function sortTable(columnKey) {
             if (currentSort.column === columnKey) {
                 currentSort.ascending = !currentSort.ascending;
@@ -645,12 +662,14 @@
                 let valA = a[columnKey];
                 let valB = b[columnKey];
 
-                // Handle Date Sorting parsing fallback comparisons
                 if (columnKey === 'deadline' || columnKey === 'published') {
-                    return currentSort.ascending ? new Date(valA) - new Date(valB) : new Date(valB) - new Date(valA);
+                    let dateA = new Date(valA);
+                    let dateB = new Date(valB);
+                    if (isNaN(dateA)) return 1;
+                    if (isNaN(dateB)) return -1;
+                    return currentSort.ascending ? dateA - dateB : dateB - dateA;
                 }
 
-                // Strings vs numbers safe routing
                 if (typeof valA === 'string') {
                     return currentSort.ascending ? valA.localeCompare(valB) : valB.localeCompare(valA);
                 } else {
@@ -661,7 +680,6 @@
             renderTable();
         }
 
-        // Quick Controls Utilities
         function setQuickState(stateName) {
             document.getElementById('state-dropdown').value = stateName;
             applyFilters();
@@ -679,17 +697,16 @@
             applyFilters();
         }
 
-        // Popup Details Modal Trigger View 
+        // Modal triggers
         function openDetailsModal(item) {
             const modalContent = document.getElementById('modal-content');
             modalContent.innerHTML = '';
 
-            // Generate clean dynamic rows matching every single property header found inside your active spreadsheet columns
             for (const [key, value] of Object.entries(item.rawRow)) {
                 let detailBox = document.createElement('div');
                 detailBox.className = 'detail-item';
                 detailBox.innerHTML = `
-                    <div class="detail-label">${key}</div>
+                    <div class="detail-label">${key.trim()}</div>
                     <div class="detail-value">${value || '—'}</div>
                 `;
                 modalContent.appendChild(detailBox);
@@ -710,12 +727,11 @@
             }
         }
 
-        // Input Observers
         document.getElementById('search-input').addEventListener('input', applyFilters);
         document.getElementById('state-dropdown').addEventListener('change', applyFilters);
         document.getElementById('value-dropdown').addEventListener('change', applyFilters);
 
-        // Kickoff App load 
+        // Run application
         fetchTenderData();
     </script>
 </body>
