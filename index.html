@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 <style>
   :root{
     --bg:#f3f6fb;
@@ -279,6 +280,65 @@
   .loader-overlay .lt{font-family:var(--mono);font-size:12px;color:var(--text-dim);letter-spacing:.4px;}
   .load-err{color:var(--red);font-size:12.5px;max-width:420px;text-align:center;font-family:var(--body);}
 
+  /* ---------- Region / India map tab ---------- */
+  .region-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px;flex-wrap:wrap;}
+  .region-crumb{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;color:var(--text-dim);}
+  .region-crumb b{color:var(--amber);cursor:pointer;}
+  .region-crumb b:hover{text-decoration:underline;}
+  .region-crumb .sep{color:var(--text-faint);}
+  .back-to-map{
+    font-family:var(--body);font-weight:600;font-size:12.4px;border:1px solid var(--border);
+    background:var(--panel);color:var(--text);padding:7px 12px;border-radius:8px;cursor:pointer;
+    display:flex;align-items:center;gap:6px;
+  }
+  .back-to-map:hover{border-color:var(--cyan);}
+  .map-wrap{
+    background:var(--panel);border:1px solid var(--border-soft);border-radius:14px;padding:22px 18px;
+    position:relative;
+  }
+  #indiaSvg, #districtSvg{width:100%;height:auto;max-height:560px;display:block;margin:0 auto;}
+  #indiaSvg path, #districtSvg path{
+    stroke:#ffffff;stroke-width:0.7;transition:fill .15s ease, opacity .15s ease, stroke-width .15s ease;
+  }
+  #indiaSvg path.has-data, #districtSvg path.has-data{cursor:pointer;}
+  #indiaSvg path.has-data:hover, #districtSvg path.has-data:hover{opacity:.82;stroke:var(--amber);stroke-width:1.6;}
+  #indiaSvg path.selected-path{stroke:var(--amber);stroke-width:2;}
+  .map-loading-text{font-family:var(--mono);font-size:12.5px;fill:var(--text-faint);}
+
+  .map-legend{display:flex;align-items:center;gap:10px;justify-content:center;margin-top:18px;font-family:var(--mono);font-size:10.5px;color:var(--text-faint);}
+  .legend-bar{width:140px;height:8px;border-radius:5px;background:linear-gradient(90deg,#eef2f8,var(--amber));}
+
+  .region-callout{
+    position:absolute;background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    box-shadow:0 16px 40px -12px rgba(20,30,50,.28);padding:14px 16px;min-width:200px;z-index:30;
+    display:none;
+  }
+  .region-callout.show{display:block;}
+  .region-callout .rc-name{font-family:var(--display);font-weight:700;font-size:14px;margin-bottom:6px;}
+  .region-callout .rc-row{display:flex;justify-content:space-between;font-size:11.6px;color:var(--text-dim);margin-top:3px;}
+  .region-callout .rc-row b{color:var(--amber);font-family:var(--mono);}
+  .region-callout .rc-hint{
+    margin-top:10px;font-size:11px;color:#fff;font-weight:700;background:var(--amber);
+    padding:7px 10px;border-radius:8px;text-align:center;cursor:pointer;
+  }
+  .region-callout .rc-hint:hover{filter:brightness(1.08);}
+  .region-callout .rc-close{
+    position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:6px;border:none;
+    background:var(--panel-2);color:var(--text-dim);cursor:pointer;font-size:12px;line-height:1;
+  }
+
+  .district-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:16px;}
+  .district-card{
+    background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--border-soft);
+    border-radius:11px;padding:14px;cursor:pointer;transition:transform .15s,border-color .15s;
+  }
+  .district-card:hover{transform:translateY(-2px);border-color:var(--cyan);}
+  .district-card .dc-name{font-family:var(--display);font-weight:700;font-size:13.5px;}
+  .district-card .dc-row{display:flex;justify-content:space-between;margin-top:8px;font-size:11.6px;color:var(--text-dim);}
+  .district-card .dc-row b{color:var(--amber);font-family:var(--mono);}
+  .district-bar{height:5px;border-radius:3px;background:#e7ecf5;margin-top:9px;overflow:hidden;}
+  .district-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--amber),var(--cyan));}
+
   .hamburger{display:none;}
   @media(max-width:860px){
     .sidebar{position:fixed;left:-260px;transition:left .2s;box-shadow:20px 0 40px rgba(20,30,50,.18);}
@@ -288,6 +348,7 @@
       background:var(--panel);border:1px solid var(--border);color:var(--text);cursor:pointer;margin-right:10px;}
     .topbar{flex-wrap:wrap;}
     .modal-fields{grid-template-columns:1fr;}
+    .region-callout{max-width:80vw;}
   }
 </style>
 </head>
@@ -324,6 +385,10 @@
       <button class="tab-btn" data-tab="bigprojects">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V9l4-4 4 4 4-6v18"/></svg>
         Big Projects <span class="idx">04</span>
+      </button>
+      <button class="tab-btn" data-tab="region">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.5 7-12a7 7 0 0 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.4"/></svg>
+        Region <span class="idx">05</span>
       </button>
     </nav>
     <div class="side-foot">
@@ -452,6 +517,40 @@
         </table>
       </div>
     </section>
+
+    <!-- REGION -->
+    <section class="section" id="section-region">
+      <div class="kpi-row" id="regionKpiRow"></div>
+      <div class="region-toolbar">
+        <div class="region-crumb" id="regionCrumb"><b onclick="regionShowMap()">India</b></div>
+        <button class="back-to-map" id="backToMapBtn" style="display:none;" onclick="regionShowMap()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg>
+          Back to India map
+        </button>
+      </div>
+      <div class="map-wrap" id="regionMapWrap">
+        <svg id="indiaSvg" viewBox="0 0 600 640" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="map-legend"><span>Fewer tenders</span><div class="legend-bar"></div><span>More tenders</span></div>
+        <div class="region-callout" id="regionCallout"></div>
+      </div>
+      <div class="panel" style="margin-top:16px;" id="topStatesPanelWrap">
+        <h3>All States <span style="color:var(--text-faint);font-weight:400;">— tap a card if a state is too small to tap on the map</span></h3>
+        <div class="panel-sub">Sorted by pipeline value, highest first</div>
+        <div class="district-grid" id="topStatesGrid"></div>
+      </div>
+      <div id="regionDrilldownWrap" style="display:none;">
+        <div class="map-wrap" style="margin-bottom:16px;">
+          <svg id="districtSvg" viewBox="0 0 600 640" preserveAspectRatio="xMidYMid meet"></svg>
+          <div class="map-legend"><span>Fewer tenders</span><div class="legend-bar"></div><span>More tenders</span></div>
+          <div class="region-callout" id="districtCallout"></div>
+        </div>
+        <div class="panel">
+          <h3 id="drilldownStateName">State</h3>
+          <div class="panel-sub" id="drilldownStateSub">District-wise pipeline value</div>
+          <div class="district-grid" id="districtGrid"></div>
+        </div>
+      </div>
+    </section>
   </main>
 </div>
 
@@ -505,7 +604,7 @@ function fmtCr(n){
   return "₹" + Number(n).toLocaleString("en-IN", {maximumFractionDigits:0}) + " Cr";
 }
 function fmtNum(n){ return n === null || n === undefined ? "—" : Number(n).toLocaleString("en-IN"); }
-function esc(s){ return (s===undefined||s===null) ? "" : String(s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
+function esc(s){ return (s===undefined||s===null) ? "" : String(s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"'"}[m])); }
 function truncate(s, n){ if(!s) return ""; s = String(s); return s.length > n ? s.slice(0,n).trim() + "…" : s; }
 function statusPillClass(status){
   if(!status) return "other";
@@ -1013,12 +1112,500 @@ function renderBigTable(){
   renderBigKpis();
 }
 
+/* ============================ REGION / INDIA MAP (real geography via D3 + GeoJSON) ============================ */
+// Alias table so real-world spellings/variants in the sheet map to a canonical state name.
+const STATE_ALIASES = {
+  "jammu and kashmir":"Jammu and Kashmir","jammu & kashmir":"Jammu and Kashmir","j&k":"Jammu and Kashmir","jk":"Jammu and Kashmir",
+  "ladakh":"Ladakh",
+  "himachal pradesh":"Himachal Pradesh","hp":"Himachal Pradesh",
+  "uttarakhand":"Uttarakhand","uttaranchal":"Uttarakhand",
+  "punjab":"Punjab",
+  "chandigarh":"Chandigarh",
+  "arunachal pradesh":"Arunachal Pradesh",
+  "haryana":"Haryana",
+  "delhi":"Delhi","new delhi":"Delhi","nct of delhi":"Delhi","national capital territory of delhi":"Delhi",
+  "sikkim":"Sikkim",
+  "assam":"Assam",
+  "nagaland":"Nagaland",
+  "rajasthan":"Rajasthan",
+  "uttar pradesh":"Uttar Pradesh","up":"Uttar Pradesh",
+  "bihar":"Bihar",
+  "meghalaya":"Meghalaya",
+  "manipur":"Manipur",
+  "gujarat":"Gujarat","gujrat":"Gujarat",
+  "madhya pradesh":"Madhya Pradesh","mp":"Madhya Pradesh",
+  "jharkhand":"Jharkhand",
+  "west bengal":"West Bengal","wb":"West Bengal",
+  "tripura":"Tripura",
+  "dadra and nagar haveli and daman and diu":"Dadra and Nagar Haveli and Daman and Diu",
+  "dadra and nagar haveli":"Dadra and Nagar Haveli and Daman and Diu","daman and diu":"Dadra and Nagar Haveli and Daman and Diu",
+  "maharashtra":"Maharashtra",
+  "chhattisgarh":"Chhattisgarh","chattisgarh":"Chhattisgarh",
+  "odisha":"Odisha","orissa":"Odisha",
+  "mizoram":"Mizoram",
+  "goa":"Goa",
+  "karnataka":"Karnataka",
+  "telangana":"Telangana","telengana":"Telangana",
+  "andhra pradesh":"Andhra Pradesh","ap":"Andhra Pradesh",
+  "puducherry":"Puducherry","pondicherry":"Puducherry",
+  "tamil nadu":"Tamil Nadu","tamilnadu":"Tamil Nadu",
+  "andaman and nicobar islands":"Andaman and Nicobar Islands","andaman & nicobar":"Andaman and Nicobar Islands","andaman and nicobar":"Andaman and Nicobar Islands",
+  "lakshadweep":"Lakshadweep",
+  "kerala":"Kerala",
+};
+function normalizeStateName(raw){
+  if(!raw) return null;
+  const key = String(raw).trim().toLowerCase().replace(/\./g,"").split(",")[0].trim();
+  return STATE_ALIASES[key] || null;
+}
+
+// Canonical state name -> jsDelivr file slug (github.com/udit-001/india-maps-data)
+const STATE_SLUGS = {
+  "Andaman and Nicobar Islands":"andaman-and-nicobar-islands",
+  "Andhra Pradesh":"andhra-pradesh",
+  "Arunachal Pradesh":"arunachal-pradesh",
+  "Assam":"assam",
+  "Bihar":"bihar",
+  "Chandigarh":"chandigarh",
+  "Chhattisgarh":"chhattisgarh",
+  "Delhi":"delhi",
+  "Dadra and Nagar Haveli and Daman and Diu":"dnh-and-dd",
+  "Goa":"goa",
+  "Gujarat":"gujarat",
+  "Haryana":"haryana",
+  "Himachal Pradesh":"himachal-pradesh",
+  "Jammu and Kashmir":"jammu-and-kashmir",
+  "Jharkhand":"jharkhand",
+  "Karnataka":"karnataka",
+  "Kerala":"kerala",
+  "Ladakh":"ladakh",
+  "Lakshadweep":"lakshadweep",
+  "Madhya Pradesh":"madhya-pradesh",
+  "Maharashtra":"maharashtra",
+  "Manipur":"manipur",
+  "Meghalaya":"meghalaya",
+  "Mizoram":"mizoram",
+  "Nagaland":"nagaland",
+  "Odisha":"odisha",
+  "Puducherry":"puducherry",
+  "Punjab":"punjab",
+  "Rajasthan":"rajasthan",
+  "Sikkim":"sikkim",
+  "Tamil Nadu":"tamil-nadu",
+  "Telangana":"telangana",
+  "Tripura":"tripura",
+  "Uttar Pradesh":"uttar-pradesh",
+  "Uttarakhand":"uttarakhand",
+  "West Bengal":"west-bengal",
+};
+const GEO_BASE = "https://cdn.jsdelivr.net/gh/udit-001/india-maps-data@main";
+const INDIA_GEOJSON_URLS = [
+  `${GEO_BASE}/geojson/india.geojson`,
+  "https://raw.githubusercontent.com/udit-001/india-maps-data/main/geojson/india.geojson",
+];
+function stateGeojsonUrls(slug){
+  return [
+    `${GEO_BASE}/geojson/states/${slug}.geojson`,
+    `https://raw.githubusercontent.com/udit-001/india-maps-data/main/geojson/states/${slug}.geojson`,
+  ];
+}
+
+// A small set of known district spelling differences between government tender sheets and the geojson source.
+const DISTRICT_ALIASES = {
+  "bengaluru urban":"bangalore urban","bengaluru":"bangalore urban","bangalore":"bangalore urban",
+  "bengaluru rural":"bangalore rural",
+  "gurugram":"gurgaon","gurgaon":"gurugram",
+  "prayagraj":"allahabad","allahabad":"prayagraj",
+  "mumbai city":"mumbai","mumbai suburban":"mumbai",
+  "kolkata":"calcutta",
+  "chennai":"madras",
+  "vadodara":"baroda",
+  "gautam buddha nagar":"gautam budh nagar","gautam budh nagar":"gautam buddha nagar",
+  "shivamogga":"shimoga","shimoga":"shivamogga",
+  "mysuru":"mysore","mysore":"mysuru",
+  "belagavi":"belgaum","belgaum":"belagavi",
+  "kalaburagi":"gulbarga","gulbarga":"kalaburagi",
+};
+function normalizeDistrictText(raw){
+  if(!raw) return "";
+  return String(raw).trim().toLowerCase()
+    .replace(/\bdist(rict)?\.?\b/g,"")
+    .replace(/[.,()]/g,"")
+    .replace(/\s+/g," ").trim();
+}
+function districtsMatch(a, b){
+  const na = normalizeDistrictText(a), nb = normalizeDistrictText(b);
+  if(!na || !nb) return false;
+  if(na === nb) return true;
+  const aliasA = DISTRICT_ALIASES[na], aliasB = DISTRICT_ALIASES[nb];
+  if(aliasA && aliasA === nb) return true;
+  if(aliasB && aliasB === na) return true;
+  if(na.length>3 && nb.length>3 && (na.includes(nb) || nb.includes(na))) return true;
+  return false;
+}
+
+let regionData = new Map();   // canonical state name -> {count, value, districts: Map(districtName -> {count,value})}
+let regionUnmatched = { count:0, value:0 };
+let regionView = "map";       // "map" | "drilldown"
+let regionSelectedState = null;
+let regionCalloutState = null; // which state's number-callout is currently open (tap-once state)
+const isTouchDevice = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
+
+let indiaGeo = null, indiaGeoLoading = null, indiaGeoError = null, stateNameKey = null;
+const districtGeoCache = new Map(); // canonical state -> {data, nameKey} | "error"
+
+function fetchJsonWithFallback(urls){
+  let p = Promise.reject();
+  urls.forEach(u=>{ p = p.catch(()=> d3.json(u).then(data=>{ if(!data) throw new Error("empty"); return data; })); });
+  return p;
+}
+function detectNameKey(features, candidates){
+  if(!features || !features.length) return null;
+  const props = features[0].properties || {};
+  for(const c of candidates){ if(typeof props[c] === "string" && props[c].trim()) return c; }
+  // Fallback: first string-valued property across a sample of features
+  const keys = Object.keys(props);
+  for(const k of keys){
+    let stringy = 0, sample = features.slice(0, Math.min(10, features.length));
+    sample.forEach(f=>{ if(typeof (f.properties||{})[k] === "string") stringy++; });
+    if(stringy === sample.length) return k;
+  }
+  return keys[0] || null;
+}
+
+function aggregateRegionData(){
+  regionData = new Map();
+  regionUnmatched = { count:0, value:0 };
+  combinedProjects.forEach(p=>{
+    const canon = normalizeStateName(p.state);
+    if(!canon){ regionUnmatched.count++; regionUnmatched.value += p.valueCr; return; }
+    if(!regionData.has(canon)) regionData.set(canon, { count:0, value:0, districts:new Map() });
+    const agg = regionData.get(canon);
+    agg.count++; agg.value += p.valueCr;
+    const distKey = (p.district || "Unspecified District").trim() || "Unspecified District";
+    if(!agg.districts.has(distKey)) agg.districts.set(distKey, { count:0, value:0 });
+    const dAgg = agg.districts.get(distKey);
+    dAgg.count++; dAgg.value += p.valueCr;
+  });
+}
+
+function regionColor(t){
+  t = Math.max(0, Math.min(1, t));
+  const c1 = [241,244,250]; // --panel-2
+  const c2 = [181,105,11];  // --amber
+  const r = Math.round(c1[0] + (c2[0]-c1[0])*t);
+  const g = Math.round(c1[1] + (c2[1]-c1[1])*t);
+  const b = Math.round(c1[2] + (c2[2]-c1[2])*t);
+  return `rgb(${r},${g},${b})`;
+}
+
+function renderRegionKpis(){
+  const el = document.getElementById("regionKpiRow");
+  el.innerHTML = "";
+  const statesCovered = regionData.size;
+  const totalDistricts = new Set();
+  let totalValue = 0, totalCount = 0, topState = null, topVal = -1;
+  regionData.forEach((agg,name)=>{
+    totalValue += agg.value; totalCount += agg.count;
+    agg.districts.forEach((_,d)=>totalDistricts.add(name+"::"+d));
+    if(agg.value > topVal){ topVal = agg.value; topState = name; }
+  });
+  const kpis = [
+    {lbl:"States Covered", val: fmtNum(statesCovered), sub:"with at least one tender", cls:"amber"},
+    {lbl:"Districts Covered", val: fmtNum(totalDistricts.size), sub:"unique locations", cls:"cyan"},
+    {lbl:"Total Pipeline Value", val: fmtCr(totalValue).replace("₹",""), sub:"₹ Cr across India", cls:"green"},
+    {lbl:"Top State", val: topState ? truncate(topState,16) : "—", sub: topState ? fmtCr(topVal) : "no data yet", cls:"red"},
+  ];
+  kpis.forEach(k=>{
+    const d = document.createElement("div");
+    d.className="kpi";
+    d.innerHTML = `<div class="lbl">${esc(k.lbl)}</div><div class="val ${k.cls}">${k.val}</div><div class="sub">${esc(k.sub)}</div>`;
+    el.appendChild(d);
+  });
+}
+
+function renderTopStatesList(){
+  const grid = document.getElementById("topStatesGrid");
+  grid.innerHTML = "";
+  const rows = [...regionData.entries()].sort((a,b)=>b[1].value-a[1].value);
+  if(rows.length===0){ grid.innerHTML = `<div class="empty-state">No state-level data found yet.</div>`; return; }
+  const maxV = Math.max(1, ...rows.map(r=>r[1].value));
+  rows.forEach(([name, agg])=>{
+    const card = document.createElement("div");
+    card.className = "district-card";
+    card.innerHTML = `
+      <div class="dc-name">${esc(name)}</div>
+      <div class="dc-row"><span>Tenders</span><b>${fmtNum(agg.count)}</b></div>
+      <div class="dc-row"><span>Amount</span><b>${fmtCr(agg.value)}</b></div>
+      <div class="district-bar"><i style="width:${Math.min(100,(agg.value/maxV)*100)}%"></i></div>
+    `;
+    card.addEventListener("click", ()=>regionSelectState(name));
+    grid.appendChild(card);
+  });
+}
+
+/* ---------- Callout (hover/tap popup showing numbers before drill-down) ---------- */
+function showRegionCallout(event, calloutId, name, agg, onDrill){
+  const callout = document.getElementById(calloutId);
+  callout.innerHTML = `
+    <button class="rc-close" onclick="event.stopPropagation();document.getElementById('${calloutId}').classList.remove('show');regionCalloutState=null;">✕</button>
+    <div class="rc-name">${esc(name)}</div>
+    <div class="rc-row"><span>Tenders</span><b>${fmtNum(agg.count)}</b></div>
+    <div class="rc-row"><span>Pipeline Value</span><b>${fmtCr(agg.value)}</b></div>
+    ${agg.districts ? `<div class="rc-row"><span>Districts</span><b>${agg.districts.size}</b></div>` : ""}
+    <div class="rc-hint" id="${calloutId}Hint">${onDrill ? "View districts →" : "View tenders →"}</div>
+  `;
+  callout.classList.add("show");
+  positionCallout(event, calloutId);
+  const hint = document.getElementById(calloutId+"Hint");
+  if(hint) hint.onclick = (e)=>{ e.stopPropagation(); callout.classList.remove("show"); regionCalloutState=null; onDrill && onDrill(); };
+}
+function positionCallout(event, calloutId){
+  const callout = document.getElementById(calloutId);
+  const wrap = callout.closest(".map-wrap");
+  const wrapRect = wrap.getBoundingClientRect();
+  let x = event.clientX - wrapRect.left + 14;
+  let y = event.clientY - wrapRect.top + 14;
+  if(x + 210 > wrapRect.width) x = wrapRect.width - 216;
+  if(y + 150 > wrapRect.height) y = Math.max(4, wrapRect.height - 160);
+  callout.style.left = x + "px";
+  callout.style.top = y + "px";
+}
+function hideRegionCallout(calloutId){ const el=document.getElementById(calloutId); if(el){ el.classList.remove("show"); } regionCalloutState = null; }
+document.addEventListener("click", (e)=>{
+  ["regionCallout","districtCallout"].forEach(id=>{
+    const callout = document.getElementById(id);
+    if(callout && !callout.contains(e.target) && !e.target.closest("path")){ callout.classList.remove("show"); }
+  });
+});
+
+/* ---------- India-level map (state polygons) ---------- */
+async function ensureIndiaGeo(){
+  if(indiaGeo) return indiaGeo;
+  if(indiaGeoLoading) return indiaGeoLoading;
+  indiaGeoLoading = fetchJsonWithFallback(INDIA_GEOJSON_URLS).then(data=>{
+    indiaGeo = data;
+    stateNameKey = detectNameKey(data.features, ["st_nm","STNAME","name","NAME_1","State_Name","state","ST_NM"]);
+    return data;
+  }).catch(err=>{
+    indiaGeoError = "Could not load the India map outline (needs internet access to cdn.jsdelivr.net). " + (err && err.message ? err.message : "");
+    throw err;
+  });
+  return indiaGeoLoading;
+}
+async function paintIndiaMap(){
+  const svg = d3.select("#indiaSvg");
+  svg.selectAll("*").remove();
+  svg.append("text").attr("class","map-loading-text").attr("x",300).attr("y",320).attr("text-anchor","middle").text("Loading India map…");
+  try{
+    await ensureIndiaGeo();
+  }catch(e){
+    svg.selectAll("*").remove();
+    svg.append("text").attr("class","map-loading-text").attr("x",300).attr("y",300).attr("text-anchor","middle").text("Map failed to load.");
+    svg.append("text").attr("class","map-loading-text").attr("x",300).attr("y",322).attr("text-anchor","middle").style("font-size","10.5px").text("Check your internet connection and click Refresh.");
+    return;
+  }
+  svg.selectAll("*").remove();
+  const width = 600, height = 640;
+  const projection = d3.geoMercator().fitExtent([[14,14],[width-14,height-14]], indiaGeo);
+  const pathGen = d3.geoPath(projection);
+  const maxVal = Math.max(1, ...[...regionData.values()].map(a=>a.value));
+
+  svg.selectAll("path")
+    .data(indiaGeo.features)
+    .join("path")
+    .attr("d", pathGen)
+    .attr("fill", d=>{
+      const canon = normalizeStateName(d.properties[stateNameKey]);
+      const agg = canon ? regionData.get(canon) : null;
+      return (agg && agg.count>0) ? regionColor(agg.value/maxVal) : "#f1f4fa";
+    })
+    .attr("class", d=>{
+      const canon = normalizeStateName(d.properties[stateNameKey]);
+      const agg = canon ? regionData.get(canon) : null;
+      return "india-state" + ((agg && agg.count>0) ? " has-data" : "") + (regionSelectedState===canon ? " selected-path" : "");
+    })
+    .on("mouseenter", function(event, d){
+      if(isTouchDevice) return;
+      const canon = normalizeStateName(d.properties[stateNameKey]);
+      const agg = canon ? regionData.get(canon) : null;
+      if(agg && agg.count>0) showRegionCallout(event, "regionCallout", canon, agg, ()=>regionSelectState(canon));
+    })
+    .on("mousemove", function(event){ if(!isTouchDevice) positionCallout(event, "regionCallout"); })
+    .on("mouseleave", function(){ if(!isTouchDevice && !regionCalloutState) hideRegionCallout("regionCallout"); })
+    .on("click", function(event, d){
+      event.stopPropagation();
+      const canon = normalizeStateName(d.properties[stateNameKey]);
+      const agg = canon ? regionData.get(canon) : null;
+      if(!agg || agg.count===0) return;
+      if(regionCalloutState === canon){ hideRegionCallout("regionCallout"); regionSelectState(canon); }
+      else { showRegionCallout(event, "regionCallout", canon, agg, ()=>regionSelectState(canon)); regionCalloutState = canon; }
+    });
+}
+
+/* ---------- District-level map (within a selected state) ---------- */
+async function ensureDistrictGeo(canonicalState){
+  if(districtGeoCache.has(canonicalState)) return districtGeoCache.get(canonicalState);
+  const slug = STATE_SLUGS[canonicalState];
+  if(!slug){ districtGeoCache.set(canonicalState, null); return null; }
+  try{
+    const data = await fetchJsonWithFallback(stateGeojsonUrls(slug));
+    const nameKey = detectNameKey(data.features, ["district","DISTRICT","dtname","DTNAME","name","NAME_2","District","distname"]);
+    const result = { data, nameKey };
+    districtGeoCache.set(canonicalState, result);
+    return result;
+  }catch(err){
+    districtGeoCache.set(canonicalState, null);
+    return null;
+  }
+}
+async function paintDistrictMap(stateName){
+  const svg = d3.select("#districtSvg");
+  svg.selectAll("*").remove();
+  svg.append("text").attr("class","map-loading-text").attr("x",300).attr("y",320).attr("text-anchor","middle").text("Loading "+stateName+" districts…");
+  const geo = await ensureDistrictGeo(stateName);
+  svg.selectAll("*").remove();
+  if(!geo){
+    svg.append("text").attr("class","map-loading-text").attr("x",300).attr("y",310).attr("text-anchor","middle").text("District map unavailable for "+stateName+".");
+    svg.append("text").attr("class","map-loading-text").attr("x",300).attr("y",332).attr("text-anchor","middle").style("font-size","10.5px").text("See the numbers list below instead.");
+    return;
+  }
+  const width = 600, height = 640;
+  const agg = regionData.get(stateName);
+  const projection = d3.geoMercator().fitExtent([[14,14],[width-14,height-14]], geo.data);
+  const pathGen = d3.geoPath(projection);
+  const maxVal = agg ? Math.max(1, ...[...agg.districts.values()].map(x=>x.value)) : 1;
+
+  function matchDistrict(geoName){
+    if(!agg) return null;
+    for(const [distName, dAgg] of agg.districts.entries()){
+      if(districtsMatch(distName, geoName)) return { distName, dAgg };
+    }
+    return null;
+  }
+
+  svg.selectAll("path")
+    .data(geo.data.features)
+    .join("path")
+    .attr("d", pathGen)
+    .attr("fill", d=>{
+      const m = matchDistrict(d.properties[geo.nameKey]);
+      return m ? regionColor(m.dAgg.value/maxVal) : "#f1f4fa";
+    })
+    .attr("class", d=> matchDistrict(d.properties[geo.nameKey]) ? "has-data" : "")
+    .on("mouseenter", function(event, d){
+      if(isTouchDevice) return;
+      const m = matchDistrict(d.properties[geo.nameKey]);
+      if(m) showRegionCallout(event, "districtCallout", m.distName, m.dAgg, ()=>openDistrictProjectsModal(stateName, m.distName));
+    })
+    .on("mousemove", function(event){ if(!isTouchDevice) positionCallout(event, "districtCallout"); })
+    .on("mouseleave", function(){ if(!isTouchDevice) hideRegionCallout("districtCallout"); })
+    .on("click", function(event, d){
+      event.stopPropagation();
+      const m = matchDistrict(d.properties[geo.nameKey]);
+      if(!m) return;
+      openDistrictProjectsModal(stateName, m.distName);
+    });
+}
+
+function regionSelectState(stateName){
+  regionSelectedState = stateName;
+  regionView = "drilldown";
+  regionCalloutState = null;
+  document.getElementById("regionMapWrap").style.display = "none";
+  document.getElementById("topStatesPanelWrap").style.display = "none";
+  document.getElementById("regionDrilldownWrap").style.display = "block";
+  document.getElementById("backToMapBtn").style.display = "flex";
+  document.getElementById("regionCrumb").innerHTML = `<b onclick="regionShowMap()">India</b><span class="sep">/</span><b style="cursor:default;color:var(--text);">${esc(stateName)}</b>`;
+  renderDistrictDrilldown(stateName);
+  paintDistrictMap(stateName);
+}
+function regionShowMap(){
+  regionView = "map";
+  regionSelectedState = null;
+  regionCalloutState = null;
+  document.getElementById("regionMapWrap").style.display = "block";
+  document.getElementById("topStatesPanelWrap").style.display = "block";
+  document.getElementById("regionDrilldownWrap").style.display = "none";
+  document.getElementById("backToMapBtn").style.display = "none";
+  document.getElementById("regionCrumb").innerHTML = `<b onclick="regionShowMap()">India</b>`;
+  paintIndiaMap();
+}
+
+function renderDistrictDrilldown(stateName){
+  const agg = regionData.get(stateName);
+  document.getElementById("drilldownStateName").textContent = stateName;
+  document.getElementById("drilldownStateSub").textContent =
+    agg ? `${fmtNum(agg.count)} tenders · ${fmtCr(agg.value)} combined · ${agg.districts.size} district(s)` : "No data";
+  const gridEl = document.getElementById("districtGrid");
+  gridEl.innerHTML = "";
+  if(!agg || agg.districts.size===0){
+    gridEl.innerHTML = `<div class="empty-state">No district-level records found for ${esc(stateName)}.</div>`;
+    return;
+  }
+  const maxD = Math.max(1, ...[...agg.districts.values()].map(d=>d.value));
+  const sorted = [...agg.districts.entries()].sort((a,b)=>b[1].value-a[1].value);
+  sorted.forEach(([distName, d])=>{
+    const card = document.createElement("div");
+    card.className = "district-card";
+    card.innerHTML = `
+      <div class="dc-name">${esc(distName)}</div>
+      <div class="dc-row"><span>Tenders</span><b>${fmtNum(d.count)}</b></div>
+      <div class="dc-row"><span>Amount</span><b>${fmtCr(d.value)}</b></div>
+      <div class="district-bar"><i style="width:${Math.min(100,(d.value/maxD)*100)}%"></i></div>
+    `;
+    card.addEventListener("click", ()=>openDistrictProjectsModal(stateName, distName));
+    gridEl.appendChild(card);
+  });
+}
+
+function openDistrictProjectsModal(stateName, distName){
+  const projects = combinedProjects.filter(p=>{
+    const canon = normalizeStateName(p.state);
+    const pd = (p.district || "Unspecified District").trim() || "Unspecified District";
+    return canon === stateName && pd === distName;
+  });
+  const total = projects.reduce((s,p)=>s+p.valueCr,0);
+  let html = `<div class="modal-eyebrow">${esc(stateName)} · District</div>`;
+  html += `<div class="modal-title">${esc(distName)}</div>`;
+  html += `<div class="modal-fields">`;
+  html += projectField("Tenders in this district", fmtNum(projects.length));
+  html += projectField("Combined Amount", `<b style="color:var(--amber)">${fmtCr(total)}</b>`);
+  html += `</div>`;
+  html += `<div class="modal-divider"></div>`;
+  html += `<div class="modal-subhead">Tenders</div>`;
+  if(projects.length===0){
+    html += `<div class="empty-state">No tenders found.</div>`;
+  } else {
+    safeSort(projects, p=>p.valueCr).slice(0,30).forEach(p=>{
+      html += `<div class="mini-row" onclick="closeModal();setTimeout(()=>openProjectModal('${esc(p.tenderId).replace(/'/g,"\\'")}','${p.type}'),50)">
+        <span class="mr-name">${p.type==="Upcoming"?"🟦":"🟩"} ${esc(truncate(p.description,54))}</span>
+        <span class="mr-val">${fmtCr(p.valueCr)}</span>
+      </div>`;
+    });
+  }
+  openModal(html);
+}
+
+function renderRegion(){
+  aggregateRegionData();
+  renderRegionKpis();
+  renderTopStatesList();
+  if(regionView === "drilldown" && regionSelectedState && regionData.has(regionSelectedState)){
+    renderDistrictDrilldown(regionSelectedState);
+    paintDistrictMap(regionSelectedState);
+  } else {
+    regionShowMap();
+  }
+}
+
 /* ============================ TAB NAV ============================ */
 const titles = {
   overview: ["Overview Dashboard","Live pipeline health across upcoming tenders, awarded contracts and BD ownership — pulled straight from the tracker sheet."],
   approval: ["Approval Status","Which authorities are cleared to bid, which are still pending sign-off, and where empanelment is already in place."],
   salesperson: ["Sales Person Dashboard","Ownership and pipeline value per BD owner, including vacant territories that need coverage."],
-  bigprojects: ["Tracking Big Projects","The largest tenders in flight — filter by value threshold, type or state, and drill into any row."]
+  bigprojects: ["Tracking Big Projects","The largest tenders in flight — filter by value threshold, type or state, and drill into any row."],
+  region: ["Region — India Map","Tap any state to see its pipeline, then drill into districts to see amount by location."]
 };
 function switchTab(tab){
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.toggle("active", b.dataset.tab===tab));
@@ -1026,6 +1613,7 @@ function switchTab(tab){
   document.getElementById("pageTitle").textContent = titles[tab][0];
   document.getElementById("pageSub").textContent = titles[tab][1];
   document.getElementById("sidebar").classList.remove("open");
+  if(tab === "region" && regionData.size === 0 && combinedProjects.length > 0){ renderRegion(); }
 }
 document.querySelectorAll(".tab-btn").forEach(b=>b.addEventListener("click", ()=>switchTab(b.dataset.tab)));
 document.getElementById("hamburger").addEventListener("click", ()=>document.getElementById("sidebar").classList.toggle("open"));
@@ -1076,6 +1664,7 @@ async function loadAll(isRefresh){
     renderApprovalTable();
     renderSalesPerson();
     renderBigTable();
+    renderRegion();
     document.getElementById("lastSync").textContent = "last sync " + new Date().toLocaleTimeString();
     document.getElementById("rowCounts").textContent = `${upcomingRows.length} upcoming · ${awardedRows.length} awarded · ${authorityRows.length} authorities`;
     loader.classList.add("hidden");
