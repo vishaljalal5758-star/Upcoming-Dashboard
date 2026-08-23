@@ -1,738 +1,1093 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upcoming Tenders Dashboard</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <style>
-        :root {
-            --bg-color: #0d131a;
-            --card-bg: #131c26;
-            --text-color: #ffffff;
-            --text-muted: #8b9bb4;
-            --accent-orange: #ff9f43;
-            --accent-cyan: #00d2d3;
-            --border-color: #1e293b;
-            --hover-row: #1c2836;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tender Command — Live Pipeline Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#f3f6fb;
+    --bg-2:#ffffff;
+    --panel:#ffffff;
+    --panel-2:#f1f4fa;
+    --border:#dbe3ef;
+    --border-soft:#e8edf6;
+    --text:#152238;
+    --text-dim:#5b6b85;
+    --text-faint:#8b98ac;
+    --amber:#b5690b;
+    --amber-soft:rgba(181,105,11,.12);
+    --cyan:#0e8f83;
+    --cyan-soft:rgba(14,143,131,.12);
+    --green:#188a52;
+    --green-soft:rgba(24,138,82,.12);
+    --red:#c1483a;
+    --red-soft:rgba(193,72,58,.12);
+    --violet:#6a4fd6;
+    --display:'Space Grotesk',sans-serif;
+    --body:'Inter',sans-serif;
+    --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      repeating-linear-gradient(0deg, rgba(14,143,131,.05) 0px, rgba(14,143,131,.05) 1px, transparent 1px, transparent 48px),
+      repeating-linear-gradient(90deg, rgba(14,143,131,.05) 0px, rgba(14,143,131,.05) 1px, transparent 1px, transparent 48px),
+      radial-gradient(circle at 15% 0%, #e7f2f1 0%, var(--bg) 55%);
+    color:var(--text);
+    font-family:var(--body);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;}
+  ::selection{background:var(--amber);color:#fff;}
+  ::-webkit-scrollbar{width:10px;height:10px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:#c7d2e3;border-radius:6px;}
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
+  /* ---------- Layout ---------- */
+  .app{display:flex;min-height:100vh;}
+  .sidebar{
+    width:236px;flex:0 0 236px;
+    background:linear-gradient(180deg,var(--bg-2),#eef3fa);
+    border-right:1px solid var(--border-soft);
+    box-shadow:1px 0 0 rgba(20,30,50,.02);
+    padding:22px 16px;
+    position:sticky;top:0;height:100vh;
+    display:flex;flex-direction:column;gap:26px;
+    z-index:20;
+  }
+  .brand{display:flex;align-items:center;gap:10px;padding:0 4px;}
+  .brand-mark{
+    width:34px;height:34px;border-radius:8px;flex:0 0 34px;
+    background:linear-gradient(135deg,var(--amber),#8a4d06);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--display);font-weight:700;color:#fff;font-size:15px;
+    box-shadow:0 0 0 1px rgba(181,105,11,.3), 0 6px 18px -6px rgba(181,105,11,.55);
+  }
+  .brand-text .t1{font-family:var(--display);font-weight:700;font-size:15.5px;letter-spacing:.2px;line-height:1.1;}
+  .brand-text .t2{font-family:var(--mono);font-size:10px;color:var(--text-faint);letter-spacing:.6px;text-transform:uppercase;}
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            padding: 24px;
-        }
+  nav.tabs{display:flex;flex-direction:column;gap:4px;margin-top:4px;}
+  .tab-btn{
+    display:flex;align-items:center;gap:11px;
+    padding:10px 12px;border-radius:9px;border:1px solid transparent;
+    background:transparent;color:var(--text-dim);cursor:pointer;
+    font-family:var(--body);font-size:13.4px;font-weight:600;text-align:left;
+    transition:background .15s,color .15s,border-color .15s;
+  }
+  .tab-btn .ic{width:18px;height:18px;flex:0 0 18px;opacity:.85;}
+  .tab-btn:hover{background:var(--panel);color:var(--text);}
+  .tab-btn.active{
+    background:linear-gradient(90deg,var(--amber-soft),transparent);
+    border-color:rgba(181,105,11,.3);color:var(--amber);
+  }
+  .tab-btn .idx{font-family:var(--mono);font-size:10px;color:var(--text-faint);margin-left:auto;}
+  .tab-btn.active .idx{color:var(--amber);opacity:.7;}
 
-        /* Top Header */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 24px;
-        }
+  .side-foot{margin-top:auto;padding:12px 4px 2px;border-top:1px solid var(--border-soft);}
+  .status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:6px;box-shadow:0 0 8px var(--green);}
+  .side-foot .line{font-family:var(--mono);font-size:10.5px;color:var(--text-faint);margin-top:6px;}
 
-        .header-title h1 {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--accent-orange);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+  .main{flex:1;min-width:0;padding:26px 34px 60px;max-width:1400px;}
+  .topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:26px;flex-wrap:wrap;}
+  .topbar h1{font-family:var(--display);font-size:24px;margin:0 0 4px;letter-spacing:.2px;}
+  .topbar p{margin:0;color:var(--text-dim);font-size:13.2px;max-width:640px;}
+  .top-actions{display:flex;align-items:center;gap:10px;}
+  .btn{
+    font-family:var(--body);font-weight:600;font-size:12.6px;
+    border:1px solid var(--border);background:var(--panel);color:var(--text);
+    padding:8px 13px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:7px;
+    transition:border-color .15s,background .15s;
+  }
+  .btn:hover{border-color:var(--cyan);}
+  .btn.primary{background:linear-gradient(135deg,var(--amber),#8a4d06);color:#fff;border-color:transparent;}
+  .btn.primary:hover{filter:brightness(1.06);}
 
-        .header-subtitle {
-            color: var(--text-muted);
-            font-size: 13px;
-            margin-top: 4px;
-        }
+  .section{display:none;}
+  .section.active{display:block;animation:fadeIn .35s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
 
-        .header-badges {
-            display: flex;
-            gap: 8px;
-            margin-top: 12px;
-        }
+  /* ---------- KPI cards ---------- */
+  .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:22px;}
+  .kpi{
+    background:linear-gradient(180deg,var(--panel),var(--panel-2));
+    border:1px solid var(--border-soft);border-radius:12px;padding:16px 16px 14px;
+    cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s;position:relative;overflow:hidden;
+  }
+  .kpi::after{content:"";position:absolute;right:-30px;top:-30px;width:90px;height:90px;border-radius:50%;
+    background:radial-gradient(circle,rgba(181,105,11,.09),transparent 70%);}
+  .kpi:hover{transform:translateY(-2px);border-color:rgba(14,143,131,.4);box-shadow:0 10px 24px -12px rgba(20,30,50,.18);}
+  .kpi .lbl{font-family:var(--mono);font-size:10.4px;text-transform:uppercase;letter-spacing:.7px;color:var(--text-faint);}
+  .kpi .val{font-family:var(--display);font-size:26px;font-weight:700;margin-top:7px;color:var(--text);}
+  .kpi .sub{font-size:11.6px;color:var(--text-dim);margin-top:4px;}
+  .kpi .val.amber{color:var(--amber);}
+  .kpi .val.cyan{color:var(--cyan);}
+  .kpi .val.green{color:var(--green);}
+  .kpi .val.red{color:var(--red);}
 
-        .badge {
-            font-size: 11px;
-            padding: 6px 12px;
-            border-radius: 4px;
-            background: #1e293b;
-            color: var(--text-muted);
-            font-weight: 600;
-        }
-        .badge.highlight {
-            background: rgba(255, 159, 67, 0.15);
-            color: var(--accent-orange);
-        }
-        .badge.cyan {
-            background: rgba(0, 210, 211, 0.15);
-            color: var(--accent-cyan);
-        }
+  .panel-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-bottom:18px;}
+  @media(max-width:980px){.panel-grid{grid-template-columns:1fr;}}
+  .panel{
+    background:var(--panel);border:1px solid var(--border-soft);border-radius:13px;padding:18px 18px 14px;
+  }
+  .panel h3{font-family:var(--display);font-size:14.5px;margin:0 0 2px;display:flex;align-items:center;gap:8px;}
+  .panel .panel-sub{font-size:11.6px;color:var(--text-faint);margin-bottom:14px;}
+  .chart-wrap{position:relative;height:250px;}
+  .chart-wrap.small{height:210px;}
 
-        .total-value-display {
-            text-align: right;
-        }
-        .total-value-display .amount {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--accent-cyan);
-        }
-        .total-value-display .label {
-            font-size: 11px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 2px;
-        }
+  /* ---------- list rows ---------- */
+  .row-list{display:flex;flex-direction:column;gap:8px;}
+  .row-item{
+    display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:9px;
+    background:var(--panel-2);border:1px solid var(--border-soft);cursor:pointer;
+    transition:border-color .15s, background .15s;
+  }
+  .row-item:hover{border-color:var(--cyan);background:#eaf6f4;}
+  .row-item .rank{font-family:var(--mono);font-size:11px;color:var(--text-faint);width:20px;flex:0 0 20px;}
+  .row-item .ri-main{min-width:0;flex:1;}
+  .row-item .ri-title{font-size:12.6px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .row-item .ri-sub{font-size:11px;color:var(--text-faint);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .row-item .ri-val{font-family:var(--mono);font-weight:600;font-size:12.5px;color:var(--amber);white-space:nowrap;flex:0 0 auto;}
 
-        /* KPI Cards Grid */
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 16px;
-            margin-bottom: 24px;
-        }
+  .pill{display:inline-flex;align-items:center;gap:5px;padding:2.5px 8px;border-radius:999px;font-size:10.6px;font-weight:600;font-family:var(--body);white-space:nowrap;}
+  .pill.pending{background:var(--amber-soft);color:var(--amber);}
+  .pill.notreq{background:rgba(91,107,133,.13);color:var(--text-dim);}
+  .pill.empanelled{background:var(--green-soft);color:var(--green);}
+  .pill.other{background:var(--cyan-soft);color:var(--cyan);}
+  .pill.upcoming{background:var(--cyan-soft);color:var(--cyan);}
+  .pill.awarded{background:var(--green-soft);color:var(--green);}
 
-        .kpi-card {
-            background: var(--card-bg);
-            border-radius: 6px;
-            padding: 20px;
-            border-bottom: 3px solid transparent;
-            position: relative;
-        }
-        .kpi-card:nth-child(1) { border-bottom-color: #a29bfe; }
-        .kpi-card:nth-child(2) { border-bottom-color: #ffeaa7; }
-        .kpi-card:nth-child(3) { border-bottom-color: #00cec9; }
-        .kpi-card:nth-child(4) { border-bottom-color: #ff7675; }
-        .kpi-card:nth-child(5) { border-bottom-color: #ff9f43; }
+  /* ---------- Approval tab ---------- */
+  .status-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:20px;}
+  .status-card{
+    border-radius:12px;padding:16px;cursor:pointer;border:1px solid var(--border-soft);
+    background:var(--panel);transition:border-color .15s,transform .15s;
+  }
+  .status-card:hover{transform:translateY(-2px);}
+  .status-card.selected{border-color:var(--amber);box-shadow:0 0 0 1px rgba(181,105,11,.25);}
+  .status-card .sc-count{font-family:var(--display);font-size:28px;font-weight:700;}
+  .status-card .sc-label{font-size:12px;color:var(--text-dim);margin-top:4px;}
 
-        .kpi-card i {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            color: var(--text-muted);
-            opacity: 0.4;
-            font-size: 18px;
-        }
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+  .search-input{
+    flex:1;min-width:200px;background:var(--panel-2);border:1px solid var(--border);
+    border-radius:8px;padding:9px 12px;color:var(--text);font-family:var(--body);font-size:13px;
+  }
+  .search-input:focus{outline:none;border-color:var(--cyan);}
+  select.filter-select{
+    background:var(--panel-2);border:1px solid var(--border);border-radius:8px;color:var(--text);
+    padding:9px 10px;font-family:var(--body);font-size:12.6px;
+  }
+  .chip-row{display:flex;gap:8px;flex-wrap:wrap;}
+  .chip{
+    border:1px solid var(--border);background:var(--panel-2);color:var(--text-dim);
+    padding:7px 12px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;
+  }
+  .chip.active{border-color:var(--amber);color:var(--amber);background:var(--amber-soft);}
 
-        .kpi-value {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 6px;
-        }
+  table.data-table{width:100%;border-collapse:collapse;font-size:12.6px;}
+  table.data-table thead th{
+    text-align:left;font-family:var(--mono);font-size:10.4px;text-transform:uppercase;letter-spacing:.5px;
+    color:var(--text-faint);padding:9px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--panel);
+  }
+  table.data-table thead th.sortable{cursor:pointer;user-select:none;transition:color .12s;white-space:nowrap;}
+  table.data-table thead th.sortable:hover{color:var(--cyan);}
+  table.data-table thead th.sortable .arrow{display:inline-block;margin-left:4px;font-size:9px;opacity:.35;}
+  table.data-table thead th.sortable.sort-asc .arrow, table.data-table thead th.sortable.sort-desc .arrow{opacity:1;color:var(--amber);}
+  table.data-table thead th.sortable.sort-asc .arrow::after{content:"▲";}
+  table.data-table thead th.sortable.sort-desc .arrow::after{content:"▼";}
+  table.data-table thead th.sortable:not(.sort-asc):not(.sort-desc) .arrow::after{content:"▲▼";font-size:7px;letter-spacing:-1px;}
+  table.data-table tbody tr{cursor:pointer;transition:background .12s;}
+  table.data-table tbody tr:hover{background:var(--panel-2);}
+  table.data-table tbody td{padding:10px 12px;border-bottom:1px solid var(--border-soft);vertical-align:top;}
+  .table-scroll{max-height:520px;overflow:auto;border:1px solid var(--border-soft);border-radius:12px;}
+  .cell-title{font-weight:600;}
+  .cell-sub{color:var(--text-faint);font-size:11px;margin-top:2px;}
+  .mono-cell{font-family:var(--mono);color:var(--text-dim);font-size:11.6px;}
 
-        .kpi-label {
-            font-size: 11px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+  /* ---------- Sales person cards ---------- */
+  .sp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:14px;}
+  .sp-card{
+    background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--border-soft);
+    border-radius:13px;padding:16px;cursor:pointer;transition:transform .15s,border-color .15s;position:relative;
+  }
+  .sp-card:hover{transform:translateY(-3px);border-color:var(--cyan);}
+  .sp-card .sp-avatar{
+    width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    font-family:var(--display);font-weight:700;font-size:14px;margin-bottom:10px;
+    background:linear-gradient(135deg,var(--cyan),#0b5c54);color:#fff;
+  }
+  .sp-card.vacant .sp-avatar{background:linear-gradient(135deg,#93a2ba,#5b6b85);color:#fff;}
+  .sp-card .sp-name{font-family:var(--display);font-weight:700;font-size:15px;}
+  .sp-card .sp-code{font-family:var(--mono);font-size:10.5px;color:var(--text-faint);margin-top:1px;}
+  .sp-stat-row{display:flex;justify-content:space-between;margin-top:11px;font-size:11.8px;color:var(--text-dim);}
+  .sp-stat-row b{color:var(--text);font-family:var(--mono);}
+  .sp-bar{height:5px;border-radius:3px;background:#e7ecf5;margin-top:12px;overflow:hidden;}
+  .sp-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--amber),var(--cyan));}
 
-        /* Controls / Filters Container */
-        .controls-panel {
-            background: var(--card-bg);
-            border-radius: 6px;
-            padding: 16px;
-            margin-bottom: 20px;
-        }
+  /* ---------- Big projects tab ---------- */
+  .threshold-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
 
-        .search-filter-row {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
+  /* ---------- modal ---------- */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(20,30,50,.45);backdrop-filter:blur(3px);
+    display:none;align-items:center;justify-content:center;z-index:100;padding:20px;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-box{
+    width:100%;max-width:640px;max-height:86vh;overflow:auto;
+    background:linear-gradient(180deg,#ffffff,#f6f9fc);border:1px solid var(--border);
+    border-radius:16px;padding:24px 24px 22px;position:relative;
+    box-shadow:0 30px 80px -20px rgba(20,30,50,.35);
+    animation:modalIn .22s ease;
+  }
+  @keyframes modalIn{from{opacity:0;transform:translateY(10px) scale(.98);}to{opacity:1;transform:none;}}
+  .modal-close{
+    position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:8px;border:1px solid var(--border);
+    background:var(--panel-2);color:var(--text-dim);cursor:pointer;font-size:15px;line-height:1;
+  }
+  .modal-close:hover{color:var(--text);border-color:var(--cyan);}
+  .modal-eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--amber);margin-bottom:6px;}
+  .modal-title{font-family:var(--display);font-size:19px;font-weight:700;line-height:1.3;margin:0 0 14px;padding-right:26px;}
+  .modal-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;margin-bottom:16px;}
+  .modal-fields .f-full{grid-column:1/-1;}
+  .mf-lbl{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-faint);margin-bottom:3px;}
+  .mf-val{font-size:13px;color:var(--text);line-height:1.45;}
+  .modal-divider{height:1px;background:var(--border-soft);margin:16px 0;}
+  .modal-subhead{font-family:var(--display);font-size:12.5px;font-weight:700;color:var(--cyan);margin-bottom:10px;}
+  .mini-row{
+    display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 10px;border-radius:8px;
+    background:var(--panel-2);border:1px solid var(--border-soft);margin-bottom:6px;cursor:pointer;font-size:12px;
+  }
+  .mini-row:hover{border-color:var(--cyan);}
+  .mini-row .mr-name{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .mini-row .mr-val{font-family:var(--mono);color:var(--amber);white-space:nowrap;font-size:11.6px;}
 
-        .search-box {
-            position: relative;
-            flex: 2;
-        }
-        .search-box i {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-        }
-        .search-box input {
-            width: 100%;
-            background: #0d131a;
-            border: 1px solid var(--border-color);
-            padding: 12px 12px 12px 38px;
-            border-radius: 4px;
-            color: #fff;
-            font-size: 14px;
-        }
+  .empty-state{padding:40px 10px;text-align:center;color:var(--text-faint);font-size:13px;}
+  .loader-overlay{
+    position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;
+    z-index:999;gap:16px;
+  }
+  .loader-overlay.hidden{display:none;}
+  .spinner{width:34px;height:34px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--amber);animation:spin 1s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loader-overlay .lt{font-family:var(--mono);font-size:12px;color:var(--text-dim);letter-spacing:.4px;}
+  .load-err{color:var(--red);font-size:12.5px;max-width:420px;text-align:center;font-family:var(--body);}
 
-        .filter-dropdown {
-            flex: 1;
-            background: #0d131a;
-            border: 1px solid var(--border-color);
-            padding: 12px;
-            border-radius: 4px;
-            color: #fff;
-            font-size: 14px;
-            cursor: pointer;
-        }
-
-        .quick-filters {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-            font-size: 12px;
-        }
-        .quick-filters span {
-            color: var(--text-muted);
-            text-transform: uppercase;
-            font-size: 11px;
-            font-weight: 600;
-        }
-        .filter-btn {
-            background: #1c2635;
-            border: 1px solid var(--border-color);
-            color: #d1d5db;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .filter-btn:hover, .filter-btn.active {
-            background: rgba(255, 159, 67, 0.2);
-            color: var(--accent-orange);
-            border-color: var(--accent-orange);
-        }
-        .filter-btn.reset-btn {
-            background: transparent;
-            border-color: #ff7675;
-            color: #ff7675;
-            margin-left: auto;
-        }
-        .filter-btn.reset-btn:hover {
-            background: #ff7675;
-            color: #fff;
-        }
-
-        /* Table Area - No Horizontal Scrolling */
-        .table-container {
-            background: var(--card-bg);
-            border-radius: 6px;
-            overflow: hidden;
-            width: 100%;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-            font-size: 13px;
-            table-layout: fixed;
-        }
-
-        th, td {
-            padding: 14px 12px;
-            border-bottom: 1px solid var(--border-color);
-            word-wrap: break-word;
-            white-space: normal;
-        }
-
-        /* Strict column allocations to guarantee absolute wrap */
-        th:nth-child(1), td:nth-child(1) { width: 4%; text-align: center; color: var(--text-muted); } /* # */
-        th:nth-child(2), td:nth-child(2) { width: 30%; color: var(--accent-orange); font-weight: 500; } /* Title */
-        th:nth-child(3), td:nth-child(3) { width: 12%; color: #fff; } /* Tender ID */
-        th:nth-child(4), td:nth-child(4) { width: 12%; } /* State */
-        th:nth-child(5), td:nth-child(5) { width: 18%; } /* Organisation */
-        th:nth-child(6), td:nth-child(6) { width: 10%; text-align: right; font-weight: 600; color: #ffeaa7; } /* Value */
-        th:nth-child(7), td:nth-child(7) { width: 12%; text-align: center; } /* Bid Deadline */
-        th:nth-child(8), td:nth-child(8) { width: 12%; text-align: center; } /* Published */
-
-        th {
-            background-color: #172230;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            cursor: pointer;
-            user-select: none;
-        }
-        th:hover {
-            background-color: #1c2a3c;
-            color: #fff;
-        }
-        th .sort-icon {
-            margin-left: 4px;
-            font-size: 10px;
-            color: var(--text-muted);
-        }
-
-        tbody tr {
-            cursor: pointer;
-            transition: background 0.15s;
-        }
-        tbody tr:hover {
-            background-color: var(--hover-row);
-        }
-
-        /* Modal / Dialog Popup Details overlay */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(4px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s ease;
-        }
-        .modal-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        .modal-card {
-            background: var(--card-bg);
-            border-radius: 8px;
-            width: 90%;
-            max-width: 650px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.6);
-            overflow: hidden;
-            transform: scale(0.95);
-            transition: transform 0.2s ease;
-        }
-        .modal-overlay.active .modal-card {
-            transform: scale(1);
-        }
-        .modal-header {
-            background: #172230;
-            padding: 16px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .modal-header h3 {
-            color: var(--accent-orange);
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .close-modal {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-size: 24px;
-            cursor: pointer;
-            line-height: 1;
-        }
-        .close-modal:hover { color: #fff; }
-        .modal-body {
-            padding: 20px;
-            max-height: 75vh;
-            overflow-y: auto;
-        }
-        .detail-item {
-            margin-bottom: 14px;
-            border-bottom: 1px solid #1c2635;
-            padding-bottom: 10px;
-        }
-        .detail-item:last-child { border: none; }
-        .detail-label {
-            font-size: 11px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            margin-bottom: 4px;
-            font-weight: 600;
-            letter-spacing: 0.3px;
-        }
-        .detail-value {
-            font-size: 14px;
-            color: #fff;
-            line-height: 1.5;
-        }
-
-        .loader {
-            text-align: center;
-            padding: 60px;
-            font-size: 15px;
-            color: var(--text-muted);
-        }
-    </style>
+  .hamburger{display:none;}
+  @media(max-width:860px){
+    .sidebar{position:fixed;left:-260px;transition:left .2s;box-shadow:20px 0 40px rgba(20,30,50,.18);}
+    .sidebar.open{left:0;}
+    .main{padding:20px 16px 60px;}
+    .hamburger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;
+      background:var(--panel);border:1px solid var(--border);color:var(--text);cursor:pointer;margin-right:10px;}
+    .topbar{flex-wrap:wrap;}
+    .modal-fields{grid-template-columns:1fr;}
+  }
+</style>
 </head>
 <body>
 
-    <div class="header">
-        <div class="header-title">
-            <h1><i class="fa-solid fa-building-columns"></i> Upcoming Tenders Dashboard</h1>
-            <div class="header-subtitle">Authority-wise project intelligence · Government of India</div>
-            <div class="header-badges">
-                <span class="badge highlight" id="badge-count">0 Tenders</span>
-                <span class="badge cyan">All India Coverage</span>
-                <span class="badge" id="badge-date">Live Database View</span>
-            </div>
+<div class="loader-overlay" id="loaderOverlay">
+  <div class="spinner"></div>
+  <div class="lt" id="loaderText">CONNECTING TO LIVE SHEET…</div>
+  <div class="load-err" id="loaderErr" style="display:none;"></div>
+</div>
+
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">TC</div>
+      <div class="brand-text">
+        <div class="t1">Tender Command</div>
+        <div class="t2">Infra pipeline · live</div>
+      </div>
+    </div>
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="overview">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="12" width="4" height="8"/><rect x="10" y="7" width="4" height="13"/><rect x="17" y="3" width="4" height="17"/></svg>
+        Overview <span class="idx">01</span>
+      </button>
+      <button class="tab-btn" data-tab="approval">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+        Approval Status <span class="idx">02</span>
+      </button>
+      <button class="tab-btn" data-tab="salesperson">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="18" cy="8" r="2.6"/><path d="M15.5 14.2c2.7.3 5 2.5 5 5.8"/></svg>
+        Sales Person <span class="idx">03</span>
+      </button>
+      <button class="tab-btn" data-tab="bigprojects">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V9l4-4 4 4 4-6v18"/></svg>
+        Big Projects <span class="idx">04</span>
+      </button>
+    </nav>
+    <div class="side-foot">
+      <div><span class="status-dot"></span><span style="font-size:11.5px;color:var(--text-dim);">Source: 3 Google Sheet tabs</span></div>
+      <div class="line" id="lastSync">last sync —</div>
+      <div class="line" id="rowCounts">—</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;">
+        <div class="hamburger" id="hamburger">☰</div>
+        <div>
+          <h1 id="pageTitle">Overview Dashboard</h1>
+          <p id="pageSub">Live pipeline health across upcoming tenders, awarded contracts and BD ownership — pulled straight from the tracker sheet.</p>
         </div>
-        <div class="total-value-display">
-            <div class="amount" id="top-total-value">₹0 Cr</div>
-            <div class="label">Total Tender Value</div>
-        </div>
+      </div>
+      <div class="top-actions">
+        <button class="btn" id="refreshBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+          Refresh
+        </button>
+      </div>
     </div>
 
-    <div class="kpi-grid">
-        <div class="kpi-card">
-            <i class="fa-regular fa-file-lines"></i>
-            <div class="kpi-value" id="kpi-tenders">0</div>
-            <div class="kpi-label">Total Tenders</div>
+    <!-- OVERVIEW -->
+    <section class="section active" id="section-overview">
+      <div class="kpi-row" id="kpiRow"></div>
+      <div class="panel-grid">
+        <div class="panel">
+          <h3>Value by sector <span style="color:var(--text-faint);font-weight:400;">— upcoming pipeline</span></h3>
+          <div class="panel-sub">Click a bar's legend row below for the same info in table form. Amounts in ₹ Cr.</div>
+          <div class="chart-wrap"><canvas id="chartSector"></canvas></div>
         </div>
-        <div class="kpi-card">
-            <i class="fa-solid fa-coins"></i>
-            <div class="kpi-value" id="kpi-value">₹0.0L Cr</div>
-            <div class="kpi-label">Total Value</div>
+        <div class="panel">
+          <h3>Approval status split</h3>
+          <div class="panel-sub">Across all tracked authorities</div>
+          <div class="chart-wrap"><canvas id="chartApproval"></canvas></div>
         </div>
-        <div class="kpi-card">
-            <i class="fa-solid fa-chart-bar"></i>
-            <div class="kpi-value" id="kpi-avg">₹0 Cr</div>
-            <div class="kpi-label">Avg Tender Value</div>
+      </div>
+      <div class="panel-grid">
+        <div class="panel">
+          <h3>Top states by pipeline value</h3>
+          <div class="panel-sub">Upcoming tender value, ₹ Cr</div>
+          <div class="chart-wrap small"><canvas id="chartState"></canvas></div>
         </div>
-        <div class="kpi-card">
-            <i class="fa-solid fa-map-location-dot"></i>
-            <div class="kpi-value" id="kpi-states">0</div>
-            <div class="kpi-label">States Covered</div>
+        <div class="panel">
+          <h3>Highest-value upcoming tenders</h3>
+          <div class="panel-sub">Click any row for full details</div>
+          <div class="row-list" id="topUpcomingList"></div>
         </div>
-        <div class="kpi-card">
-            <i class="fa-solid fa-fire"></i>
-            <div class="kpi-value" id="kpi-large">0</div>
-            <div class="kpi-label">₹500 Cr+ Tenders</div>
-        </div>
-    </div>
+      </div>
+    </section>
 
-    <div class="controls-panel">
-        <div class="search-filter-row">
-            <div class="search-box">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="search-input" placeholder="Search title, Tender ID, organisation, state...">
-            </div>
-            <select class="filter-dropdown" id="state-dropdown">
-                <option value="">All States</option>
-            </select>
-            <select class="filter-dropdown" id="value-dropdown">
-                <option value="">All Values</option>
-                <option value="under5">Under ₹5 Cr</option>
-                <option value="5-25">₹5 – ₹25 Cr</option>
-                <option value="25-100">₹25 – ₹100 Cr</option>
-                <option value="100-500">₹100 – ₹500 Cr</option>
-                <option value="500plus">₹500 Cr+</option>
-            </select>
-        </div>
-        <div class="quick-filters">
-            <span>Quick Filter:</span>
-            <button class="filter-btn" onclick="setQuickState('Uttar Pradesh')">Uttar Pradesh</button>
-            <button class="filter-btn" onclick="setQuickState('Delhi')">Delhi</button>
-            <button class="filter-btn" onclick="setQuickState('Maharashtra')">Maharashtra</button>
-            <button class="filter-btn" onclick="setQuickState('Gujarat')">Gujarat</button>
-            <button class="filter-btn" onclick="setQuickValue('500plus')">🔥 ₹500 Cr+</button>
-            <button class="filter-btn" onclick="setQuickValue('100-500')">₹100–500 Cr</button>
-            <button class="filter-btn reset-btn" onclick="resetFilters()"><i class="fa-solid fa-rotate-left"></i> Reset</button>
-        </div>
-    </div>
-
-    <div class="table-container">
-        <table id="tenders-table">
-            <thead>
-                <tr>
-                    <th style="width: 4%;">#</th>
-                    <th onclick="sortTable('title')">Tender Title <i class="fa-solid fa-sort sort-icon"></i></th>
-                    <th onclick="sortTable('tenderId')">Tender ID <i class="fa-solid fa-sort sort-icon"></i></th>
-                    <th onclick="sortTable('state')">State <i class="fa-solid fa-sort sort-icon"></i></th>
-                    <th onclick="sortTable('organisation')">Organisation <i class="fa-solid fa-sort sort-icon"></i></th>
-                    <th onclick="sortTable('value')" style="text-align: right;">Value (Cr) <i class="fa-solid fa-sort sort-icon"></i></th>
-                    <th onclick="sortTable('deadline')" style="text-align: center;">Bid Deadline <i class="fa-solid fa-sort sort-icon"></i></th>
-                    <th onclick="sortTable('published')" style="text-align: center;">Published <i class="fa-solid fa-sort sort-icon"></i></th>
-                </tr>
-            </thead>
-            <tbody id="table-body">
-                <tr>
-                    <td colspan="8" class="loader"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading data streams from Google Sheets...</td>
-                </tr>
-            </tbody>
+    <!-- APPROVAL STATUS -->
+    <section class="section" id="section-approval">
+      <div class="status-cards" id="statusCards"></div>
+      <div class="toolbar">
+        <input class="search-input" id="approvalSearch" placeholder="Search organisation, sector, sales person…">
+        <select class="filter-select" id="approvalSectorFilter"><option value="">All sectors</option></select>
+      </div>
+      <div class="table-scroll">
+        <table class="data-table" id="approvalTable">
+          <thead><tr>
+            <th class="sortable" data-sort="organisation">Organisation<span class="arrow"></span></th>
+            <th class="sortable" data-sort="sector">Sector<span class="arrow"></span></th>
+            <th class="sortable" data-sort="salesperson">Sales Person<span class="arrow"></span></th>
+            <th class="sortable" data-sort="zone">Zone / State<span class="arrow"></span></th>
+            <th class="sortable" data-sort="lom">LOM<span class="arrow"></span></th>
+            <th class="sortable" data-sort="approval">Approval<span class="arrow"></span></th>
+            <th class="sortable" data-sort="tenders">No. of Tenders<span class="arrow"></span></th>
+            <th class="sortable" data-sort="value">Pipeline Value<span class="arrow"></span></th>
+          </tr></thead>
+          <tbody id="approvalTableBody"></tbody>
         </table>
-    </div>
+      </div>
+    </section>
 
-    <div class="modal-overlay" id="details-modal" onclick="closeModal(event)">
-        <div class="modal-card" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <h3><i class="fa-solid fa-circle-info"></i> Full Tender Details Breakdown</h3>
-                <button class="close-modal" onclick="toggleModal(false)">&times;</button>
-            </div>
-            <div class="modal-body" id="modal-content">
-                </div>
+    <!-- SALES PERSON -->
+    <section class="section" id="section-salesperson">
+      <div class="toolbar">
+        <input class="search-input" id="spSearch" placeholder="Search sales person…">
+        <select class="filter-select" id="spSort">
+          <option value="value">Sort by pipeline value</option>
+          <option value="count">Sort by organisation count</option>
+          <option value="name">Sort A–Z</option>
+        </select>
+      </div>
+      <div class="sp-grid" id="spGrid"></div>
+    </section>
+
+    <!-- BIG PROJECTS -->
+    <section class="section" id="section-bigprojects">
+      <div class="kpi-row" id="bigKpiRow"></div>
+      <div class="threshold-row">
+        <span style="font-size:12px;color:var(--text-dim);font-weight:600;">Show projects worth at least</span>
+        <div class="chip-row" id="thresholdChips">
+          <div class="chip" data-th="100">₹100 Cr+</div>
+          <div class="chip active" data-th="500">₹500 Cr+</div>
+          <div class="chip" data-th="1000">₹1,000 Cr+</div>
+          <div class="chip" data-th="5000">₹5,000 Cr+</div>
         </div>
-    </div>
+        <div class="chip-row" id="typeChips" style="margin-left:auto;">
+          <div class="chip active" data-type="all">All</div>
+          <div class="chip" data-type="Upcoming">Upcoming</div>
+          <div class="chip" data-type="Awarded">Awarded</div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <input class="search-input" id="bigSearch" placeholder="Search tender ID, organisation, description…">
+      </div>
+      <div class="table-scroll">
+        <table class="data-table" id="bigTable">
+          <thead><tr>
+            <th class="sortable" data-sort="rank">#<span class="arrow"></span></th>
+            <th class="sortable" data-sort="tender">Tender<span class="arrow"></span></th>
+            <th class="sortable" data-sort="organisation">Organisation<span class="arrow"></span></th>
+            <th class="sortable" data-sort="sector">Sector<span class="arrow"></span></th>
+            <th class="sortable" data-sort="state">State<span class="arrow"></span></th>
+            <th class="sortable sort-desc" data-sort="value">Value (₹ Cr)<span class="arrow"></span></th>
+            <th class="sortable" data-sort="salesperson">Sales Person<span class="arrow"></span></th>
+            <th class="sortable" data-sort="type">Status<span class="arrow"></span></th>
+          </tr></thead>
+          <tbody id="bigTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
 
-    <script>
-        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSZjO-A6VhuzifXXgffaGdtD6ysazVtS1FTjeFTUxdi-q9IIfjc4DZmrS3QF7MhzKjHRqeN36ZeX_qu/pub?gid=1590006273&single=true&output=csv";
-        
-        let allData = [];
-        let filteredData = [];
-        let currentSort = { column: '', ascending: true };
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box" id="modalBox"></div>
+</div>
 
-        // Core data pipeline fetch
-        async function fetchTenderData() {
-            try {
-                const response = await fetch(CSV_URL);
-                const csvText = await response.text();
-                
-                Papa.parse(csvText, {
-                    header: true,
-                    skipEmptyLines: true,
-                    complete: function(results) {
-                        processRawData(results.data);
-                    }
-                });
-            } catch (error) {
-                console.error("CSV loading error:", error);
-                document.getElementById('table-body').innerHTML = `<tr><td colspan="8" class="loader" style="color: #ff7675;">Failed to pull current Google sheet configurations. Check connection access.</td></tr>`;
-            }
-        }
+<script>
+/* ============================ CONFIG ============================ */
+const SHEET_ID = "130p2XxQvrRlWumgcN8ujtd8dh8ao4ByZS4wG5fVXp9Q";
+const GID_UPCOMING = "1461554809";
+const GID_MASTER   = "935586997";
+const GID_AWARDED  = "1166040452";
 
-        // Helper function to safely find values inside columns regardless of trailing/leading spaces or casing variations
-        function getRowValueByKeys(row, keysArray) {
-            const rowKeys = Object.keys(row);
-            for (let k of keysArray) {
-                // Find matching column string via trimming and casing normalization
-                let matchedKey = rowKeys.find(rk => rk.trim().toLowerCase() === k.toLowerCase());
-                if (matchedKey) return row[matchedKey];
-            }
-            return '';
-        }
+/* ============================ FETCH (JSONP via gviz) ============================ */
+let cbCounter = 0;
+function fetchSheet(gid){
+  return new Promise((resolve, reject)=>{
+    const cbName = "__gvizCB_" + gid + "_" + (cbCounter++);
+    const timeout = setTimeout(()=>{ cleanup(); reject(new Error("Timed out loading sheet " + gid)); }, 20000);
+    function cleanup(){ clearTimeout(timeout); delete window[cbName]; if(script.parentNode) script.parentNode.removeChild(script); }
+    window[cbName] = function(resp){ cleanup(); resolve(resp); };
+    const script = document.createElement("script");
+    script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=${gid}&headers=1&tqx=out:json;responseHandler:${cbName}`;
+    script.onerror = ()=>{ cleanup(); reject(new Error("Could not reach sheet " + gid + " — check it is shared as 'Anyone with the link can view'.")); };
+    document.body.appendChild(script);
+  });
+}
 
-        // Process data safely maps all columns dynamically
-        function processRawData(rawData) {
-            allData = rawData.map((row, index) => {
-                // Extract keys with fallback array logic to intercept trailing spreadsheet spaces
-                const title = getRowValueByKeys(row, ['Tender Title', 'Title', 'TENDER TITLE']);
-                const tenderId = getRowValueByKeys(row, ['Tender ID', 'ID', 'TENDER ID']);
-                const state = getRowValueByKeys(row, ['State', 'STATE']) || 'Unknown';
-                const org = getRowValueByKeys(row, ['Organisation', 'Organization', 'ORGANISATION']) || 'N/A';
-                
-                let rawValue = getRowValueByKeys(row, ['amt. in cr.', 'Amt. in Cr.', 'Value', 'value']) || 0;
-                let numericValue = parseFloat(String(rawValue).replace(/,/g, '')) || 0;
+function rowsFromTable(resp){
+  if(!resp || !resp.table) return [];
+  const table = resp.table;
+  const headers = table.cols.map(c => (c.label || "").trim());
+  return table.rows.map(r=>{
+    const obj = {};
+    headers.forEach((h,i)=>{
+      if(!h) return;
+      const cell = r.c ? r.c[i] : null;
+      if(!cell){ obj[h] = ""; obj["__"+h+"_num"] = null; return; }
+      const display = (cell.f !== undefined && cell.f !== null) ? cell.f : cell.v;
+      obj[h] = display === null || display === undefined ? "" : display;
+      obj["__"+h+"_num"] = (typeof cell.v === "number") ? cell.v : (parseFloat(cell.v) || null);
+    });
+    return obj;
+  });
+}
 
-                let publishedStr = getRowValueByKeys(row, ['Published', 'PUBLISHED', 'Published Date']) || '';
-                let deadlineStr = getRowValueByKeys(row, ['Bid Deadline', 'BID DEADLINE', 'Deadline']) || '';
-                
-                // Chronological sorting failover logic rule evaluation
-                let pubDate = new Date(publishedStr);
-                let deadDate = new Date(deadlineStr);
-                if (!isNaN(pubDate) && !isNaN(deadDate) && pubDate > deadDate) {
-                    let swap = publishedStr;
-                    publishedStr = deadlineStr;
-                    deadlineStr = swap;
-                }
+/* ============================ HELPERS ============================ */
+function fmtCr(n){
+  if(n === null || n === undefined || isNaN(n)) return "—";
+  return "₹" + Number(n).toLocaleString("en-IN", {maximumFractionDigits:0}) + " Cr";
+}
+function fmtNum(n){ return n === null || n === undefined ? "—" : Number(n).toLocaleString("en-IN"); }
+function esc(s){ return (s===undefined||s===null) ? "" : String(s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
+function truncate(s, n){ if(!s) return ""; s = String(s); return s.length > n ? s.slice(0,n).trim() + "…" : s; }
+function statusPillClass(status){
+  if(!status) return "other";
+  const s = status.toLowerCase();
+  if(s.includes("pending")) return "pending";
+  if(s.includes("not required")) return "notreq";
+  if(s.includes("empanel")) return "empanelled";
+  return "other";
+}
+function safeSort(arr, keyFn, desc=true){ return [...arr].sort((a,b)=> desc ? keyFn(b)-keyFn(a) : keyFn(a)-keyFn(b)); }
 
-                return {
-                    id: index + 1,
-                    title: title || '—',
-                    tenderId: tenderId || '—',
-                    state: state.trim(),
-                    organisation: org,
-                    value: numericValue,
-                    published: publishedStr || '—',
-                    deadline: deadlineStr || '—',
-                    rawRow: row 
-                };
-            });
+/* ============================ DATA MODEL ============================ */
+let authorityRows = [], authorityMap = new Map();
+let upcomingRows = [], awardedRows = [];
+let combinedProjects = [];
+let salesPersonAgg = new Map();
 
-            populateStateDropdown();
-            applyFilters();
-        }
+function buildModel(upTable, masterTable, awTable){
+  authorityRows = rowsFromTable(masterTable).filter(r => r["Organisation"]);
+  authorityMap = new Map();
+  authorityRows.forEach(r => authorityMap.set(r["Organisation Code"], r));
 
-        function populateStateDropdown() {
-            const dropdown = document.getElementById('state-dropdown');
-            const states = [...new Set(allData.map(d => d.state).filter(Boolean))].sort();
-            states.forEach(state => {
-                let opt = document.createElement('option');
-                opt.value = state;
-                opt.innerText = state;
-                dropdown.appendChild(opt);
-            });
-        }
+  const up = rowsFromTable(upTable).filter(r => r["Tender ID"]);
+  const aw = rowsFromTable(awTable).filter(r => r["Tender ID"]);
+  upcomingRows = up; awardedRows = aw;
 
-        function updateKPIs(data) {
-            const count = data.length;
-            let totalVal = 0;
-            let over500Count = 0;
-            let uniqueStates = new Set();
+  combinedProjects = [];
+  up.forEach(r=>{
+    const meta = authorityMap.get(r["Organisation Code"]) || {};
+    combinedProjects.push({
+      type:"Upcoming",
+      tenderId:r["Tender ID"], description:r["Description"],
+      valueCr: r["__Amt. in Cr._num"] || 0, amountDisplay: r["Amt. in Cr."],
+      publishedDate:r["Published Date"], endDate:r["Bid Submission End Date"], contractDate:null,
+      district:r["District/City"], state:r["State"], organisation:r["Organisation"],
+      orgChain:r["Organisation Chain"], governingAuthority:r["Governing Authority"],
+      status:r["Tender Status"], orgCode:r["Organisation Code"], winner:null,
+      sector: meta["Sector"] || "Unclassified", salesPerson: meta["Sales Person"] || "Vacant",
+      approvalStatus: meta["Approval Status"] || "Unknown", zone: meta["Zone"] || "", lom: meta["LOM Available or not"] || ""
+    });
+  });
+  aw.forEach(r=>{
+    const meta = authorityMap.get(r["Organisation Code"]) || {};
+    combinedProjects.push({
+      type:"Awarded",
+      tenderId:r["Tender ID"], description:r["Description"],
+      valueCr: r["__Amt. in Cr._num"] || 0, amountDisplay: r["Amt. in Cr."],
+      publishedDate:r["Published Date"], endDate:r["Bid Submission End Date"], contractDate:r["Contract Date"],
+      district:r["District/City"], state:r["State"], organisation:r["Organisation"],
+      orgChain:r["Organisation Chain"], governingAuthority:r["Governing Authority"],
+      status:r["Tender Status"], orgCode:r["Organisation Code"], winner:r["L1 Winner"],
+      sector: meta["Sector"] || "Unclassified", salesPerson: meta["Sales Person"] || "Vacant",
+      approvalStatus: meta["Approval Status"] || "Unknown", zone: meta["Zone"] || "", lom: meta["LOM Available or not"] || ""
+    });
+  });
 
-            data.forEach(item => {
-                totalVal += item.value;
-                if(item.value >= 500) over500Count++;
-                if(item.state && item.state !== 'Unknown') uniqueStates.add(item.state);
-            });
+  // sales person aggregation
+  salesPersonAgg = new Map();
+  authorityRows.forEach(r=>{
+    const name = r["Sales Person"] || "Vacant";
+    if(!salesPersonAgg.has(name)) salesPersonAgg.set(name, {
+      name, code: r["Sales Person code"] || "—", orgCodes: new Set(), sectors: new Set(),
+      upcomingCount:0, upcomingValue:0, awardedCount:0, awardedValue:0
+    });
+    const agg = salesPersonAgg.get(name);
+    agg.orgCodes.add(r["Organisation Code"]);
+    if(r["Sector"]) agg.sectors.add(r["Sector"]);
+  });
+  combinedProjects.forEach(p=>{
+    const name = p.salesPerson || "Vacant";
+    if(!salesPersonAgg.has(name)) salesPersonAgg.set(name, {
+      name, code:"—", orgCodes:new Set(), sectors:new Set(), upcomingCount:0, upcomingValue:0, awardedCount:0, awardedValue:0
+    });
+    const agg = salesPersonAgg.get(name);
+    if(p.type === "Upcoming"){ agg.upcomingCount++; agg.upcomingValue += p.valueCr; }
+    else { agg.awardedCount++; agg.awardedValue += p.valueCr; }
+  });
+}
 
-            const avgVal = count > 0 ? (totalVal / count) : 0;
+/* ============================ MODAL SYSTEM ============================ */
+const modalOverlay = document.getElementById("modalOverlay");
+const modalBox = document.getElementById("modalBox");
+function closeModal(){ modalOverlay.classList.remove("open"); modalBox.innerHTML=""; }
+modalOverlay.addEventListener("click", e=>{ if(e.target === modalOverlay) closeModal(); });
+document.addEventListener("keydown", e=>{ if(e.key === "Escape") closeModal(); });
 
-            document.getElementById('badge-count').innerText = `${count.toLocaleString()} Tenders`;
-            document.getElementById('top-total-value').innerText = `₹${Math.round(totalVal).toLocaleString()} Cr`;
-            
-            document.getElementById('kpi-tenders').innerText = count.toLocaleString();
-            document.getElementById('kpi-value').innerText = `₹${(totalVal / 100000).toFixed(1)}L Cr`;
-            document.getElementById('kpi-avg').innerText = `₹${Math.round(avgVal)} Cr`;
-            document.getElementById('kpi-states').innerText = uniqueStates.size;
-            document.getElementById('kpi-large').innerText = over500Count;
-        }
+function openModal(html){
+  modalBox.innerHTML = `<button class="modal-close" onclick="closeModal()">✕</button>` + html;
+  modalOverlay.classList.add("open");
+  modalBox.scrollTop = 0;
+}
 
-        function applyFilters() {
-            const searchVal = document.getElementById('search-input').value.toLowerCase();
-            const stateVal = document.getElementById('state-dropdown').value;
-            const valueRange = document.getElementById('value-dropdown').value;
+function projectField(label, value, full=false){
+  return `<div class="${full?'f-full':''}"><div class="mf-lbl">${esc(label)}</div><div class="mf-val">${value===""||value===null||value===undefined?"—":value}</div></div>`;
+}
 
-            filteredData = allData.filter(item => {
-                const matchSearch = item.title.toLowerCase().includes(searchVal) || 
-                                    item.tenderId.toLowerCase().includes(searchVal) ||
-                                    item.organisation.toLowerCase().includes(searchVal) || 
-                                    item.state.toLowerCase().includes(searchVal);
-                
-                const matchState = !stateVal || item.state === stateVal;
+function openProjectModal(tenderId, type){
+  const p = combinedProjects.find(x => x.tenderId === tenderId && x.type === type);
+  if(!p) return;
+  let html = `<div class="modal-eyebrow">${p.type} tender · ${esc(p.orgCode||"")}</div>`;
+  html += `<div class="modal-title">${esc(truncate(p.description, 160))}</div>`;
+  html += `<div class="modal-fields">`;
+  html += projectField("Tender ID", `<span class="mono-cell">${esc(p.tenderId)}</span>`);
+  html += projectField("Value", `<b style="color:var(--amber)">${fmtCr(p.valueCr)}</b>`);
+  html += projectField("Organisation", esc(p.organisation));
+  html += projectField("Sector", esc(p.sector));
+  html += projectField("Sales Person", esc(p.salesPerson));
+  html += projectField("Approval Status", `<span class="pill ${statusPillClass(p.approvalStatus)}">${esc(p.approvalStatus)}</span>`);
+  html += projectField("Location", esc([p.district, p.state].filter(Boolean).join(", ")));
+  html += projectField("Governing Authority", esc(p.governingAuthority));
+  html += projectField("Tender Status", esc(p.status));
+  html += projectField("Published Date", esc(p.publishedDate));
+  if(p.type === "Upcoming"){
+    html += projectField("Bid Submission End", esc(p.endDate));
+  } else {
+    html += projectField("Contract Date", esc(p.contractDate));
+    html += projectField("L1 Winner", esc(p.winner) || "—");
+  }
+  html += projectField("Organisation Chain", esc(p.orgChain), true);
+  html += projectField("Full Description", esc(p.description), true);
+  html += `</div>`;
+  html += `<div class="modal-divider"></div>`;
+  html += `<div class="mini-row" style="cursor:default;justify-content:flex-start;gap:8px;" >
+    <span class="mf-lbl" style="margin:0;">view organisation</span>
+  </div>`;
+  html += `<div class="mini-row" onclick="openAuthorityModal('${esc(p.orgCode)}')">
+    <span class="mr-name">${esc(p.organisation)}</span><span class="mr-val">Open →</span>
+  </div>`;
+  openModal(html);
+}
 
-                let matchValue = true;
-                if (valueRange === 'under5') matchValue = item.value < 5;
-                else if (valueRange === '5-25') matchValue = item.value >= 5 && item.value <= 25;
-                else if (valueRange === '25-100') matchValue = item.value > 25 && item.value <= 100;
-                else if (valueRange === '100-500') matchValue = item.value > 100 && item.value <= 500;
-                else if (valueRange === '500plus') matchValue = item.value >= 500;
+function openAuthorityModal(orgCode){
+  const a = authorityMap.get(orgCode);
+  if(!a) return;
+  const orgProjects = combinedProjects.filter(p => p.orgCode === orgCode);
+  const upVal = orgProjects.filter(p=>p.type==="Upcoming").reduce((s,p)=>s+p.valueCr,0);
+  const awVal = orgProjects.filter(p=>p.type==="Awarded").reduce((s,p)=>s+p.valueCr,0);
+  let html = `<div class="modal-eyebrow">Authority · ${esc(a["Organisation Code"])}</div>`;
+  html += `<div class="modal-title">${esc(a["Organisation"])}</div>`;
+  html += `<div class="modal-fields">`;
+  html += projectField("Governing Authority", esc(a["Governing Authority"]));
+  html += projectField("Approval Status", `<span class="pill ${statusPillClass(a["Approval Status"])}">${esc(a["Approval Status"])}</span>`);
+  html += projectField("Sector", esc(a["Sector"]));
+  html += projectField("Sales Person", `<span style="cursor:pointer;color:var(--cyan);" onclick="closeModal();setTimeout(()=>openSalesPersonModal('${esc(a["Sales Person"]).replace(/'/g,"\\'")}'),50)">${esc(a["Sales Person"])} →</span>`);
+  html += projectField("Zone", esc(a["Zone"]));
+  html += projectField("State / District", esc([a["State"],a["District"]].filter(Boolean).join(" / ")));
+  html += projectField("LOM Available", esc(a["LOM Available or not"]));
+  html += projectField("Sales Person Code", `<span class="mono-cell">${esc(a["Sales Person code"])}</span>`);
+  html += `</div>`;
+  html += `<div class="modal-divider"></div>`;
+  html += `<div class="modal-subhead">Pipeline for this organisation — ${orgProjects.length} tender${orgProjects.length===1?"":"s"} · ${fmtCr(upVal+awVal)} combined</div>`;
+  if(orgProjects.length === 0){
+    html += `<div class="empty-state">No tenders linked to this organisation in the tracked sheets yet.</div>`;
+  } else {
+    safeSort(orgProjects, p=>p.valueCr).slice(0,12).forEach(p=>{
+      html += `<div class="mini-row" onclick="closeModal();setTimeout(()=>openProjectModal('${esc(p.tenderId).replace(/'/g,"\\'")}','${p.type}'),50)">
+        <span class="mr-name">${p.type==="Upcoming"?"🟦":"🟩"} ${esc(truncate(p.description,54))}</span>
+        <span class="mr-val">${fmtCr(p.valueCr)}</span>
+      </div>`;
+    });
+  }
+  openModal(html);
+}
 
-                return matchSearch && matchState && matchValue;
-            });
+function openSalesPersonModal(name){
+  const agg = salesPersonAgg.get(name);
+  if(!agg) return;
+  const orgs = authorityRows.filter(a => (a["Sales Person"]||"Vacant") === name);
+  let html = `<div class="modal-eyebrow">Sales Person</div>`;
+  html += `<div class="modal-title">${esc(name)} ${name==="Vacant"?"— Unassigned territory":""}</div>`;
+  html += `<div class="modal-fields">`;
+  html += projectField("Sales Person Code", `<span class="mono-cell">${esc(agg.code)}</span>`);
+  html += projectField("Organisations Owned", fmtNum(agg.orgCodes.size));
+  html += projectField("Upcoming Pipeline", `<b style="color:var(--cyan)">${fmtCr(agg.upcomingValue)}</b> (${agg.upcomingCount} tenders)`);
+  html += projectField("Awarded Value", `<b style="color:var(--green)">${fmtCr(agg.awardedValue)}</b> (${agg.awardedCount} tenders)`);
+  html += projectField("Sectors Covered", esc([...agg.sectors].join(", ")), true);
+  html += `</div>`;
+  html += `<div class="modal-divider"></div>`;
+  html += `<div class="modal-subhead">Assigned organisations (${orgs.length})</div>`;
+  if(orgs.length === 0){
+    html += `<div class="empty-state">No organisations currently assigned.</div>`;
+  } else {
+    safeSort(orgs, o=>{
+      const v = combinedProjects.filter(p=>p.orgCode===o["Organisation Code"]).reduce((s,p)=>s+p.valueCr,0);
+      return v;
+    }).forEach(o=>{
+      const v = combinedProjects.filter(p=>p.orgCode===o["Organisation Code"]).reduce((s,p)=>s+p.valueCr,0);
+      html += `<div class="mini-row" onclick="closeModal();setTimeout(()=>openAuthorityModal('${esc(o["Organisation Code"]).replace(/'/g,"\\'")}'),50)">
+        <span class="mr-name">${esc(o["Organisation"])} <span class="pill ${statusPillClass(o["Approval Status"])}" style="margin-left:6px;">${esc(o["Approval Status"])}</span></span>
+        <span class="mr-val">${fmtCr(v)}</span>
+      </div>`;
+    });
+  }
+  openModal(html);
+}
 
-            updateKPIs(filteredData);
-            renderTable();
-        }
+function openKpiListModal(title, eyebrow, items){
+  let html = `<div class="modal-eyebrow">${esc(eyebrow)}</div><div class="modal-title">${esc(title)}</div>`;
+  html += `<div class="modal-divider" style="margin-top:0;"></div>`;
+  if(items.length === 0){ html += `<div class="empty-state">Nothing here right now.</div>`; }
+  items.slice(0,40).forEach(it => { html += it; });
+  openModal(html);
+}
 
-        function renderTable() {
-            const tbody = document.getElementById('table-body');
-            tbody.innerHTML = '';
+/* ============================ CHARTS ============================ */
+let chartSector, chartApproval, chartState;
+const chartColors = ["#b5690b","#0e8f83","#188a52","#6a4fd6","#c1483a","#a67c0a","#3572b0","#a04fc9"];
 
-            if (filteredData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="loader">No current matching records found in this view.</td></tr>`;
-                return;
-            }
+function renderCharts(){
+  const ctxSector = document.getElementById("chartSector");
+  const ctxApproval = document.getElementById("chartApproval");
+  const ctxState = document.getElementById("chartState");
+  Chart.defaults.color = "#5b6b85";
+  Chart.defaults.font.family = "Inter";
+  Chart.defaults.borderColor = "#e8edf6";
 
-            filteredData.forEach((item, idx) => {
-                let tr = document.createElement('tr');
-                tr.onclick = () => openDetailsModal(item);
-                
-                tr.innerHTML = `
-                    <td style="text-align: center;">${idx + 1}</td>
-                    <td>${item.title}</td>
-                    <td>${item.tenderId}</td>
-                    <td>${item.state}</td>
-                    <td>${item.organisation}</td>
-                    <td style="text-align: right;">₹${item.value.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})} Cr</td>
-                    <td style="text-align: center;">${item.deadline}</td>
-                    <td style="text-align: center;">${item.published}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
+  // sector aggregation (upcoming)
+  const sectorMap = new Map();
+  upcomingRows.forEach(r=>{
+    const meta = authorityMap.get(r["Organisation Code"]) || {};
+    const sector = meta["Sector"] || "Unclassified";
+    sectorMap.set(sector, (sectorMap.get(sector)||0) + (r["__Amt. in Cr._num"]||0));
+  });
+  const sectorSorted = [...sectorMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,8);
+  if(chartSector) chartSector.destroy();
+  chartSector = new Chart(ctxSector, {
+    type:"bar",
+    data:{ labels: sectorSorted.map(s=>s[0]), datasets:[{ data: sectorSorted.map(s=>Math.round(s[1])), backgroundColor: chartColors[0], borderRadius:5, maxBarThickness:22 }]},
+    options:{ indexAxis:"y", plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>fmtCr(c.raw)}}}, scales:{x:{grid:{color:"#eef2f8"}}, y:{grid:{display:false}}} }
+  });
 
-        // Inline Grid Column Sort mechanics 
-        function sortTable(columnKey) {
-            if (currentSort.column === columnKey) {
-                currentSort.ascending = !currentSort.ascending;
-            } else {
-                currentSort.column = columnKey;
-                currentSort.ascending = true;
-            }
+  // approval status
+  const apMap = new Map();
+  authorityRows.forEach(r=>{ const s = r["Approval Status"]||"Unknown"; apMap.set(s,(apMap.get(s)||0)+1); });
+  const apEntries = [...apMap.entries()];
+  if(chartApproval) chartApproval.destroy();
+  chartApproval = new Chart(ctxApproval, {
+    type:"doughnut",
+    data:{ labels: apEntries.map(e=>e[0]), datasets:[{ data: apEntries.map(e=>e[1]), backgroundColor:[chartColors[0],chartColors[1],chartColors[2],chartColors[3]], borderColor:"#ffffff", borderWidth:3 }]},
+    options:{ plugins:{legend:{position:"bottom", labels:{boxWidth:10, padding:14, font:{size:11}}}}, cutout:"62%" }
+  });
 
-            filteredData.sort((a, b) => {
-                let valA = a[columnKey];
-                let valB = b[columnKey];
+  // state aggregation
+  const stMap = new Map();
+  upcomingRows.forEach(r=>{
+    const st = (r["State"]||"Unknown").split(",")[0].trim();
+    stMap.set(st, (stMap.get(st)||0) + (r["__Amt. in Cr._num"]||0));
+  });
+  const stSorted = [...stMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,8);
+  if(chartState) chartState.destroy();
+  chartState = new Chart(ctxState, {
+    type:"bar",
+    data:{ labels: stSorted.map(s=>s[0]), datasets:[{ data: stSorted.map(s=>Math.round(s[1])), backgroundColor: chartColors[1], borderRadius:5, maxBarThickness:26 }]},
+    options:{ plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>fmtCr(c.raw)}}}, scales:{y:{grid:{color:"#eef2f8"}}, x:{grid:{display:false}}} }
+  });
+}
 
-                if (columnKey === 'deadline' || columnKey === 'published') {
-                    let dateA = new Date(valA);
-                    let dateB = new Date(valB);
-                    if (isNaN(dateA)) return 1;
-                    if (isNaN(dateB)) return -1;
-                    return currentSort.ascending ? dateA - dateB : dateB - dateA;
-                }
+/* ============================ RENDER: OVERVIEW ============================ */
+function renderOverview(){
+  const upcomingValue = upcomingRows.reduce((s,r)=>s+(r["__Amt. in Cr._num"]||0),0);
+  const awardedValue = awardedRows.reduce((s,r)=>s+(r["__Amt. in Cr._num"]||0),0);
+  const pendingCount = authorityRows.filter(r=>(r["Approval Status"]||"").toLowerCase().includes("pending")).length;
+  const salesPeopleActive = [...salesPersonAgg.keys()].filter(n=>n!=="Vacant").length;
+  const vacantOrgs = authorityRows.filter(r=>(r["Sales Person"]||"Vacant")==="Vacant").length;
 
-                if (typeof valA === 'string') {
-                    return currentSort.ascending ? valA.localeCompare(valB) : valB.localeCompare(valA);
-                } else {
-                    return currentSort.ascending ? valA - valB : valB - valA;
-                }
-            });
+  const kpiRow = document.getElementById("kpiRow");
+  kpiRow.innerHTML = "";
+  const kpis = [
+    {lbl:"Upcoming Tenders", val: fmtNum(upcomingRows.length), sub: fmtCr(upcomingValue) + " pipeline", cls:"cyan",
+      onClick:()=>switchTab("bigprojects")},
+    {lbl:"Awarded Contracts", val: fmtNum(awardedRows.length), sub: fmtCr(awardedValue) + " contracted", cls:"green",
+      onClick:()=>{switchTab("bigprojects"); document.querySelector('#typeChips [data-type="Awarded"]').click();}},
+    {lbl:"Authorities Tracked", val: fmtNum(authorityRows.length), sub: salesPeopleActive + " sales owners active", cls:"amber",
+      onClick:()=>switchTab("approval")},
+    {lbl:"Pending Approvals", val: fmtNum(pendingCount), sub: "need sign-off", cls:"red",
+      onClick:()=>{switchTab("approval"); setTimeout(()=>document.querySelector('.status-card[data-status="Pending"]')?.click(),60);}},
+    {lbl:"Vacant Territories", val: fmtNum(vacantOrgs), sub: "orgs without an owner", cls:"amber",
+      onClick:()=>switchTab("salesperson")},
+  ];
+  kpis.forEach(k=>{
+    const el = document.createElement("div");
+    el.className = "kpi";
+    el.innerHTML = `<div class="lbl">${esc(k.lbl)}</div><div class="val ${k.cls}">${k.val}</div><div class="sub">${esc(k.sub)}</div>`;
+    el.addEventListener("click", k.onClick);
+    kpiRow.appendChild(el);
+  });
 
-            renderTable();
-        }
+  const topUpcoming = safeSort(upcomingRows, r=>r["__Amt. in Cr._num"]||0).slice(0,8);
+  const list = document.getElementById("topUpcomingList");
+  list.innerHTML = "";
+  topUpcoming.forEach((r,i)=>{
+    const meta = authorityMap.get(r["Organisation Code"]) || {};
+    const el = document.createElement("div");
+    el.className = "row-item";
+    el.innerHTML = `<div class="rank">${i+1}</div>
+      <div class="ri-main">
+        <div class="ri-title">${esc(truncate(r["Description"], 62))}</div>
+        <div class="ri-sub">${esc(r["Organisation"])} · ${esc(r["State"])}</div>
+      </div>
+      <div class="ri-val">${fmtCr(r["__Amt. in Cr._num"])}</div>`;
+    el.addEventListener("click", ()=>openProjectModal(r["Tender ID"], "Upcoming"));
+    list.appendChild(el);
+  });
 
-        function setQuickState(stateName) {
-            document.getElementById('state-dropdown').value = stateName;
-            applyFilters();
-        }
+  renderCharts();
+}
 
-        function setQuickValue(rangeKey) {
-            document.getElementById('value-dropdown').value = rangeKey;
-            applyFilters();
-        }
+/* ============================ SORTABLE TABLE HEADERS ============================ */
+function wireSortableHeaders(tableId, sortState, rerenderFn){
+  const table = document.getElementById(tableId);
+  table.querySelectorAll("th.sortable").forEach(th=>{
+    th.addEventListener("click", ()=>{
+      const key = th.dataset.sort;
+      if(sortState.key === key){ sortState.dir = sortState.dir === "asc" ? "desc" : "asc"; }
+      else { sortState.key = key; sortState.dir = key === "value" || key === "tenders" ? "desc" : "asc"; }
+      table.querySelectorAll("th.sortable").forEach(h=>h.classList.remove("sort-asc","sort-desc"));
+      th.classList.add(sortState.dir === "asc" ? "sort-asc" : "sort-desc");
+      rerenderFn();
+    });
+  });
+}
+function applySortState(list, sortState, accessors){
+  const fn = accessors[sortState.key];
+  if(!fn) return list;
+  const sorted = [...list].sort((a,b)=>{
+    const va = fn(a), vb = fn(b);
+    if(typeof va === "string" || typeof vb === "string"){
+      return String(va||"").localeCompare(String(vb||""));
+    }
+    return (va||0) - (vb||0);
+  });
+  if(sortState.dir === "desc") sorted.reverse();
+  return sorted;
+}
 
-        function resetFilters() {
-            document.getElementById('search-input').value = '';
-            document.getElementById('state-dropdown').value = '';
-            document.getElementById('value-dropdown').value = '';
-            applyFilters();
-        }
+/* ============================ RENDER: APPROVAL ============================ */
+let approvalStatusFilter = null;
+let approvalSortState = { key: null, dir: "asc" };
+const approvalAccessors = {
+  organisation: r => (r["Organisation"]||"").toLowerCase(),
+  sector: r => (r["Sector"]||"").toLowerCase(),
+  salesperson: r => (r["Sales Person"]||"").toLowerCase(),
+  zone: r => (r["Zone"]||"")+" "+(r["State"]||""),
+  lom: r => (r["LOM Available or not"]||"").toLowerCase(),
+  approval: r => (r["Approval Status"]||"").toLowerCase(),
+  tenders: r => combinedProjects.filter(p=>p.orgCode === r["Organisation Code"]).length,
+  value: r => combinedProjects.filter(p=>p.orgCode === r["Organisation Code"]).reduce((s,p)=>s+p.valueCr,0),
+};
+function renderApprovalCards(){
+  const apMap = new Map();
+  authorityRows.forEach(r=>{ const s = r["Approval Status"]||"Unknown"; apMap.set(s,(apMap.get(s)||0)+1); });
+  const cardsEl = document.getElementById("statusCards");
+  cardsEl.innerHTML = "";
+  const allCard = document.createElement("div");
+  allCard.className = "status-card" + (approvalStatusFilter===null ? " selected" : "");
+  allCard.innerHTML = `<div class="sc-count" style="color:var(--text)">${fmtNum(authorityRows.length)}</div><div class="sc-label">All Authorities</div>`;
+  allCard.addEventListener("click", ()=>{ approvalStatusFilter=null; renderApprovalCards(); renderApprovalTable(); });
+  cardsEl.appendChild(allCard);
+  [...apMap.entries()].forEach(([status,count])=>{
+    const cls = statusPillClass(status);
+    const colorVar = cls==="pending"?"var(--amber)":cls==="notreq"?"var(--text-dim)":cls==="empanelled"?"var(--green)":"var(--cyan)";
+    const el = document.createElement("div");
+    el.className = "status-card" + (approvalStatusFilter===status ? " selected" : "");
+    el.setAttribute("data-status", status);
+    el.innerHTML = `<div class="sc-count" style="color:${colorVar}">${fmtNum(count)}</div><div class="sc-label">${esc(status)}</div>`;
+    el.addEventListener("click", ()=>{ approvalStatusFilter = status; renderApprovalCards(); renderApprovalTable(); });
+    cardsEl.appendChild(el);
+  });
+}
 
-        // Modal triggers
-        function openDetailsModal(item) {
-            const modalContent = document.getElementById('modal-content');
-            modalContent.innerHTML = '';
+function populateSectorFilter(){
+  const sel = document.getElementById("approvalSectorFilter");
+  const sectors = [...new Set(authorityRows.map(r=>r["Sector"]).filter(Boolean))].sort();
+  sel.innerHTML = `<option value="">All sectors</option>` + sectors.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join("");
+}
 
-            for (const [key, value] of Object.entries(item.rawRow)) {
-                let detailBox = document.createElement('div');
-                detailBox.className = 'detail-item';
-                detailBox.innerHTML = `
-                    <div class="detail-label">${key.trim()}</div>
-                    <div class="detail-value">${value || '—'}</div>
-                `;
-                modalContent.appendChild(detailBox);
-            }
+function renderApprovalTable(){
+  const search = (document.getElementById("approvalSearch").value||"").toLowerCase();
+  const sectorFilter = document.getElementById("approvalSectorFilter").value;
+  let rows = authorityRows.slice();
+  if(approvalStatusFilter) rows = rows.filter(r => (r["Approval Status"]||"Unknown") === approvalStatusFilter);
+  if(sectorFilter) rows = rows.filter(r => r["Sector"] === sectorFilter);
+  if(search) rows = rows.filter(r => (r["Organisation"]+" "+r["Sector"]+" "+r["Sales Person"]).toLowerCase().includes(search));
+  if(approvalSortState.key) rows = applySortState(rows, approvalSortState, approvalAccessors);
 
-            toggleModal(true);
-        }
+  const tbody = document.getElementById("approvalTableBody");
+  tbody.innerHTML = "";
+  if(rows.length === 0){
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">No organisations match this filter.</div></td></tr>`;
+    return;
+  }
+  rows.forEach(r=>{
+    const proj = combinedProjects.filter(p=>p.orgCode === r["Organisation Code"]);
+    const val = proj.reduce((s,p)=>s+p.valueCr,0);
+    const upCount = proj.filter(p=>p.type==="Upcoming").length;
+    const awCount = proj.filter(p=>p.type==="Awarded").length;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><div class="cell-title">${esc(r["Organisation"])}</div><div class="cell-sub mono-cell">${esc(r["Organisation Code"])}</div></td>
+      <td>${esc(r["Sector"])}</td>
+      <td>${esc(r["Sales Person"])}</td>
+      <td>${esc(r["Zone"])}<div class="cell-sub">${esc(r["State"])}</div></td>
+      <td>${esc(r["LOM Available or not"])}</td>
+      <td><span class="pill ${statusPillClass(r["Approval Status"])}">${esc(r["Approval Status"])}</span></td>
+      <td><b style="font-family:var(--mono);">${proj.length}</b><div class="cell-sub">${upCount} upcoming · ${awCount} awarded</div></td>
+      <td>${proj.length ? `<b style="font-family:var(--mono);color:var(--amber);">${fmtCr(val)}</b>` : "—"}</td>
+    `;
+    tr.addEventListener("click", ()=>openAuthorityModal(r["Organisation Code"]));
+    tbody.appendChild(tr);
+  });
+}
 
-        function toggleModal(show) {
-            const modal = document.getElementById('details-modal');
-            if (show) modal.classList.add('active');
-            else modal.classList.remove('active');
-        }
+/* ============================ RENDER: SALES PERSON ============================ */
+function renderSalesPerson(){
+  const search = (document.getElementById("spSearch").value||"").toLowerCase();
+  const sortMode = document.getElementById("spSort").value;
+  let people = [...salesPersonAgg.values()];
+  if(search) people = people.filter(p=>p.name.toLowerCase().includes(search));
+  if(sortMode === "value") people.sort((a,b)=> (b.upcomingValue+b.awardedValue) - (a.upcomingValue+a.awardedValue));
+  else if(sortMode === "count") people.sort((a,b)=> b.orgCodes.size - a.orgCodes.size);
+  else people.sort((a,b)=> a.name.localeCompare(b.name));
 
-        function closeModal(e) {
-            if(e.target === document.getElementById('details-modal')) {
-                toggleModal(false);
-            }
-        }
+  const maxVal = Math.max(1, ...people.map(p=>p.upcomingValue+p.awardedValue));
+  const grid = document.getElementById("spGrid");
+  grid.innerHTML = "";
+  if(people.length===0){ grid.innerHTML = `<div class="empty-state">No sales person matches "${esc(search)}".</div>`; return; }
+  people.forEach(p=>{
+    const initials = p.name === "Vacant" ? "—" : p.name.split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase();
+    const total = p.upcomingValue + p.awardedValue;
+    const el = document.createElement("div");
+    el.className = "sp-card" + (p.name==="Vacant" ? " vacant" : "");
+    el.innerHTML = `
+      <div class="sp-avatar">${initials}</div>
+      <div class="sp-name">${esc(p.name)}</div>
+      <div class="sp-code">${p.code!=="—"?esc(p.code):"UNASSIGNED"} · ${p.orgCodes.size} orgs</div>
+      <div class="sp-stat-row"><span>Upcoming pipeline</span><b>${fmtCr(p.upcomingValue)}</b></div>
+      <div class="sp-stat-row"><span>Awarded value</span><b>${fmtCr(p.awardedValue)}</b></div>
+      <div class="sp-bar"><i style="width:${Math.min(100,(total/maxVal)*100)}%"></i></div>
+    `;
+    el.addEventListener("click", ()=>openSalesPersonModal(p.name));
+    grid.appendChild(el);
+  });
+}
 
-        document.getElementById('search-input').addEventListener('input', applyFilters);
-        document.getElementById('state-dropdown').addEventListener('change', applyFilters);
-        document.getElementById('value-dropdown').addEventListener('change', applyFilters);
+/* ============================ RENDER: BIG PROJECTS ============================ */
+let bigThreshold = 500, bigTypeFilter = "all";
+let bigSortState = { key: "value", dir: "desc" };
+const bigAccessors = {
+  tender: p => (p.description||"").toLowerCase(),
+  organisation: p => (p.organisation||"").toLowerCase(),
+  sector: p => (p.sector||"").toLowerCase(),
+  state: p => (p.state||"").toLowerCase(),
+  value: p => p.valueCr,
+  salesperson: p => (p.salesPerson||"").toLowerCase(),
+  type: p => (p.type||"").toLowerCase(),
+};
+function renderBigKpis(){
+  const filtered = combinedProjects.filter(p=>p.valueCr >= bigThreshold && (bigTypeFilter==="all"||p.type===bigTypeFilter));
+  const total = filtered.reduce((s,p)=>s+p.valueCr,0);
+  const el = document.getElementById("bigKpiRow");
+  el.innerHTML = "";
+  const kpis = [
+    {lbl:"Projects Tracked", val: fmtNum(filtered.length), sub:`≥ ${fmtCr(bigThreshold)}`, cls:"amber"},
+    {lbl:"Combined Value", val: fmtCr(total).replace("₹",""), sub:"₹ Cr across selection", cls:"cyan"},
+    {lbl:"Largest Single Tender", val: filtered.length? fmtCr(Math.max(...filtered.map(p=>p.valueCr))).replace("₹","") : "—", sub:"₹ Cr", cls:"green"},
+    {lbl:"States Involved", val: fmtNum(new Set(filtered.map(p=>p.state)).size), sub:"unique geographies", cls:"red"},
+  ];
+  kpis.forEach(k=>{
+    const d = document.createElement("div");
+    d.className="kpi";
+    d.innerHTML = `<div class="lbl">${esc(k.lbl)}</div><div class="val ${k.cls}">${k.val}</div><div class="sub">${esc(k.sub)}</div>`;
+    el.appendChild(d);
+  });
+}
 
-        // Run application
-        fetchTenderData();
-    </script>
+function renderBigTable(){
+  const search = (document.getElementById("bigSearch").value||"").toLowerCase();
+  let list = combinedProjects.filter(p=>p.valueCr >= bigThreshold && (bigTypeFilter==="all"||p.type===bigTypeFilter));
+  if(search) list = list.filter(p => (p.tenderId+" "+p.organisation+" "+p.description).toLowerCase().includes(search));
+  list = bigSortState.key === "rank" ? safeSort(list, p=>p.valueCr, bigSortState.dir==="asc")
+       : applySortState(list, bigSortState, bigAccessors);
+
+  const tbody = document.getElementById("bigTableBody");
+  tbody.innerHTML = "";
+  if(list.length===0){
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">No projects at this threshold. Try lowering it.</div></td></tr>`;
+    renderBigKpis();
+    return;
+  }
+  list.forEach((p,i)=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="mono-cell">${i+1}</td>
+      <td><div class="cell-title">${esc(truncate(p.description,56))}</div><div class="cell-sub mono-cell">${esc(p.tenderId)}</div></td>
+      <td>${esc(p.organisation)}</td>
+      <td>${esc(p.sector)}</td>
+      <td>${esc(p.state)}</td>
+      <td><b style="color:var(--amber);font-family:var(--mono);">${fmtCr(p.valueCr)}</b></td>
+      <td>${esc(p.salesPerson)}</td>
+      <td><span class="pill ${p.type==='Upcoming'?'upcoming':'awarded'}">${p.type}</span></td>
+    `;
+    tr.addEventListener("click", ()=>openProjectModal(p.tenderId, p.type));
+    tbody.appendChild(tr);
+  });
+  renderBigKpis();
+}
+
+/* ============================ TAB NAV ============================ */
+const titles = {
+  overview: ["Overview Dashboard","Live pipeline health across upcoming tenders, awarded contracts and BD ownership — pulled straight from the tracker sheet."],
+  approval: ["Approval Status","Which authorities are cleared to bid, which are still pending sign-off, and where empanelment is already in place."],
+  salesperson: ["Sales Person Dashboard","Ownership and pipeline value per BD owner, including vacant territories that need coverage."],
+  bigprojects: ["Tracking Big Projects","The largest tenders in flight — filter by value threshold, type or state, and drill into any row."]
+};
+function switchTab(tab){
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.toggle("active", b.dataset.tab===tab));
+  document.querySelectorAll(".section").forEach(s=>s.classList.toggle("active", s.id === "section-"+tab));
+  document.getElementById("pageTitle").textContent = titles[tab][0];
+  document.getElementById("pageSub").textContent = titles[tab][1];
+  document.getElementById("sidebar").classList.remove("open");
+}
+document.querySelectorAll(".tab-btn").forEach(b=>b.addEventListener("click", ()=>switchTab(b.dataset.tab)));
+document.getElementById("hamburger").addEventListener("click", ()=>document.getElementById("sidebar").classList.toggle("open"));
+
+/* ============================ EVENTS ============================ */
+document.getElementById("approvalSearch").addEventListener("input", renderApprovalTable);
+document.getElementById("approvalSectorFilter").addEventListener("change", renderApprovalTable);
+document.getElementById("spSearch").addEventListener("input", renderSalesPerson);
+document.getElementById("spSort").addEventListener("change", renderSalesPerson);
+document.getElementById("bigSearch").addEventListener("input", renderBigTable);
+document.querySelectorAll("#thresholdChips .chip").forEach(chip=>{
+  chip.addEventListener("click", ()=>{
+    document.querySelectorAll("#thresholdChips .chip").forEach(c=>c.classList.remove("active"));
+    chip.classList.add("active");
+    bigThreshold = parseFloat(chip.dataset.th);
+    renderBigTable();
+  });
+});
+document.querySelectorAll("#typeChips .chip").forEach(chip=>{
+  chip.addEventListener("click", ()=>{
+    document.querySelectorAll("#typeChips .chip").forEach(c=>c.classList.remove("active"));
+    chip.classList.add("active");
+    bigTypeFilter = chip.dataset.type;
+    renderBigTable();
+  });
+});
+document.getElementById("refreshBtn").addEventListener("click", ()=>loadAll(true));
+wireSortableHeaders("approvalTable", approvalSortState, renderApprovalTable);
+wireSortableHeaders("bigTable", bigSortState, renderBigTable);
+
+/* ============================ LOAD ============================ */
+async function loadAll(isRefresh){
+  const loader = document.getElementById("loaderOverlay");
+  const loaderText = document.getElementById("loaderText");
+  const loaderErr = document.getElementById("loaderErr");
+  loaderErr.style.display = "none";
+  if(isRefresh){ loader.classList.remove("hidden"); }
+  loaderText.textContent = "CONNECTING TO LIVE SHEET…";
+  try{
+    const [upResp, masterResp, awResp] = await Promise.all([
+      fetchSheet(GID_UPCOMING), fetchSheet(GID_MASTER), fetchSheet(GID_AWARDED)
+    ]);
+    loaderText.textContent = "CRUNCHING PIPELINE DATA…";
+    buildModel(upResp, masterResp, awResp);
+    populateSectorFilter();
+    renderOverview();
+    renderApprovalCards();
+    renderApprovalTable();
+    renderSalesPerson();
+    renderBigTable();
+    document.getElementById("lastSync").textContent = "last sync " + new Date().toLocaleTimeString();
+    document.getElementById("rowCounts").textContent = `${upcomingRows.length} upcoming · ${awardedRows.length} awarded · ${authorityRows.length} authorities`;
+    loader.classList.add("hidden");
+  }catch(err){
+    console.error(err);
+    loaderText.textContent = "COULD NOT LOAD LIVE DATA";
+    loaderErr.style.display = "block";
+    loaderErr.textContent = (err && err.message) ? err.message : "Unknown error while contacting Google Sheets.";
+    loader.classList.remove("hidden");
+  }
+}
+loadAll(false);
+</script>
 </body>
 </html>
