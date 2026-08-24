@@ -10,24 +10,24 @@
 <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 <style>
   :root{
-    --bg:#f3f6fb;
+    --bg:#F0F4F8;
     --bg-2:#ffffff;
     --panel:#ffffff;
-    --panel-2:#f1f4fa;
-    --border:#dbe3ef;
-    --border-soft:#e8edf6;
-    --text:#152238;
-    --text-dim:#5b6b85;
-    --text-faint:#8b98ac;
-    --amber:#b5690b;
-    --amber-soft:rgba(181,105,11,.12);
-    --cyan:#0e8f83;
-    --cyan-soft:rgba(14,143,131,.12);
-    --green:#188a52;
-    --green-soft:rgba(24,138,82,.12);
-    --red:#c1483a;
-    --red-soft:rgba(193,72,58,.12);
-    --violet:#6a4fd6;
+    --panel-2:#F8FAFC;
+    --border:#E2E8F0;
+    --border-soft:#EDF2F7;
+    --text:#1E293B;
+    --text-dim:#64748B;
+    --text-faint:#94A3B8;
+    --amber:#1A56A0;
+    --amber-soft:rgba(26,86,160,.12);
+    --cyan:#0891B2;
+    --cyan-soft:rgba(8,145,178,.12);
+    --green:#059669;
+    --green-soft:rgba(5,150,105,.12);
+    --red:#DC2626;
+    --red-soft:rgba(220,38,38,.12);
+    --violet:#0F2044;
     --display:'Space Grotesk',sans-serif;
     --body:'Inter',sans-serif;
     --mono:'JetBrains Mono',monospace;
@@ -36,9 +36,9 @@
   html,body{margin:0;padding:0;}
   body{
     background:
-      repeating-linear-gradient(0deg, rgba(14,143,131,.05) 0px, rgba(14,143,131,.05) 1px, transparent 1px, transparent 48px),
-      repeating-linear-gradient(90deg, rgba(14,143,131,.05) 0px, rgba(14,143,131,.05) 1px, transparent 1px, transparent 48px),
-      radial-gradient(circle at 15% 0%, #e7f2f1 0%, var(--bg) 55%);
+      repeating-linear-gradient(0deg, rgba(8,145,178,.05) 0px, rgba(8,145,178,.05) 1px, transparent 1px, transparent 48px),
+      repeating-linear-gradient(90deg, rgba(8,145,178,.05) 0px, rgba(8,145,178,.05) 1px, transparent 1px, transparent 48px),
+      radial-gradient(circle at 15% 0%, #E8F0FA 0%, var(--bg) 55%);
     color:var(--text);
     font-family:var(--body);
     min-height:100vh;
@@ -65,10 +65,10 @@
   .brand{display:flex;align-items:center;gap:10px;padding:0 4px;}
   .brand-mark{
     width:34px;height:34px;border-radius:8px;flex:0 0 34px;
-    background:linear-gradient(135deg,var(--amber),#8a4d06);
+    background:linear-gradient(135deg,var(--amber),#0F2044);
     display:flex;align-items:center;justify-content:center;
     font-family:var(--display);font-weight:700;color:#fff;font-size:15px;
-    box-shadow:0 0 0 1px rgba(181,105,11,.3), 0 6px 18px -6px rgba(181,105,11,.55);
+    box-shadow:0 0 0 1px rgba(26,86,160,.3), 0 6px 18px -6px rgba(26,86,160,.55);
   }
   .brand-text .t1{font-family:var(--display);font-weight:700;font-size:15.5px;letter-spacing:.2px;line-height:1.1;}
   .brand-text .t2{font-family:var(--mono);font-size:10px;color:var(--text-faint);letter-spacing:.6px;text-transform:uppercase;}
@@ -85,7 +85,7 @@
   .tab-btn:hover{background:var(--panel);color:var(--text);}
   .tab-btn.active{
     background:linear-gradient(90deg,var(--amber-soft),transparent);
-    border-color:rgba(181,105,11,.3);color:var(--amber);
+    border-color:rgba(26,86,160,.3);color:var(--amber);
   }
   .tab-btn .idx{font-family:var(--mono);font-size:10px;color:var(--text-faint);margin-left:auto;}
   .tab-btn.active .idx{color:var(--amber);opacity:.7;}
@@ -106,7 +106,7 @@
     transition:border-color .15s,background .15s;
   }
   .btn:hover{border-color:var(--cyan);}
-  .btn.primary{background:linear-gradient(135deg,var(--amber),#8a4d06);color:#fff;border-color:transparent;}
+  .btn.primary{background:linear-gradient(135deg,var(--amber),#0F2044);color:#fff;border-color:transparent;}
   .btn.primary:hover{filter:brightness(1.06);}
 
   .section{display:none;}
@@ -121,8 +121,8 @@
     cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s;position:relative;overflow:hidden;
   }
   .kpi::after{content:"";position:absolute;right:-30px;top:-30px;width:90px;height:90px;border-radius:50%;
-    background:radial-gradient(circle,rgba(181,105,11,.09),transparent 70%);}
-  .kpi:hover{transform:translateY(-2px);border-color:rgba(14,143,131,.4);box-shadow:0 10px 24px -12px rgba(20,30,50,.18);}
+    background:radial-gradient(circle,rgba(26,86,160,.09),transparent 70%);}
+  .kpi:hover{transform:translateY(-2px);border-color:rgba(8,145,178,.4);box-shadow:0 10px 24px -12px rgba(20,30,50,.18);}
   .kpi .lbl{font-family:var(--mono);font-size:10.4px;text-transform:uppercase;letter-spacing:.7px;color:var(--text-faint);}
   .kpi .val{font-family:var(--display);font-size:26px;font-weight:700;margin-top:7px;color:var(--text);}
   .kpi .sub{font-size:11.6px;color:var(--text-dim);margin-top:4px;}
@@ -170,7 +170,7 @@
     background:var(--panel);transition:border-color .15s,transform .15s;
   }
   .status-card:hover{transform:translateY(-2px);}
-  .status-card.selected{border-color:var(--amber);box-shadow:0 0 0 1px rgba(181,105,11,.25);}
+  .status-card.selected{border-color:var(--amber);box-shadow:0 0 0 1px rgba(26,86,160,.25);}
   .status-card .sc-count{font-family:var(--display);font-size:28px;font-weight:700;}
   .status-card .sc-label{font-size:12px;color:var(--text-dim);margin-top:4px;}
 
@@ -221,7 +221,7 @@
   .sp-card .sp-avatar{
     width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;
     font-family:var(--display);font-weight:700;font-size:14px;margin-bottom:10px;
-    background:linear-gradient(135deg,var(--cyan),#0b5c54);color:#fff;
+    background:linear-gradient(135deg,var(--cyan),#075985);color:#fff;
   }
   .sp-card.vacant .sp-avatar{background:linear-gradient(135deg,#93a2ba,#5b6b85);color:#fff;}
   .sp-card .sp-name{font-family:var(--display);font-weight:700;font-size:15px;}
@@ -604,7 +604,7 @@ function fmtCr(n){
   return "₹" + Number(n).toLocaleString("en-IN", {maximumFractionDigits:0}) + " Cr";
 }
 function fmtNum(n){ return n === null || n === undefined ? "—" : Number(n).toLocaleString("en-IN"); }
-function esc(s){ return (s===undefined||s===null) ? "" : String(s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"'"}[m])); }
+function esc(s){ return (s===undefined||s===null) ? "" : String(s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
 function truncate(s, n){ if(!s) return ""; s = String(s); return s.length > n ? s.slice(0,n).trim() + "…" : s; }
 function statusPillClass(status){
   if(!status) return "other";
@@ -811,7 +811,7 @@ function openKpiListModal(title, eyebrow, items){
 
 /* ============================ CHARTS ============================ */
 let chartSector, chartApproval, chartState;
-const chartColors = ["#b5690b","#0e8f83","#188a52","#6a4fd6","#c1483a","#a67c0a","#3572b0","#a04fc9"];
+const chartColors = ["#1A56A0","#0891B2","#059669","#0F2044","#DC2626","#D97706","#3572B0","#7C3AED"];
 
 function renderCharts(){
   const ctxSector = document.getElementById("chartSector");
@@ -874,15 +874,41 @@ function renderOverview(){
   kpiRow.innerHTML = "";
   const kpis = [
     {lbl:"Upcoming Tenders", val: fmtNum(upcomingRows.length), sub: fmtCr(upcomingValue) + " pipeline", cls:"cyan",
-      onClick:()=>switchTab("bigprojects")},
+      onClick:()=>{
+        const items = safeSort(upcomingRows, r=>r["__Amt. in Cr._num"]||0).map(r=>`<div class="mini-row" onclick="closeModal();setTimeout(()=>openProjectModal('${esc(r["Tender ID"]).replace(/'/g,"\\'")}','Upcoming'),50)"><span class="mr-name">🟦 ${esc(truncate(r["Description"],50))} <span style="color:var(--text-faint);font-weight:400;">· ${esc(r["Organisation"])}${r["State"]?", "+esc(r["State"]):""}</span></span><span class="mr-val">${fmtCr(r["__Amt. in Cr._num"]||0)}</span></div>`);
+        openKpiListModal("Upcoming Tenders", `${fmtNum(upcomingRows.length)} tender(s) · ${fmtCr(upcomingValue)} pipeline`, items);
+      }},
     {lbl:"Awarded Contracts", val: fmtNum(awardedRows.length), sub: fmtCr(awardedValue) + " contracted", cls:"green",
-      onClick:()=>{switchTab("bigprojects"); document.querySelector('#typeChips [data-type="Awarded"]').click();}},
+      onClick:()=>{
+        const items = safeSort(awardedRows, r=>r["__Amt. in Cr._num"]||0).map(r=>`<div class="mini-row" onclick="closeModal();setTimeout(()=>openProjectModal('${esc(r["Tender ID"]).replace(/'/g,"\\'")}','Awarded'),50)"><span class="mr-name">🟩 ${esc(truncate(r["Description"],50))} <span style="color:var(--text-faint);font-weight:400;">· ${esc(r["Organisation"])}${r["State"]?", "+esc(r["State"]):""}</span></span><span class="mr-val">${fmtCr(r["__Amt. in Cr._num"]||0)}</span></div>`);
+        openKpiListModal("Awarded Contracts", `${fmtNum(awardedRows.length)} contract(s) · ${fmtCr(awardedValue)} contracted`, items);
+      }},
     {lbl:"Authorities Tracked", val: fmtNum(authorityRows.length), sub: salesPeopleActive + " sales owners active", cls:"amber",
-      onClick:()=>switchTab("approval")},
+      onClick:()=>{
+        const items = safeSort(authorityRows, a=>combinedProjects.filter(p=>p.orgCode===a["Organisation Code"]).reduce((s,p)=>s+p.valueCr,0)).map(a=>{
+          const v = combinedProjects.filter(p=>p.orgCode===a["Organisation Code"]).reduce((s,p)=>s+p.valueCr,0);
+          return `<div class="mini-row" onclick="closeModal();setTimeout(()=>openAuthorityModal('${esc(a["Organisation Code"]).replace(/'/g,"\\'")}'),50)"><span class="mr-name">${esc(a["Organisation"])} <span class="pill ${statusPillClass(a["Approval Status"])}" style="margin-left:6px;">${esc(a["Approval Status"])}</span></span><span class="mr-val">${v?fmtCr(v):esc(a["Sector"]||"")}</span></div>`;
+        });
+        openKpiListModal("Authorities Tracked", `${fmtNum(authorityRows.length)} authorities · ${salesPeopleActive} sales owners active`, items);
+      }},
     {lbl:"Pending Approvals", val: fmtNum(pendingCount), sub: "need sign-off", cls:"red",
-      onClick:()=>{switchTab("approval"); setTimeout(()=>document.querySelector('.status-card[data-status="Pending"]')?.click(),60);}},
+      onClick:()=>{
+        const pending = authorityRows.filter(r=>(r["Approval Status"]||"").toLowerCase().includes("pending"));
+        const items = safeSort(pending, a=>combinedProjects.filter(p=>p.orgCode===a["Organisation Code"]).reduce((s,p)=>s+p.valueCr,0)).map(a=>{
+          const v = combinedProjects.filter(p=>p.orgCode===a["Organisation Code"]).reduce((s,p)=>s+p.valueCr,0);
+          return `<div class="mini-row" onclick="closeModal();setTimeout(()=>openAuthorityModal('${esc(a["Organisation Code"]).replace(/'/g,"\\'")}'),50)"><span class="mr-name">${esc(a["Organisation"])} <span class="pill ${statusPillClass(a["Approval Status"])}" style="margin-left:6px;">${esc(a["Approval Status"])}</span></span><span class="mr-val">${v?fmtCr(v):esc(a["Sector"]||"")}</span></div>`;
+        });
+        openKpiListModal("Pending Approvals", `${fmtNum(pending.length)} authorities need sign-off`, items);
+      }},
     {lbl:"Vacant Territories", val: fmtNum(vacantOrgs), sub: "orgs without an owner", cls:"amber",
-      onClick:()=>switchTab("salesperson")},
+      onClick:()=>{
+        const vacant = authorityRows.filter(r=>(r["Sales Person"]||"Vacant")==="Vacant");
+        const items = safeSort(vacant, a=>combinedProjects.filter(p=>p.orgCode===a["Organisation Code"]).reduce((s,p)=>s+p.valueCr,0)).map(a=>{
+          const v = combinedProjects.filter(p=>p.orgCode===a["Organisation Code"]).reduce((s,p)=>s+p.valueCr,0);
+          return `<div class="mini-row" onclick="closeModal();setTimeout(()=>openAuthorityModal('${esc(a["Organisation Code"]).replace(/'/g,"\\'")}'),50)"><span class="mr-name">${esc(a["Organisation"])} <span class="pill ${statusPillClass(a["Approval Status"])}" style="margin-left:6px;">${esc(a["Approval Status"])}</span></span><span class="mr-val">${v?fmtCr(v):esc(a["Sector"]||"")}</span></div>`;
+        });
+        openKpiListModal("Vacant Territories", `${fmtNum(vacant.length)} organisation(s) without a sales owner`, items);
+      }},
   ];
   kpis.forEach(k=>{
     const el = document.createElement("div");
@@ -1113,90 +1139,39 @@ function renderBigTable(){
 }
 
 /* ============================ REGION / INDIA MAP (real geography via D3 + GeoJSON) ============================ */
-// Alias table so real-world spellings/variants in the sheet map to a canonical state name.
 const STATE_ALIASES = {
   "jammu and kashmir":"Jammu and Kashmir","jammu & kashmir":"Jammu and Kashmir","j&k":"Jammu and Kashmir","jk":"Jammu and Kashmir",
-  "ladakh":"Ladakh",
-  "himachal pradesh":"Himachal Pradesh","hp":"Himachal Pradesh",
-  "uttarakhand":"Uttarakhand","uttaranchal":"Uttarakhand",
-  "punjab":"Punjab",
-  "chandigarh":"Chandigarh",
-  "arunachal pradesh":"Arunachal Pradesh",
-  "haryana":"Haryana",
+  "ladakh":"Ladakh","himachal pradesh":"Himachal Pradesh","hp":"Himachal Pradesh",
+  "uttarakhand":"Uttarakhand","uttaranchal":"Uttarakhand","punjab":"Punjab","chandigarh":"Chandigarh",
+  "arunachal pradesh":"Arunachal Pradesh","haryana":"Haryana",
   "delhi":"Delhi","new delhi":"Delhi","nct of delhi":"Delhi","national capital territory of delhi":"Delhi",
-  "sikkim":"Sikkim",
-  "assam":"Assam",
-  "nagaland":"Nagaland",
-  "rajasthan":"Rajasthan",
-  "uttar pradesh":"Uttar Pradesh","up":"Uttar Pradesh",
-  "bihar":"Bihar",
-  "meghalaya":"Meghalaya",
-  "manipur":"Manipur",
-  "gujarat":"Gujarat","gujrat":"Gujarat",
-  "madhya pradesh":"Madhya Pradesh","mp":"Madhya Pradesh",
-  "jharkhand":"Jharkhand",
-  "west bengal":"West Bengal","wb":"West Bengal",
-  "tripura":"Tripura",
+  "sikkim":"Sikkim","assam":"Assam","nagaland":"Nagaland","rajasthan":"Rajasthan",
+  "uttar pradesh":"Uttar Pradesh","up":"Uttar Pradesh","bihar":"Bihar","meghalaya":"Meghalaya","manipur":"Manipur",
+  "gujarat":"Gujarat","gujrat":"Gujarat","madhya pradesh":"Madhya Pradesh","mp":"Madhya Pradesh","jharkhand":"Jharkhand",
+  "west bengal":"West Bengal","wb":"West Bengal","tripura":"Tripura",
   "dadra and nagar haveli and daman and diu":"Dadra and Nagar Haveli and Daman and Diu",
   "dadra and nagar haveli":"Dadra and Nagar Haveli and Daman and Diu","daman and diu":"Dadra and Nagar Haveli and Daman and Diu",
-  "maharashtra":"Maharashtra",
-  "chhattisgarh":"Chhattisgarh","chattisgarh":"Chhattisgarh",
-  "odisha":"Odisha","orissa":"Odisha",
-  "mizoram":"Mizoram",
-  "goa":"Goa",
-  "karnataka":"Karnataka",
-  "telangana":"Telangana","telengana":"Telangana",
-  "andhra pradesh":"Andhra Pradesh","ap":"Andhra Pradesh",
-  "puducherry":"Puducherry","pondicherry":"Puducherry",
+  "maharashtra":"Maharashtra","chhattisgarh":"Chhattisgarh","chattisgarh":"Chhattisgarh","odisha":"Odisha","orissa":"Odisha",
+  "mizoram":"Mizoram","goa":"Goa","karnataka":"Karnataka","telangana":"Telangana","telengana":"Telangana",
+  "andhra pradesh":"Andhra Pradesh","ap":"Andhra Pradesh","puducherry":"Puducherry","pondicherry":"Puducherry",
   "tamil nadu":"Tamil Nadu","tamilnadu":"Tamil Nadu",
   "andaman and nicobar islands":"Andaman and Nicobar Islands","andaman & nicobar":"Andaman and Nicobar Islands","andaman and nicobar":"Andaman and Nicobar Islands",
-  "lakshadweep":"Lakshadweep",
-  "kerala":"Kerala",
+  "lakshadweep":"Lakshadweep","kerala":"Kerala",
 };
 function normalizeStateName(raw){
   if(!raw) return null;
   const key = String(raw).trim().toLowerCase().replace(/\./g,"").split(",")[0].trim();
   return STATE_ALIASES[key] || null;
 }
-
-// Canonical state name -> jsDelivr file slug (github.com/udit-001/india-maps-data)
 const STATE_SLUGS = {
-  "Andaman and Nicobar Islands":"andaman-and-nicobar-islands",
-  "Andhra Pradesh":"andhra-pradesh",
-  "Arunachal Pradesh":"arunachal-pradesh",
-  "Assam":"assam",
-  "Bihar":"bihar",
-  "Chandigarh":"chandigarh",
-  "Chhattisgarh":"chhattisgarh",
-  "Delhi":"delhi",
-  "Dadra and Nagar Haveli and Daman and Diu":"dnh-and-dd",
-  "Goa":"goa",
-  "Gujarat":"gujarat",
-  "Haryana":"haryana",
-  "Himachal Pradesh":"himachal-pradesh",
-  "Jammu and Kashmir":"jammu-and-kashmir",
-  "Jharkhand":"jharkhand",
-  "Karnataka":"karnataka",
-  "Kerala":"kerala",
-  "Ladakh":"ladakh",
-  "Lakshadweep":"lakshadweep",
-  "Madhya Pradesh":"madhya-pradesh",
-  "Maharashtra":"maharashtra",
-  "Manipur":"manipur",
-  "Meghalaya":"meghalaya",
-  "Mizoram":"mizoram",
-  "Nagaland":"nagaland",
-  "Odisha":"odisha",
-  "Puducherry":"puducherry",
-  "Punjab":"punjab",
-  "Rajasthan":"rajasthan",
-  "Sikkim":"sikkim",
-  "Tamil Nadu":"tamil-nadu",
-  "Telangana":"telangana",
-  "Tripura":"tripura",
-  "Uttar Pradesh":"uttar-pradesh",
-  "Uttarakhand":"uttarakhand",
-  "West Bengal":"west-bengal",
+  "Andaman and Nicobar Islands":"andaman-and-nicobar-islands","Andhra Pradesh":"andhra-pradesh","Arunachal Pradesh":"arunachal-pradesh",
+  "Assam":"assam","Bihar":"bihar","Chandigarh":"chandigarh","Chhattisgarh":"chhattisgarh","Delhi":"delhi",
+  "Dadra and Nagar Haveli and Daman and Diu":"dnh-and-dd","Goa":"goa","Gujarat":"gujarat","Haryana":"haryana",
+  "Himachal Pradesh":"himachal-pradesh","Jammu and Kashmir":"jammu-and-kashmir","Jharkhand":"jharkhand","Karnataka":"karnataka",
+  "Kerala":"kerala","Ladakh":"ladakh","Lakshadweep":"lakshadweep","Madhya Pradesh":"madhya-pradesh","Maharashtra":"maharashtra",
+  "Manipur":"manipur","Meghalaya":"meghalaya","Mizoram":"mizoram","Nagaland":"nagaland","Odisha":"odisha","Puducherry":"puducherry",
+  "Punjab":"punjab","Rajasthan":"rajasthan","Sikkim":"sikkim","Tamil Nadu":"tamil-nadu","Telangana":"telangana","Tripura":"tripura",
+  "Uttar Pradesh":"uttar-pradesh","Uttarakhand":"uttarakhand","West Bengal":"west-bengal",
 };
 const GEO_BASE = "https://cdn.jsdelivr.net/gh/udit-001/india-maps-data@main";
 const INDIA_GEOJSON_URLS = [
@@ -1209,29 +1184,17 @@ function stateGeojsonUrls(slug){
     `https://raw.githubusercontent.com/udit-001/india-maps-data/main/geojson/states/${slug}.geojson`,
   ];
 }
-
-// A small set of known district spelling differences between government tender sheets and the geojson source.
 const DISTRICT_ALIASES = {
-  "bengaluru urban":"bangalore urban","bengaluru":"bangalore urban","bangalore":"bangalore urban",
-  "bengaluru rural":"bangalore rural",
-  "gurugram":"gurgaon","gurgaon":"gurugram",
-  "prayagraj":"allahabad","allahabad":"prayagraj",
-  "mumbai city":"mumbai","mumbai suburban":"mumbai",
-  "kolkata":"calcutta",
-  "chennai":"madras",
-  "vadodara":"baroda",
+  "bengaluru urban":"bangalore urban","bengaluru":"bangalore urban","bangalore":"bangalore urban","bengaluru rural":"bangalore rural",
+  "gurugram":"gurgaon","gurgaon":"gurugram","prayagraj":"allahabad","allahabad":"prayagraj",
+  "mumbai city":"mumbai","mumbai suburban":"mumbai","kolkata":"calcutta","chennai":"madras","vadodara":"baroda",
   "gautam buddha nagar":"gautam budh nagar","gautam budh nagar":"gautam buddha nagar",
-  "shivamogga":"shimoga","shimoga":"shivamogga",
-  "mysuru":"mysore","mysore":"mysuru",
-  "belagavi":"belgaum","belgaum":"belagavi",
-  "kalaburagi":"gulbarga","gulbarga":"kalaburagi",
+  "shivamogga":"shimoga","shimoga":"shivamogga","mysuru":"mysore","mysore":"mysuru",
+  "belagavi":"belgaum","belgaum":"belagavi","kalaburagi":"gulbarga","gulbarga":"kalaburagi",
 };
 function normalizeDistrictText(raw){
   if(!raw) return "";
-  return String(raw).trim().toLowerCase()
-    .replace(/\bdist(rict)?\.?\b/g,"")
-    .replace(/[.,()]/g,"")
-    .replace(/\s+/g," ").trim();
+  return String(raw).trim().toLowerCase().replace(/\bdist(rict)?\.?\b/g,"").replace(/[.,()]/g,"").replace(/\s+/g," ").trim();
 }
 function districtsMatch(a, b){
   const na = normalizeDistrictText(a), nb = normalizeDistrictText(b);
@@ -1244,15 +1207,15 @@ function districtsMatch(a, b){
   return false;
 }
 
-let regionData = new Map();   // canonical state name -> {count, value, districts: Map(districtName -> {count,value})}
+let regionData = new Map();
 let regionUnmatched = { count:0, value:0 };
-let regionView = "map";       // "map" | "drilldown"
+let regionView = "map";
 let regionSelectedState = null;
-let regionCalloutState = null; // which state's number-callout is currently open (tap-once state)
+let regionCalloutState = null;
 const isTouchDevice = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
 
 let indiaGeo = null, indiaGeoLoading = null, indiaGeoError = null, stateNameKey = null;
-const districtGeoCache = new Map(); // canonical state -> {data, nameKey} | "error"
+const districtGeoCache = new Map();
 
 function fetchJsonWithFallback(urls){
   let p = Promise.reject();
@@ -1263,7 +1226,6 @@ function detectNameKey(features, candidates){
   if(!features || !features.length) return null;
   const props = features[0].properties || {};
   for(const c of candidates){ if(typeof props[c] === "string" && props[c].trim()) return c; }
-  // Fallback: first string-valued property across a sample of features
   const keys = Object.keys(props);
   for(const k of keys){
     let stringy = 0, sample = features.slice(0, Math.min(10, features.length));
@@ -1291,8 +1253,7 @@ function aggregateRegionData(){
 
 function regionColor(t){
   t = Math.max(0, Math.min(1, t));
-  const c1 = [241,244,250]; // --panel-2
-  const c2 = [181,105,11];  // --amber
+  const c1 = [241,244,250], c2 = [26,86,160];
   const r = Math.round(c1[0] + (c2[0]-c1[0])*t);
   const g = Math.round(c1[1] + (c2[1]-c1[1])*t);
   const b = Math.round(c1[2] + (c2[2]-c1[2])*t);
@@ -1344,7 +1305,6 @@ function renderTopStatesList(){
   });
 }
 
-/* ---------- Callout (hover/tap popup showing numbers before drill-down) ---------- */
 function showRegionCallout(event, calloutId, name, agg, onDrill){
   const callout = document.getElementById(calloutId);
   callout.innerHTML = `
@@ -1379,7 +1339,6 @@ document.addEventListener("click", (e)=>{
   });
 });
 
-/* ---------- India-level map (state polygons) ---------- */
 async function ensureIndiaGeo(){
   if(indiaGeo) return indiaGeo;
   if(indiaGeoLoading) return indiaGeoLoading;
@@ -1443,7 +1402,6 @@ async function paintIndiaMap(){
     });
 }
 
-/* ---------- District-level map (within a selected state) ---------- */
 async function ensureDistrictGeo(canonicalState){
   if(districtGeoCache.has(canonicalState)) return districtGeoCache.get(canonicalState);
   const slug = STATE_SLUGS[canonicalState];
