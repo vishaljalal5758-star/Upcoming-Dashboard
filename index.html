@@ -53,16 +53,19 @@
   /* ---------- Layout ---------- */
   .app{display:flex;min-height:100vh;}
   .sidebar{
-    width:236px;flex:0 0 236px;
+    width:76px;flex:0 0 76px;
     background:linear-gradient(180deg,var(--bg-2),#eef3fa);
     border-right:1px solid var(--border-soft);
     box-shadow:1px 0 0 rgba(20,30,50,.02);
-    padding:22px 16px;
+    padding:22px 12px;
     position:sticky;top:0;height:100vh;
     display:flex;flex-direction:column;gap:26px;
-    z-index:20;
+    z-index:20;overflow:hidden;
+    transition:width .28s cubic-bezier(.4,0,.2,1), flex-basis .28s cubic-bezier(.4,0,.2,1), padding .28s ease;
   }
-  .brand{display:flex;align-items:center;gap:10px;padding:0 4px;}
+  .sidebar.expanded{width:236px;flex:0 0 236px;padding:22px 16px;box-shadow:6px 0 24px -10px rgba(20,30,50,.18);}
+  .brand{display:flex;align-items:center;gap:0;padding:0 4px;transition:gap .2s ease;}
+  .sidebar.expanded .brand{gap:10px;}
   .brand-mark{
     width:34px;height:34px;border-radius:8px;flex:0 0 34px;
     background:linear-gradient(135deg,var(--amber),#0F2044);
@@ -70,29 +73,40 @@
     font-family:var(--display);font-weight:700;color:#fff;font-size:15px;
     box-shadow:0 0 0 1px rgba(26,86,160,.3), 0 6px 18px -6px rgba(26,86,160,.55);
   }
+  .brand-text{opacity:0;max-width:0;overflow:hidden;white-space:nowrap;transition:opacity .15s ease, max-width .25s ease;}
+  .sidebar.expanded .brand-text{opacity:1;max-width:180px;}
   .brand-text .t1{font-family:var(--display);font-weight:700;font-size:15.5px;letter-spacing:.2px;line-height:1.1;}
   .brand-text .t2{font-family:var(--mono);font-size:10px;color:var(--text-faint);letter-spacing:.6px;text-transform:uppercase;}
 
   nav.tabs{display:flex;flex-direction:column;gap:4px;margin-top:4px;}
   .tab-btn{
-    display:flex;align-items:center;gap:11px;
+    display:flex;align-items:center;gap:0;
     padding:10px 12px;border-radius:9px;border:1px solid transparent;
     background:transparent;color:var(--text-dim);cursor:pointer;
     font-family:var(--body);font-size:13.4px;font-weight:600;text-align:left;
-    transition:background .15s,color .15s,border-color .15s;
+    transition:background .15s,color .15s,border-color .15s,gap .2s ease;
+    white-space:nowrap;overflow:hidden;width:100%;
   }
+  .sidebar.expanded .tab-btn{gap:11px;}
   .tab-btn .ic{width:18px;height:18px;flex:0 0 18px;opacity:.85;}
   .tab-btn:hover{background:var(--panel);color:var(--text);}
   .tab-btn.active{
     background:linear-gradient(90deg,var(--amber-soft),transparent);
     border-color:rgba(26,86,160,.3);color:var(--amber);
   }
-  .tab-btn .idx{font-family:var(--mono);font-size:10px;color:var(--text-faint);margin-left:auto;}
-  .tab-btn.active .idx{color:var(--amber);opacity:.7;}
+  .tab-btn .label{opacity:0;max-width:0;overflow:hidden;display:inline-block;transition:opacity .12s ease, max-width .22s ease;}
+  .sidebar.expanded .tab-btn .label{opacity:1;max-width:150px;}
+  .tab-btn .idx{font-family:var(--mono);font-size:10px;color:var(--text-faint);margin-left:auto;opacity:0;max-width:0;overflow:hidden;transition:opacity .12s ease;}
+  .sidebar.expanded .tab-btn .idx{opacity:1;max-width:30px;}
+  .tab-btn.active .idx{color:var(--amber);}
+  .sidebar.expanded .tab-btn.active .idx{opacity:.7;}
 
-  .side-foot{margin-top:auto;padding:12px 4px 2px;border-top:1px solid var(--border-soft);}
+  .side-foot{margin-top:auto;padding:12px 4px 2px;border-top:1px solid var(--border-soft);opacity:0;max-height:0;overflow:hidden;transition:opacity .12s ease, max-height .25s ease;}
+  .sidebar.expanded .side-foot{opacity:1;max-height:120px;}
   .status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:6px;box-shadow:0 0 8px var(--green);}
   .side-foot .line{font-family:var(--mono);font-size:10.5px;color:var(--text-faint);margin-top:6px;}
+  .sidebar:not(.expanded) .brand{justify-content:center;}
+  .sidebar:not(.expanded) .tab-btn{justify-content:center;padding:10px 0;}
 
   .main{flex:1;min-width:0;padding:26px 34px 60px;max-width:1400px;}
   .topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:26px;flex-wrap:wrap;}
@@ -341,8 +355,16 @@
 
   .hamburger{display:none;}
   @media(max-width:860px){
-    .sidebar{position:fixed;left:-260px;transition:left .2s;box-shadow:20px 0 40px rgba(20,30,50,.18);}
+    .sidebar{position:fixed;left:-260px;transition:left .2s;box-shadow:20px 0 40px rgba(20,30,50,.18);
+      width:236px;flex:0 0 236px;padding:22px 16px;}
     .sidebar.open{left:0;}
+    .sidebar .brand{gap:10px;justify-content:flex-start;}
+    .sidebar .brand-text{opacity:1;max-width:180px;}
+    .sidebar .tab-btn{gap:11px;justify-content:flex-start;padding:10px 12px;}
+    .sidebar .tab-btn .label{opacity:1;max-width:150px;}
+    .sidebar .tab-btn .idx{opacity:1;max-width:30px;}
+    .sidebar .tab-btn.active .idx{opacity:.7;}
+    .sidebar .side-foot{opacity:1;max-height:120px;}
     .main{padding:20px 16px 60px;}
     .hamburger{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;
       background:var(--panel);border:1px solid var(--border);color:var(--text);cursor:pointer;margin-right:10px;}
@@ -372,23 +394,23 @@
     <nav class="tabs">
       <button class="tab-btn active" data-tab="overview">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="12" width="4" height="8"/><rect x="10" y="7" width="4" height="13"/><rect x="17" y="3" width="4" height="17"/></svg>
-        Overview <span class="idx">01</span>
+        <span class="label">Overview</span> <span class="idx">01</span>
       </button>
       <button class="tab-btn" data-tab="approval">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
-        Approval Status <span class="idx">02</span>
+        <span class="label">Approval Status</span> <span class="idx">02</span>
       </button>
       <button class="tab-btn" data-tab="salesperson">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="18" cy="8" r="2.6"/><path d="M15.5 14.2c2.7.3 5 2.5 5 5.8"/></svg>
-        Sales Person <span class="idx">03</span>
+        <span class="label">Sales Person</span> <span class="idx">03</span>
       </button>
       <button class="tab-btn" data-tab="bigprojects">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V9l4-4 4 4 4-6v18"/></svg>
-        Big Projects <span class="idx">04</span>
+        <span class="label">Big Projects</span> <span class="idx">04</span>
       </button>
       <button class="tab-btn" data-tab="region">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.5 7-12a7 7 0 0 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.4"/></svg>
-        Region <span class="idx">05</span>
+        <span class="label">Region</span> <span class="idx">05</span>
       </button>
     </nav>
     <div class="side-foot">
@@ -418,29 +440,31 @@
     <!-- OVERVIEW -->
     <section class="section active" id="section-overview">
       <div class="kpi-row" id="kpiRow"></div>
-      <div class="panel-grid">
-        <div class="panel">
-          <h3>Value by sector <span style="color:var(--text-faint);font-weight:400;">— upcoming pipeline</span></h3>
-          <div class="panel-sub">Click a bar's legend row below for the same info in table form. Amounts in ₹ Cr.</div>
-          <div class="chart-wrap"><canvas id="chartSector"></canvas></div>
-        </div>
-        <div class="panel">
-          <h3>Approval status split</h3>
-          <div class="panel-sub">Across all tracked authorities</div>
-          <div class="chart-wrap"><canvas id="chartApproval"></canvas></div>
+      <div class="threshold-row">
+        <span style="font-size:12px;color:var(--text-dim);font-weight:600;">Show</span>
+        <div class="chip-row" id="overviewTypeChips">
+          <div class="chip active" data-type="all">All</div>
+          <div class="chip" data-type="Upcoming">Upcoming</div>
+          <div class="chip" data-type="Awarded">Awarded</div>
         </div>
       </div>
-      <div class="panel-grid">
-        <div class="panel">
-          <h3>Top states by pipeline value</h3>
-          <div class="panel-sub">Upcoming tender value, ₹ Cr</div>
-          <div class="chart-wrap small"><canvas id="chartState"></canvas></div>
-        </div>
-        <div class="panel">
-          <h3>Highest-value upcoming tenders</h3>
-          <div class="panel-sub">Click any row for full details</div>
-          <div class="row-list" id="topUpcomingList"></div>
-        </div>
+      <div class="toolbar">
+        <input class="search-input" id="overviewSearch" placeholder="Search tender ID, organisation, description, sector, state, sales person…">
+        <select class="filter-select" id="overviewSectorFilter"><option value="">All sectors</option></select>
+      </div>
+      <div class="table-scroll">
+        <table class="data-table" id="overviewTable">
+          <thead><tr>
+            <th class="sortable" data-sort="type">Status<span class="arrow"></span></th>
+            <th class="sortable" data-sort="tender">Tender<span class="arrow"></span></th>
+            <th class="sortable" data-sort="organisation">Organisation<span class="arrow"></span></th>
+            <th class="sortable" data-sort="sector">Sector<span class="arrow"></span></th>
+            <th class="sortable" data-sort="state">State<span class="arrow"></span></th>
+            <th class="sortable sort-desc" data-sort="value">Value (₹ Cr)<span class="arrow"></span></th>
+            <th class="sortable" data-sort="salesperson">Sales Person<span class="arrow"></span></th>
+          </tr></thead>
+          <tbody id="overviewTableBody"></tbody>
+        </table>
       </div>
     </section>
 
@@ -869,6 +893,15 @@ function renderOverview(){
   const pendingCount = authorityRows.filter(r=>(r["Approval Status"]||"").toLowerCase().includes("pending")).length;
   const salesPeopleActive = [...salesPersonAgg.keys()].filter(n=>n!=="Vacant").length;
   const vacantOrgs = authorityRows.filter(r=>(r["Sales Person"]||"Vacant")==="Vacant").length;
+  const totalCount = upcomingRows.length + awardedRows.length;
+  const totalValue = upcomingValue + awardedValue;
+  const statesSet = new Set(combinedProjects.map(p=>(p.state||"").trim()).filter(Boolean));
+  const stateValueMap = new Map();
+  combinedProjects.forEach(p=>{ const st=(p.state||"").trim(); if(!st) return; stateValueMap.set(st,(stateValueMap.get(st)||0)+p.valueCr); });
+  const topStateEntry = [...stateValueMap.entries()].sort((a,b)=>b[1]-a[1])[0];
+  const bigThresholdOverview = 500;
+  const bigProjectsOverview = combinedProjects.filter(p=>p.valueCr>=bigThresholdOverview);
+  const bigProjectsValue = bigProjectsOverview.reduce((s,p)=>s+p.valueCr,0);
 
   const kpiRow = document.getElementById("kpiRow");
   kpiRow.innerHTML = "";
@@ -909,6 +942,24 @@ function renderOverview(){
         });
         openKpiListModal("Vacant Territories", `${fmtNum(vacant.length)} organisation(s) without a sales owner`, items);
       }},
+    {lbl:"Total Tenders", val: fmtNum(totalCount), sub: fmtCr(totalValue) + " combined value", cls:"amber",
+      onClick:()=>{
+        const items = safeSort(combinedProjects, p=>p.valueCr).map(p=>`<div class="mini-row" onclick="closeModal();setTimeout(()=>openProjectModal('${esc(p.tenderId).replace(/'/g,"\\'")}','${p.type}'),50)"><span class="mr-name">${p.type==="Upcoming"?"🟦":"🟩"} ${esc(truncate(p.description,50))} <span style="color:var(--text-faint);font-weight:400;">· ${esc(p.organisation)}</span></span><span class="mr-val">${fmtCr(p.valueCr)}</span></div>`);
+        openKpiListModal("Total Tenders", `${fmtNum(totalCount)} tender(s) · ${fmtCr(totalValue)} combined value`, items);
+      }},
+    {lbl:"Big Projects ≥ ₹500 Cr", val: fmtNum(bigProjectsOverview.length), sub: fmtCr(bigProjectsValue) + " combined", cls:"red",
+      onClick:()=>{
+        const items = safeSort(bigProjectsOverview, p=>p.valueCr).map(p=>`<div class="mini-row" onclick="closeModal();setTimeout(()=>openProjectModal('${esc(p.tenderId).replace(/'/g,"\\'")}','${p.type}'),50)"><span class="mr-name">${p.type==="Upcoming"?"🟦":"🟩"} ${esc(truncate(p.description,50))} <span style="color:var(--text-faint);font-weight:400;">· ${esc(p.organisation)}</span></span><span class="mr-val">${fmtCr(p.valueCr)}</span></div>`);
+        openKpiListModal("Big Projects ≥ ₹500 Cr", `${fmtNum(bigProjectsOverview.length)} project(s) · ${fmtCr(bigProjectsValue)} combined`, items);
+      }},
+    {lbl:"States Covered", val: fmtNum(statesSet.size), sub: topStateEntry ? `Top: ${topStateEntry[0]}` : "no data yet", cls:"cyan",
+      onClick:()=>{
+        const items = [...stateValueMap.entries()].sort((a,b)=>b[1]-a[1]).map(([st,v])=>{
+          const cnt = combinedProjects.filter(p=>(p.state||"").trim()===st).length;
+          return `<div class="mini-row" onclick="closeModal();switchTab('region');"><span class="mr-name">${esc(st)} <span style="color:var(--text-faint);font-weight:400;">· ${cnt} tender(s)</span></span><span class="mr-val">${fmtCr(v)}</span></div>`;
+        });
+        openKpiListModal("States Covered", `${fmtNum(statesSet.size)} state(s) tracked`, items);
+      }},
   ];
   kpis.forEach(k=>{
     const el = document.createElement("div");
@@ -918,24 +969,42 @@ function renderOverview(){
     kpiRow.appendChild(el);
   });
 
-  const topUpcoming = safeSort(upcomingRows, r=>r["__Amt. in Cr._num"]||0).slice(0,8);
-  const list = document.getElementById("topUpcomingList");
-  list.innerHTML = "";
-  topUpcoming.forEach((r,i)=>{
-    const meta = authorityMap.get(r["Organisation Code"]) || {};
-    const el = document.createElement("div");
-    el.className = "row-item";
-    el.innerHTML = `<div class="rank">${i+1}</div>
-      <div class="ri-main">
-        <div class="ri-title">${esc(truncate(r["Description"], 62))}</div>
-        <div class="ri-sub">${esc(r["Organisation"])} · ${esc(r["State"])}</div>
-      </div>
-      <div class="ri-val">${fmtCr(r["__Amt. in Cr._num"])}</div>`;
-    el.addEventListener("click", ()=>openProjectModal(r["Tender ID"], "Upcoming"));
-    list.appendChild(el);
+  renderOverviewTable();
+}
+/* ============================ RENDER: OVERVIEW TABLE ============================ */
+let overviewSortState = { key: "value", dir: "desc" };
+let overviewTypeFilter = "all";
+function renderOverviewTable(){
+  const searchEl = document.getElementById("overviewSearch");
+  const sectorEl = document.getElementById("overviewSectorFilter");
+  if(!searchEl || !sectorEl) return;
+  const search = (searchEl.value||"").toLowerCase();
+  const sectorFilter = sectorEl.value;
+  let list = combinedProjects.slice();
+  if(overviewTypeFilter !== "all") list = list.filter(p=>p.type===overviewTypeFilter);
+  if(sectorFilter) list = list.filter(p=>p.sector===sectorFilter);
+  if(search) list = list.filter(p=>(p.tenderId+" "+p.organisation+" "+p.description+" "+p.sector+" "+p.state+" "+p.salesPerson).toLowerCase().includes(search));
+  list = applySortState(list, overviewSortState, bigAccessors);
+  const tbody = document.getElementById("overviewTableBody");
+  tbody.innerHTML = "";
+  if(list.length === 0){
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">No tenders match this filter.</div></td></tr>`;
+    return;
+  }
+  list.forEach(p=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><span class="pill ${p.type==='Upcoming'?'upcoming':'awarded'}">${p.type}</span></td>
+      <td><div class="cell-title">${esc(truncate(p.description,56))}</div><div class="cell-sub mono-cell">${esc(p.tenderId)}</div></td>
+      <td>${esc(p.organisation)}</td>
+      <td>${esc(p.sector)}</td>
+      <td>${esc(p.state)}</td>
+      <td><b style="color:var(--amber);font-family:var(--mono);">${fmtCr(p.valueCr)}</b></td>
+      <td>${esc(p.salesPerson)}</td>
+    `;
+    tr.addEventListener("click", ()=>openProjectModal(p.tenderId, p.type));
+    tbody.appendChild(tr);
   });
-
-  renderCharts();
 }
 
 /* ============================ SORTABLE TABLE HEADERS ============================ */
@@ -1002,9 +1071,12 @@ function renderApprovalCards(){
 }
 
 function populateSectorFilter(){
-  const sel = document.getElementById("approvalSectorFilter");
   const sectors = [...new Set(authorityRows.map(r=>r["Sector"]).filter(Boolean))].sort();
-  sel.innerHTML = `<option value="">All sectors</option>` + sectors.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join("");
+  const options = `<option value="">All sectors</option>` + sectors.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join("");
+  ["approvalSectorFilter","overviewSectorFilter"].forEach(id=>{
+    const sel = document.getElementById(id);
+    if(sel) sel.innerHTML = options;
+  });
 }
 
 function renderApprovalTable(){
@@ -1575,8 +1647,31 @@ function switchTab(tab){
 }
 document.querySelectorAll(".tab-btn").forEach(b=>b.addEventListener("click", ()=>switchTab(b.dataset.tab)));
 document.getElementById("hamburger").addEventListener("click", ()=>document.getElementById("sidebar").classList.toggle("open"));
+/* ============================ SIDEBAR EXPAND/COLLAPSE (desktop rail) ============================ */
+const sidebarEl = document.getElementById("sidebar");
+sidebarEl.addEventListener("click", (e)=>{
+  if(window.innerWidth > 860){
+    sidebarEl.classList.add("expanded");
+  }
+});
+document.addEventListener("click", (e)=>{
+  if(window.innerWidth > 860 && sidebarEl.classList.contains("expanded") && !sidebarEl.contains(e.target)){
+    sidebarEl.classList.remove("expanded");
+  }
+});
 
 /* ============================ EVENTS ============================ */
+document.getElementById("overviewSearch").addEventListener("input", renderOverviewTable);
+document.getElementById("overviewSectorFilter").addEventListener("change", renderOverviewTable);
+document.querySelectorAll("#overviewTypeChips .chip").forEach(chip=>{
+  chip.addEventListener("click", ()=>{
+    document.querySelectorAll("#overviewTypeChips .chip").forEach(c=>c.classList.remove("active"));
+    chip.classList.add("active");
+    overviewTypeFilter = chip.dataset.type;
+    renderOverviewTable();
+  });
+});
+wireSortableHeaders("overviewTable", overviewSortState, renderOverviewTable);
 document.getElementById("approvalSearch").addEventListener("input", renderApprovalTable);
 document.getElementById("approvalSectorFilter").addEventListener("change", renderApprovalTable);
 document.getElementById("spSearch").addEventListener("input", renderSalesPerson);
