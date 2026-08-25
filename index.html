@@ -242,6 +242,11 @@
     background:var(--panel-2);border:1px solid var(--border);border-radius:12px;color:var(--text);
     padding:11px 12px;height:46px;font-family:var(--body);font-size:12.6px;
   }
+  input.filter-date{
+    background:var(--panel-2);border:1px solid var(--border);border-radius:12px;color:var(--text);
+    padding:11px 12px;height:46px;font-family:var(--body);font-size:12.6px;
+  }
+  .filter-label{font-size:11.5px;color:var(--text-dim);font-weight:700;display:flex;align-items:center;}
   .chip-row{display:flex;gap:8px;flex-wrap:wrap;}
   .chip{
     border:1px solid var(--border);background:var(--panel-2);color:var(--text-dim);
@@ -521,6 +526,11 @@
       <div class="toolbar">
         <input class="search-input" id="overviewSearch" placeholder="Search tender ID, organisation, description, sector, state, sales person…">
         <select class="filter-select" id="overviewSectorFilter"><option value="">All sectors</option></select>
+        <select class="filter-select" id="overviewSalesFilter"><option value="">All sales persons</option></select>
+        <select class="filter-select" id="overviewStateFilter"><option value="">All states</option></select>
+        <span class="filter-label">From</span><input type="date" class="filter-date" id="overviewDateFrom">
+        <span class="filter-label">To</span><input type="date" class="filter-date" id="overviewDateTo">
+        <button class="btn" id="overviewClearFilters">Clear filters</button>
       </div>
       <div class="table-scroll">
         <table class="data-table" id="overviewTable">
@@ -544,6 +554,11 @@
       <div class="toolbar">
         <input class="search-input" id="approvalSearch" placeholder="Search organisation, sector, sales person…">
         <select class="filter-select" id="approvalSectorFilter"><option value="">All sectors</option></select>
+        <select class="filter-select" id="approvalSalesFilter"><option value="">All sales persons</option></select>
+        <select class="filter-select" id="approvalStateFilter"><option value="">All states</option></select>
+        <span class="filter-label">From</span><input type="date" class="filter-date" id="approvalDateFrom">
+        <span class="filter-label">To</span><input type="date" class="filter-date" id="approvalDateTo">
+        <button class="btn" id="approvalClearFilters">Clear filters</button>
       </div>
       <div class="table-scroll">
         <table class="data-table" id="approvalTable">
@@ -566,11 +581,15 @@
     <section class="section" id="section-salesperson">
       <div class="toolbar">
         <input class="search-input" id="spSearch" placeholder="Search sales person…">
+        <select class="filter-select" id="spStateFilter"><option value="">All states</option></select>
+        <span class="filter-label">From</span><input type="date" class="filter-date" id="spDateFrom">
+        <span class="filter-label">To</span><input type="date" class="filter-date" id="spDateTo">
         <select class="filter-select" id="spSort">
           <option value="value">Sort by pipeline value</option>
           <option value="count">Sort by organisation count</option>
           <option value="name">Sort A–Z</option>
         </select>
+        <button class="btn" id="spClearFilters">Clear filters</button>
       </div>
       <div class="sp-grid" id="spGrid"></div>
     </section>
@@ -594,6 +613,11 @@
       </div>
       <div class="toolbar">
         <input class="search-input" id="bigSearch" placeholder="Search tender ID, organisation, description…">
+        <select class="filter-select" id="bigSalesFilter"><option value="">All sales persons</option></select>
+        <select class="filter-select" id="bigStateFilter"><option value="">All states</option></select>
+        <span class="filter-label">From</span><input type="date" class="filter-date" id="bigDateFrom">
+        <span class="filter-label">To</span><input type="date" class="filter-date" id="bigDateTo">
+        <button class="btn" id="bigClearFilters">Clear filters</button>
       </div>
       <div class="table-scroll">
         <table class="data-table" id="bigTable">
@@ -614,6 +638,13 @@
 
     <!-- REGION -->
     <section class="section" id="section-region">
+      <div class="toolbar">
+        <select class="filter-select" id="regionSalesFilter"><option value="">All sales persons</option></select>
+        <select class="filter-select" id="regionSectorFilter"><option value="">All sectors</option></select>
+        <span class="filter-label">From</span><input type="date" class="filter-date" id="regionDateFrom">
+        <span class="filter-label">To</span><input type="date" class="filter-date" id="regionDateTo">
+        <button class="btn" id="regionClearFilters">Clear filters</button>
+      </div>
       <div class="kpi-row" id="regionKpiRow"></div>
       <div class="region-toolbar">
         <div class="region-crumb" id="regionCrumb"><b onclick="regionShowMap()">India</b></div>
@@ -714,6 +745,64 @@ function salesPersonCell(name){
   return esc(name);
 }
 function safeSort(arr, keyFn, desc=true){ return [...arr].sort((a,b)=> desc ? keyFn(b)-keyFn(a) : keyFn(a)-keyFn(b)); }
+
+/* ============================ DATE HELPERS (for filters) ============================ */
+function parseAnyDate(v){
+  if(!v) return null;
+  if(v instanceof Date) return +v;
+  const x = String(v).trim();
+  let m = x.match(/^Date\((\d+),(\d+),(\d+)/);
+  if(m) return +new Date(+m[1], +m[2], +m[3]);
+  m = x.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+  if(m) return +new Date(+m[3], +m[2]-1, +m[1]);
+  const t = Date.parse(x);
+  return Number.isNaN(t) ? null : t;
+}
+function projectDateValue(p){
+  return parseAnyDate(p.type === "Awarded" ? (p.contractDate || p.publishedDate) : p.publishedDate);
+}
+function projectPassesFilters(p, prefix){
+  const salesEl = document.getElementById(prefix+"SalesFilter");
+  const stateEl = document.getElementById(prefix+"StateFilter");
+  const sectorEl = document.getElementById(prefix+"SectorFilter2");
+  const fromEl = document.getElementById(prefix+"DateFrom");
+  const toEl = document.getElementById(prefix+"DateTo");
+  const sales = salesEl ? salesEl.value : "";
+  const state = stateEl ? stateEl.value : "";
+  const from = fromEl ? fromEl.value : "";
+  const to = toEl ? toEl.value : "";
+  if(sales && p.salesPerson !== sales) return false;
+  if(state && p.state !== state) return false;
+  if(from || to){
+    const d = projectDateValue(p);
+    if(from && (!d || d < +new Date(from+"T00:00:00"))) return false;
+    if(to && (!d || d > +new Date(to+"T23:59:59"))) return false;
+  }
+  return true;
+}
+function filteredProjectsFor(prefix){
+  return combinedProjects.filter(p=>projectPassesFilters(p, prefix));
+}
+function populateFilterDropdown(id, values){
+  const el = document.getElementById(id);
+  if(!el) return;
+  const current = el.value;
+  const opts = [...new Set(values.filter(Boolean))].sort();
+  el.innerHTML = el.querySelector("option")?.outerHTML.includes("All") ? el.options[0].outerHTML : `<option value="">All</option>`;
+  opts.forEach(v=>{ el.insertAdjacentHTML("beforeend", `<option value="${esc(v)}">${esc(v)}</option>`); });
+  if(opts.includes(current)) el.value = current;
+}
+function populateAllFilterDropdowns(){
+  const salesValues = [...new Set(combinedProjects.map(p=>p.salesPerson))];
+  const stateValues = [...new Set(combinedProjects.map(p=>p.state).filter(Boolean))];
+  ["overview","approval","spX","big","region"].forEach(()=>{});
+  ["overviewSalesFilter","approvalSalesFilter","bigSalesFilter","regionSalesFilter"].forEach(id=>{
+    populateFilterDropdown(id, salesValues);
+  });
+  ["overviewStateFilter","approvalStateFilter","spStateFilter","bigStateFilter"].forEach(id=>{
+    populateFilterDropdown(id, stateValues);
+  });
+}
 
 /* ============================ DATA MODEL ============================ */
 let authorityRows = [], authorityMap = new Map();
@@ -961,45 +1050,50 @@ function renderCharts(){
 
 /* ============================ RENDER: OVERVIEW ============================ */
 function renderOverview(){
-  const upcomingValue = upcomingRows.reduce((s,r)=>s+(r["__Amt. in Cr._num"]||0),0);
-  const awardedValue = awardedRows.reduce((s,r)=>s+(r["__Amt. in Cr._num"]||0),0);
-  const pendingCount = authorityRows.filter(r=>(r["Approval Status"]||"").toLowerCase().includes("pending")).length;
-  const salesPeopleActive = [...salesPersonAgg.keys()].filter(n=>n!=="Vacant").length;
-  const vacantOrgs = authorityRows.filter(r=>(r["Sales Person"]||"Vacant")==="Vacant").length;
-  const totalCount = upcomingRows.length + awardedRows.length;
+  const scopedProjects = filteredProjectsFor("overview");
+  const scopedUp = scopedProjects.filter(p=>p.type==="Upcoming");
+  const scopedAw = scopedProjects.filter(p=>p.type==="Awarded");
+  const upcomingValue = scopedUp.reduce((s,p)=>s+p.valueCr,0);
+  const awardedValue = scopedAw.reduce((s,p)=>s+p.valueCr,0);
+  const scopedOrgCodes = new Set(scopedProjects.map(p=>p.orgCode));
+  const scopedAuthorityRows = authorityRows.filter(r=>scopedOrgCodes.has(r["Organisation Code"]));
+  const pendingCount = scopedAuthorityRows.filter(r=>(r["Approval Status"]||"").toLowerCase().includes("pending")).length;
+  const salesPeopleActive = [...new Set(scopedProjects.map(p=>p.salesPerson))].filter(n=>n!=="Vacant").length;
+  const vacantOrgs = scopedAuthorityRows.filter(r=>(r["Sales Person"]||"Vacant")==="Vacant").length;
+  const totalCount = scopedProjects.length;
   const totalValue = upcomingValue + awardedValue;
-  const statesSet = new Set(combinedProjects.map(p=>(p.state||"").trim()).filter(Boolean));
+  const statesSet = new Set(scopedProjects.map(p=>(p.state||"").trim()).filter(Boolean));
   const stateValueMap = new Map();
-  combinedProjects.forEach(p=>{ const st=(p.state||"").trim(); if(!st) return; stateValueMap.set(st,(stateValueMap.get(st)||0)+p.valueCr); });
+  scopedProjects.forEach(p=>{ const st=(p.state||"").trim(); if(!st) return; stateValueMap.set(st,(stateValueMap.get(st)||0)+p.valueCr); });
   const topStateEntry = [...stateValueMap.entries()].sort((a,b)=>b[1]-a[1])[0];
   const bigThresholdOverview = 500;
-  const bigProjectsOverview = combinedProjects.filter(p=>p.valueCr>=bigThresholdOverview);
+  const bigProjectsOverview = scopedProjects.filter(p=>p.valueCr>=bigThresholdOverview);
   const bigProjectsValue = bigProjectsOverview.reduce((s,p)=>s+p.valueCr,0);
 
   const kpiRow = document.getElementById("kpiRow");
   kpiRow.innerHTML = "";
   const kpis = [
-    {lbl:"Upcoming Tenders", val: fmtNum(upcomingRows.length), sub: fmtCr(upcomingValue) + " pipeline", cls:"cyan",
+    {lbl:"Upcoming Tenders", val: fmtNum(scopedUp.length), sub: fmtCr(upcomingValue) + " pipeline", cls:"cyan",
       onClick:()=>{
-        const items = safeSort(upcomingRows, r=>r["__Amt. in Cr._num"]||0).map(r=>`<div class="mini-row" onclick="closeModal();setTimeout(()=>openProjectModal('${esc(r["Tender ID"]).replace(/'/g,"\\'")}','Upcoming'),50)"><span class="mr-name">🟦 ${esc(truncate(r["Description"],50))} <span style="color:var(--text-faint);font-weight:400;">· ${esc(r["Organisation"])}${r["State"]?", "+esc(r["State"]):""}</span></span><span class="mr-val">${fmtCr(r["__Amt. in Cr._num"]||0)}</span></div>`);
-        openKpiListModal("Upcoming Tenders", `${fmtNum(upcomingRows.length)} tender(s) · ${fmtCr(upcomingValue)} pipeline`, items);
+        const items = safeSort(scopedUp, p=>p.valueCr).map(p=>`<div class="mini-row" onclick="closeModal();setTimeout(()=>openProjectModal('${esc(p.tenderId).replace(/'/g,"\\'")}','Upcoming'),50)"><span class="mr-name">🟦 ${esc(truncate(p.description,50))} <span style="color:var(--text-faint);font-weight:400;">· ${esc(p.organisation)}${p.state?", "+esc(p.state):""}</span></span><span class="mr-val">${fmtCr(p.valueCr)}</span></div>`);
+        openKpiListModal("Upcoming Tenders", `${fmtNum(scopedUp.length)} tender(s) · ${fmtCr(upcomingValue)} pipeline`, items);
       }},
-    {lbl:"Awarded Contracts", val: fmtNum(awardedRows.length), sub: fmtCr(awardedValue) + " contracted", cls:"green",
+    {lbl:"Awarded Contracts", val: fmtNum(scopedAw.length), sub: fmtCr(awardedValue) + " contracted", cls:"green",
       onClick:()=>{
-        const items = safeSort(awardedRows, r=>r["__Amt. in Cr._num"]||0).map(r=>`<div class="mini-row" onclick="closeModal();setTimeout(()=>openProjectModal('${esc(r["Tender ID"]).replace(/'/g,"\\'")}','Awarded'),50)"><span class="mr-name">🟩 ${esc(truncate(r["Description"],50))} <span style="color:var(--text-faint);font-weight:400;">· ${esc(r["Organisation"])}${r["State"]?", "+esc(r["State"]):""}</span></span><span class="mr-val">${fmtCr(r["__Amt. in Cr._num"]||0)}</span></div>`);
-        openKpiListModal("Awarded Contracts", `${fmtNum(awardedRows.length)} contract(s) · ${fmtCr(awardedValue)} contracted`, items);
+        const items = safeSort(scopedAw, p=>p.valueCr).map(p=>`<div class="mini-row" onclick="closeModal();setTimeout(()=>openProjectModal('${esc(p.tenderId).replace(/'/g,"\\'")}','Awarded'),50)"><span class="mr-name">🟩 ${esc(truncate(p.description,50))} <span style="color:var(--text-faint);font-weight:400;">· ${esc(p.organisation)}${p.state?", "+esc(p.state):""}</span></span><span class="mr-val">${fmtCr(p.valueCr)}</span></div>`);
+        openKpiListModal("Awarded Contracts", `${fmtNum(scopedAw.length)} contract(s) · ${fmtCr(awardedValue)} contracted`, items);
       }},
-    {lbl:"Authorities Tracked", val: fmtNum(authorityRows.length), sub: salesPeopleActive + " sales owners active", cls:"amber",
+    {lbl:"Authorities Tracked", val: fmtNum(scopedAuthorityRows.length), sub: salesPeopleActive + " sales owners active", cls:"amber",
       onClick:()=>{
-        const items = safeSort(authorityRows, a=>combinedProjects.filter(p=>p.orgCode===a["Organisation Code"]).reduce((s,p)=>s+p.valueCr,0)).map(a=>{
+        const items = safeSort(scopedAuthorityRows, a=>combinedProjects.filter(p=>p.orgCode===a["Organisation Code"]).reduce((s,p)=>s+p.valueCr,0)).map(a=>{
           const v = combinedProjects.filter(p=>p.orgCode===a["Organisation Code"]).reduce((s,p)=>s+p.valueCr,0);
           return `<div class="mini-row" onclick="closeModal();setTimeout(()=>openAuthorityModal('${esc(a["Organisation Code"]).replace(/'/g,"\\'")}'),50)"><span class="mr-name">${esc(a["Organisation"])} <span class="pill ${statusPillClass(a["Approval Status"])}" style="margin-left:6px;">${esc(a["Approval Status"])}</span></span><span class="mr-val">${v?fmtCr(v):esc(a["Sector"]||"")}</span></div>`;
         });
-        openKpiListModal("Authorities Tracked", `${fmtNum(authorityRows.length)} authorities · ${salesPeopleActive} sales owners active`, items);
+        openKpiListModal("Authorities Tracked", `${fmtNum(scopedAuthorityRows.length)} authorities · ${salesPeopleActive} sales owners active`, items);
       }},
     {lbl:"Pending Approvals", val: fmtNum(pendingCount), sub: "need sign-off", cls:"red",
       onClick:()=>{
-        const pending = authorityRows.filter(r=>(r["Approval Status"]||"").toLowerCase().includes("pending"));
+        const pending = scopedAuthorityRows.filter(r=>(r["Approval Status"]||"").toLowerCase().includes("pending"));
         const items = safeSort(pending, a=>combinedProjects.filter(p=>p.orgCode===a["Organisation Code"]).reduce((s,p)=>s+p.valueCr,0)).map(a=>{
           const v = combinedProjects.filter(p=>p.orgCode===a["Organisation Code"]).reduce((s,p)=>s+p.valueCr,0);
           return `<div class="mini-row" onclick="closeModal();setTimeout(()=>openAuthorityModal('${esc(a["Organisation Code"]).replace(/'/g,"\\'")}'),50)"><span class="mr-name">${esc(a["Organisation"])} <span class="pill ${statusPillClass(a["Approval Status"])}" style="margin-left:6px;">${esc(a["Approval Status"])}</span></span><span class="mr-val">${v?fmtCr(v):esc(a["Sector"]||"")}</span></div>`;
@@ -1008,7 +1102,7 @@ function renderOverview(){
       }},
     {lbl:"Vacant Territories", val: fmtNum(vacantOrgs), sub: "orgs without an owner", cls:"amber",
       onClick:()=>{
-        const vacant = authorityRows.filter(r=>(r["Sales Person"]||"Vacant")==="Vacant");
+        const vacant = scopedAuthorityRows.filter(r=>(r["Sales Person"]||"Vacant")==="Vacant");
         const items = safeSort(vacant, a=>combinedProjects.filter(p=>p.orgCode===a["Organisation Code"]).reduce((s,p)=>s+p.valueCr,0)).map(a=>{
           const v = combinedProjects.filter(p=>p.orgCode===a["Organisation Code"]).reduce((s,p)=>s+p.valueCr,0);
           return `<div class="mini-row" onclick="closeModal();setTimeout(()=>openAuthorityModal('${esc(a["Organisation Code"]).replace(/'/g,"\\'")}'),50)"><span class="mr-name">${esc(a["Organisation"])} <span class="pill ${statusPillClass(a["Approval Status"])}" style="margin-left:6px;">${esc(a["Approval Status"])}</span></span><span class="mr-val">${v?fmtCr(v):esc(a["Sector"]||"")}</span></div>`;
@@ -1017,7 +1111,7 @@ function renderOverview(){
       }},
     {lbl:"Total Tenders", val: fmtNum(totalCount), sub: fmtCr(totalValue) + " combined value", cls:"amber",
       onClick:()=>{
-        const items = safeSort(combinedProjects, p=>p.valueCr).map(p=>`<div class="mini-row" onclick="closeModal();setTimeout(()=>openProjectModal('${esc(p.tenderId).replace(/'/g,"\\'")}','${p.type}'),50)"><span class="mr-name">${p.type==="Upcoming"?"🟦":"🟩"} ${esc(truncate(p.description,50))} <span style="color:var(--text-faint);font-weight:400;">· ${esc(p.organisation)}</span></span><span class="mr-val">${fmtCr(p.valueCr)}</span></div>`);
+        const items = safeSort(scopedProjects, p=>p.valueCr).map(p=>`<div class="mini-row" onclick="closeModal();setTimeout(()=>openProjectModal('${esc(p.tenderId).replace(/'/g,"\\'")}','${p.type}'),50)"><span class="mr-name">${p.type==="Upcoming"?"🟦":"🟩"} ${esc(truncate(p.description,50))} <span style="color:var(--text-faint);font-weight:400;">· ${esc(p.organisation)}</span></span><span class="mr-val">${fmtCr(p.valueCr)}</span></div>`);
         openKpiListModal("Total Tenders", `${fmtNum(totalCount)} tender(s) · ${fmtCr(totalValue)} combined value`, items);
       }},
     {lbl:"Big Projects ≥ ₹500 Cr", val: fmtNum(bigProjectsOverview.length), sub: fmtCr(bigProjectsValue) + " combined", cls:"red",
@@ -1028,7 +1122,7 @@ function renderOverview(){
     {lbl:"States Covered", val: fmtNum(statesSet.size), sub: topStateEntry ? `Top: ${topStateEntry[0]}` : "no data yet", cls:"cyan",
       onClick:()=>{
         const items = [...stateValueMap.entries()].sort((a,b)=>b[1]-a[1]).map(([st,v])=>{
-          const cnt = combinedProjects.filter(p=>(p.state||"").trim()===st).length;
+          const cnt = scopedProjects.filter(p=>(p.state||"").trim()===st).length;
           return `<div class="mini-row" onclick="closeModal();switchTab('region');"><span class="mr-name">${esc(st)} <span style="color:var(--text-faint);font-weight:400;">· ${cnt} tender(s)</span></span><span class="mr-val">${fmtCr(v)}</span></div>`;
         });
         openKpiListModal("States Covered", `${fmtNum(statesSet.size)} state(s) tracked`, items);
@@ -1053,7 +1147,7 @@ function renderOverviewTable(){
   if(!searchEl || !sectorEl) return;
   const search = (searchEl.value||"").toLowerCase();
   const sectorFilter = sectorEl.value;
-  let list = combinedProjects.slice();
+  let list = filteredProjectsFor("overview");
   if(overviewTypeFilter !== "all") list = list.filter(p=>p.type===overviewTypeFilter);
   if(sectorFilter) list = list.filter(p=>p.sector===sectorFilter);
   if(search) list = list.filter(p=>(p.tenderId+" "+p.organisation+" "+p.description+" "+p.sector+" "+p.state+" "+p.salesPerson).toLowerCase().includes(search));
@@ -1122,13 +1216,16 @@ const approvalAccessors = {
   value: r => combinedProjects.filter(p=>p.orgCode === r["Organisation Code"]).reduce((s,p)=>s+p.valueCr,0),
 };
 function renderApprovalCards(){
+  const scopedProjects = filteredProjectsFor("approval");
+  const scopedOrgCodes = new Set(scopedProjects.map(p=>p.orgCode));
+  const scopedAuthorityRows = authorityRows.filter(r=>scopedOrgCodes.has(r["Organisation Code"]));
   const apMap = new Map();
-  authorityRows.forEach(r=>{ const s = r["Approval Status"]||"Unknown"; apMap.set(s,(apMap.get(s)||0)+1); });
+  scopedAuthorityRows.forEach(r=>{ const s = r["Approval Status"]||"Unknown"; apMap.set(s,(apMap.get(s)||0)+1); });
   const cardsEl = document.getElementById("statusCards");
   cardsEl.innerHTML = "";
   const allCard = document.createElement("div");
   allCard.className = "status-card" + (approvalStatusFilter===null ? " selected" : "");
-  allCard.innerHTML = `<div class="sc-count" style="color:var(--text)">${fmtNum(authorityRows.length)}</div><div class="sc-label">All Authorities</div>`;
+  allCard.innerHTML = `<div class="sc-count" style="color:var(--text)">${fmtNum(scopedAuthorityRows.length)}</div><div class="sc-label">All Authorities</div>`;
   allCard.addEventListener("click", ()=>{ approvalStatusFilter=null; renderApprovalCards(); renderApprovalTable(); });
   cardsEl.appendChild(allCard);
   [...apMap.entries()].forEach(([status,count])=>{
@@ -1146,7 +1243,7 @@ function renderApprovalCards(){
 function populateSectorFilter(){
   const sectors = [...new Set(authorityRows.map(r=>r["Sector"]).filter(Boolean))].sort();
   const options = `<option value="">All sectors</option>` + sectors.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join("");
-  ["approvalSectorFilter","overviewSectorFilter"].forEach(id=>{
+  ["approvalSectorFilter","overviewSectorFilter","regionSectorFilter"].forEach(id=>{
     const sel = document.getElementById(id);
     if(sel) sel.innerHTML = options;
   });
@@ -1155,7 +1252,9 @@ function populateSectorFilter(){
 function renderApprovalTable(){
   const search = (document.getElementById("approvalSearch").value||"").toLowerCase();
   const sectorFilter = document.getElementById("approvalSectorFilter").value;
-  let rows = authorityRows.slice();
+  const scopedProjects = filteredProjectsFor("approval");
+  const scopedOrgCodes = new Set(scopedProjects.map(p=>p.orgCode));
+  let rows = authorityRows.filter(r=>scopedOrgCodes.has(r["Organisation Code"]));
   if(approvalStatusFilter) rows = rows.filter(r => (r["Approval Status"]||"Unknown") === approvalStatusFilter);
   if(sectorFilter) rows = rows.filter(r => r["Sector"] === sectorFilter);
   if(search) rows = rows.filter(r => (r["Organisation"]+" "+r["Sector"]+" "+r["Sales Person"]).toLowerCase().includes(search));
@@ -1192,7 +1291,27 @@ function renderApprovalTable(){
 function renderSalesPerson(){
   const search = (document.getElementById("spSearch").value||"").toLowerCase();
   const sortMode = document.getElementById("spSort").value;
-  let people = [...salesPersonAgg.values()];
+  const stateFilter = document.getElementById("spStateFilter").value;
+  const fromEl = document.getElementById("spDateFrom"), toEl = document.getElementById("spDateTo");
+  const from = fromEl ? fromEl.value : "", to = toEl ? toEl.value : "";
+  const scopedProjects = combinedProjects.filter(p=>{
+    if(stateFilter && p.state !== stateFilter) return false;
+    if(from || to){
+      const d = projectDateValue(p);
+      if(from && (!d || d < +new Date(from+"T00:00:00"))) return false;
+      if(to && (!d || d > +new Date(to+"T23:59:59"))) return false;
+    }
+    return true;
+  });
+  const map = new Map();
+  scopedProjects.forEach(p=>{
+    const name = p.salesPerson || "Vacant";
+    if(!map.has(name)) map.set(name, { name, code: (salesPersonAgg.get(name)||{}).code || "—", orgCodes:new Set(), upcomingValue:0, awardedValue:0 });
+    const x = map.get(name);
+    x.orgCodes.add(p.orgCode);
+    if(p.type === "Upcoming") x.upcomingValue += p.valueCr; else x.awardedValue += p.valueCr;
+  });
+  let people = [...map.values()];
   if(search) people = people.filter(p=>p.name.toLowerCase().includes(search));
   if(sortMode === "value") people.sort((a,b)=> (b.upcomingValue+b.awardedValue) - (a.upcomingValue+a.awardedValue));
   else if(sortMode === "count") people.sort((a,b)=> b.orgCodes.size - a.orgCodes.size);
@@ -1201,7 +1320,7 @@ function renderSalesPerson(){
   const maxVal = Math.max(1, ...people.map(p=>p.upcomingValue+p.awardedValue));
   const grid = document.getElementById("spGrid");
   grid.innerHTML = "";
-  if(people.length===0){ grid.innerHTML = `<div class="empty-state">No sales person matches "${esc(search)}".</div>`; return; }
+  if(people.length===0){ grid.innerHTML = `<div class="empty-state">No sales person matches this filter.</div>`; return; }
   people.forEach(p=>{
     const initials = p.name === "Vacant" ? "—" : p.name.split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase();
     const total = p.upcomingValue + p.awardedValue;
@@ -1233,7 +1352,7 @@ const bigAccessors = {
   type: p => (p.type||"").toLowerCase(),
 };
 function renderBigKpis(){
-  const filtered = combinedProjects.filter(p=>p.valueCr >= bigThreshold && (bigTypeFilter==="all"||p.type===bigTypeFilter));
+  const filtered = filteredProjectsFor("big").filter(p=>p.valueCr >= bigThreshold && (bigTypeFilter==="all"||p.type===bigTypeFilter));
   const total = filtered.reduce((s,p)=>s+p.valueCr,0);
   const el = document.getElementById("bigKpiRow");
   el.innerHTML = "";
@@ -1253,7 +1372,7 @@ function renderBigKpis(){
 
 function renderBigTable(){
   const search = (document.getElementById("bigSearch").value||"").toLowerCase();
-  let list = combinedProjects.filter(p=>p.valueCr >= bigThreshold && (bigTypeFilter==="all"||p.type===bigTypeFilter));
+  let list = filteredProjectsFor("big").filter(p=>p.valueCr >= bigThreshold && (bigTypeFilter==="all"||p.type===bigTypeFilter));
   if(search) list = list.filter(p => (p.tenderId+" "+p.organisation+" "+p.description).toLowerCase().includes(search));
   list = bigSortState.key === "rank" ? safeSort(list, p=>p.valueCr, bigSortState.dir==="asc")
        : applySortState(list, bigSortState, bigAccessors);
@@ -1383,7 +1502,8 @@ function detectNameKey(features, candidates){
 function aggregateRegionData(){
   regionData = new Map();
   regionUnmatched = { count:0, value:0 };
-  combinedProjects.forEach(p=>{
+  const scopedProjects = filteredProjectsFor("region");
+  scopedProjects.forEach(p=>{
     const canon = normalizeStateName(p.state);
     if(!canon){ regionUnmatched.count++; regionUnmatched.value += p.valueCr; return; }
     if(!regionData.has(canon)) regionData.set(canon, { count:0, value:0, districts:new Map() });
@@ -1408,6 +1528,25 @@ function regionColor(t){
 function renderRegionKpis(){
   const el = document.getElementById("regionKpiRow");
   el.innerHTML = "";
+  if(regionView === "drilldown" && regionSelectedState && regionData.has(regionSelectedState)){
+    const agg = regionData.get(regionSelectedState);
+    const districtCount = agg.districts.size;
+    let topDistrict = null, topDVal = -1;
+    agg.districts.forEach((d,name)=>{ if(d.value > topDVal){ topDVal = d.value; topDistrict = name; } });
+    const kpis = [
+      {lbl:"Selected State", val: truncate(regionSelectedState,16), sub:"currently drilled in", cls:"amber"},
+      {lbl:"Tenders in State", val: fmtNum(agg.count), sub:"matching current filters", cls:"cyan"},
+      {lbl:"Pipeline Value", val: fmtCr(agg.value).replace("₹",""), sub:"₹ Cr in this state", cls:"green"},
+      {lbl:"Top District", val: topDistrict ? truncate(topDistrict,16) : "—", sub: topDistrict ? fmtCr(topDVal) + ` · ${districtCount} district(s)` : "no data yet", cls:"red"},
+    ];
+    kpis.forEach(k=>{
+      const d = document.createElement("div");
+      d.className="kpi c-"+k.cls;
+      d.innerHTML = `<div class="lbl">${esc(k.lbl)}</div><div class="val ${k.cls}">${k.val}</div><div class="sub">${esc(k.sub)}</div>`;
+      el.appendChild(d);
+    });
+    return;
+  }
   const statesCovered = regionData.size;
   const totalDistricts = new Set();
   let totalValue = 0, totalCount = 0, topState = null, topVal = -1;
@@ -1620,6 +1759,7 @@ function regionSelectState(stateName){
   document.getElementById("regionDrilldownWrap").style.display = "block";
   document.getElementById("backToMapBtn").style.display = "flex";
   document.getElementById("regionCrumb").innerHTML = `<b onclick="regionShowMap()">India</b><span class="sep">/</span><b style="cursor:default;color:var(--text);">${esc(stateName)}</b>`;
+  renderRegionKpis();
   renderDistrictDrilldown(stateName);
   paintDistrictMap(stateName);
 }
@@ -1632,6 +1772,7 @@ function regionShowMap(){
   document.getElementById("regionDrilldownWrap").style.display = "none";
   document.getElementById("backToMapBtn").style.display = "none";
   document.getElementById("regionCrumb").innerHTML = `<b onclick="regionShowMap()">India</b>`;
+  renderRegionKpis();
   paintIndiaMap();
 }
 
@@ -1733,6 +1874,65 @@ document.addEventListener("click", (e)=>{
   }
 });
 
+/* ============================ FILTER EVENT WIRING ============================ */
+["overviewSalesFilter","overviewStateFilter","overviewDateFrom","overviewDateTo"].forEach(id=>{
+  const el = document.getElementById(id); if(el) el.addEventListener(id.includes("Date")?"change":"change", ()=>renderOverview());
+});
+document.getElementById("overviewClearFilters").addEventListener("click", ()=>{
+  ["overviewSalesFilter","overviewStateFilter"].forEach(id=>document.getElementById(id).value="");
+  ["overviewDateFrom","overviewDateTo"].forEach(id=>document.getElementById(id).value="");
+  renderOverview();
+});
+["approvalSalesFilter","approvalStateFilter","approvalDateFrom","approvalDateTo"].forEach(id=>{
+  const el = document.getElementById(id); if(el) el.addEventListener("change", ()=>{ renderApprovalCards(); renderApprovalTable(); });
+});
+document.getElementById("approvalClearFilters").addEventListener("click", ()=>{
+  ["approvalSalesFilter","approvalStateFilter"].forEach(id=>document.getElementById(id).value="");
+  ["approvalDateFrom","approvalDateTo"].forEach(id=>document.getElementById(id).value="");
+  renderApprovalCards(); renderApprovalTable();
+});
+["spStateFilter","spDateFrom","spDateTo"].forEach(id=>{
+  const el = document.getElementById(id); if(el) el.addEventListener("change", ()=>renderSalesPerson());
+});
+document.getElementById("spClearFilters").addEventListener("click", ()=>{
+  document.getElementById("spStateFilter").value="";
+  document.getElementById("spDateFrom").value="";
+  document.getElementById("spDateTo").value="";
+  renderSalesPerson();
+});
+["bigSalesFilter","bigStateFilter","bigDateFrom","bigDateTo"].forEach(id=>{
+  const el = document.getElementById(id); if(el) el.addEventListener("change", ()=>renderBigTable());
+});
+document.getElementById("bigClearFilters").addEventListener("click", ()=>{
+  ["bigSalesFilter","bigStateFilter"].forEach(id=>document.getElementById(id).value="");
+  ["bigDateFrom","bigDateTo"].forEach(id=>document.getElementById(id).value="");
+  renderBigTable();
+});
+["regionSalesFilter","regionDateFrom","regionDateTo"].forEach(id=>{
+  const el = document.getElementById(id); if(el) el.addEventListener("change", ()=>renderRegion());
+});
+document.getElementById("regionSectorFilter").addEventListener("change", ()=>{
+  const sec = document.getElementById("regionSectorFilter").value;
+  regionSectorFilterValue = sec;
+  renderRegion();
+});
+let regionSectorFilterValue = "";
+document.getElementById("regionClearFilters").addEventListener("click", ()=>{
+  document.getElementById("regionSalesFilter").value="";
+  document.getElementById("regionSectorFilter").value="";
+  document.getElementById("regionDateFrom").value="";
+  document.getElementById("regionDateTo").value="";
+  regionSectorFilterValue = "";
+  renderRegion();
+});
+// region uses regionSectorFilter too - patch projectPassesFilters usage for region prefix to include sector
+const _origProjectPasses = projectPassesFilters;
+projectPassesFilters = function(p, prefix){
+  if(!_origProjectPasses(p, prefix)) return false;
+  if(prefix === "region" && regionSectorFilterValue && p.sector !== regionSectorFilterValue) return false;
+  return true;
+};
+
 /* ============================ EVENTS ============================ */
 document.getElementById("overviewSearch").addEventListener("input", renderOverviewTable);
 document.getElementById("overviewSectorFilter").addEventListener("change", renderOverviewTable);
@@ -1786,6 +1986,7 @@ async function loadAll(isRefresh){
     loaderText.textContent = "CRUNCHING PIPELINE DATA…";
     buildModel(upResp, masterResp, awResp);
     populateSectorFilter();
+    populateAllFilterDropdowns();
     renderOverview();
     renderApprovalCards();
     renderApprovalTable();
