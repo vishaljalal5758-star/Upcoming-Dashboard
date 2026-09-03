@@ -429,6 +429,25 @@
     .modal-fields{grid-template-columns:1fr;}
     .region-callout{max-width:80vw;}
   }
+
+
+  /* ---------- Approval hierarchy map ---------- */
+  #statusCards.approval-hierarchy-panel{display:block;background:var(--panel);border-radius:18px;padding:18px;box-shadow:0 4px 20px rgba(20,30,50,.06);margin-bottom:0;overflow:auto;}
+  .approval-h-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;}
+  .approval-h-title{font-family:var(--display);font-size:15px;font-weight:700;}
+  .approval-h-sub{font-size:11.6px;color:var(--text-faint);margin-top:3px;}
+  #approvalHierarchySvg{display:block;width:100%;min-width:900px;height:560px;background:linear-gradient(180deg,#fbfdff,#f5f8fc);border-radius:14px;}
+  .approval-link{fill:none;stroke:#b9c8dc;stroke-width:2.5px;}
+  .approval-node{cursor:pointer;}
+  .approval-node rect{stroke:#fff;stroke-width:3px;filter:drop-shadow(0 5px 8px rgba(20,30,50,.12));transition:filter .15s,transform .15s;}
+  .approval-node:hover rect{filter:drop-shadow(0 8px 12px rgba(20,30,50,.22));}
+  .approval-node text{fill:#fff;font-family:var(--body);pointer-events:none;text-anchor:middle;}
+  .approval-node .node-title{font-family:var(--display);font-weight:700;font-size:13px;}
+  .approval-node .node-count{font-family:var(--display);font-weight:700;font-size:21px;}
+  .approval-node .node-hint{font-size:9.5px;opacity:.88;}
+  .approval-node.collapsed rect{stroke:#0F2044;stroke-width:4px;}
+  @media(max-width:860px){#statusCards.approval-hierarchy-panel{padding:12px}#approvalHierarchySvg{min-width:820px;height:540px;}}
+
 </style>
 </head>
 <body>
@@ -550,7 +569,6 @@
 
     <!-- APPROVAL STATUS -->
     <section class="section" id="section-approval">
-      <div class="status-cards" id="statusCards"></div>
       <div class="toolbar">
         <input class="search-input" id="approvalSearch" placeholder="Search organisation, sector, sales person…">
         <select class="filter-select" id="approvalSectorFilter"><option value="">All sectors</option></select>
@@ -560,21 +578,7 @@
         <span class="filter-label">To</span><input type="date" class="filter-date" id="approvalDateTo">
         <button class="btn" id="approvalClearFilters">Clear filters</button>
       </div>
-      <div class="table-scroll">
-        <table class="data-table" id="approvalTable">
-          <thead><tr>
-            <th class="sortable" data-sort="organisation">Organisation<span class="arrow"></span></th>
-            <th class="sortable" data-sort="sector">Sector<span class="arrow"></span></th>
-            <th class="sortable" data-sort="salesperson">Sales Person<span class="arrow"></span></th>
-            <th class="sortable" data-sort="zone">Zone / State<span class="arrow"></span></th>
-            <th class="sortable" data-sort="lom">LOM<span class="arrow"></span></th>
-            <th class="sortable" data-sort="approval">Approval<span class="arrow"></span></th>
-            <th class="sortable" data-sort="tenders">No. of Tenders<span class="arrow"></span></th>
-            <th class="sortable" data-sort="value">Pipeline Value<span class="arrow"></span></th>
-          </tr></thead>
-          <tbody id="approvalTableBody"></tbody>
-        </table>
-      </div>
+      <div class="status-cards approval-hierarchy-panel" id="statusCards"></div>
     </section>
 
     <!-- SALES PERSON -->
@@ -1203,41 +1207,45 @@ function applySortState(list, sortState, accessors){
 }
 
 /* ============================ RENDER: APPROVAL ============================ */
-let approvalStatusFilter = null;
-let approvalSortState = { key: null, dir: "asc" };
-const approvalAccessors = {
-  organisation: r => (r["Organisation"]||"").toLowerCase(),
-  sector: r => (r["Sector"]||"").toLowerCase(),
-  salesperson: r => (r["Sales Person"]||"").toLowerCase(),
-  zone: r => (r["Zone"]||"")+" "+(r["State"]||""),
-  lom: r => (r["LOM Available or not"]||"").toLowerCase(),
-  approval: r => (r["Approval Status"]||"").toLowerCase(),
-  tenders: r => combinedProjects.filter(p=>p.orgCode === r["Organisation Code"]).length,
-  value: r => combinedProjects.filter(p=>p.orgCode === r["Organisation Code"]).reduce((s,p)=>s+p.valueCr,0),
-};
+function approvalHierarchyRows(){
+  const projectCodes=new Set(filteredProjectsFor("approval").map(p=>p.orgCode));
+  const q=(document.getElementById("approvalSearch").value||"").toLowerCase();
+  const sector=document.getElementById("approvalSectorFilter").value;
+  return authorityRows.filter(r=>projectCodes.has(r["Organisation Code"]))
+    .filter(r=>!sector||r["Sector"]===sector)
+    .filter(r=>!q||(r["Organisation"]+" "+r["Sector"]+" "+r["Sales Person"]).toLowerCase().includes(q));
+}
+function approvalHierarchyColor(name,depth){
+  const s=String(name||"").toLowerCase();
+  if(depth===0)return "#0F2044";
+  if(s.includes("empan"))return depth===1?"#0F4C81":"#1F9D55";
+  if(s.includes("source"))return "#00A3A3";
+  if(s.includes("not confirm"))return "#64748B";
+  if(s.includes("file")&&s.includes("submit"))return "#2878C7";
+  if(s.includes("pending"))return "#D97706";
+  if(s.includes("not required"))return "#64748B";
+  return "#7C3AED";
+}
 function renderApprovalCards(){
-  const scopedProjects = filteredProjectsFor("approval");
-  const scopedOrgCodes = new Set(scopedProjects.map(p=>p.orgCode));
-  const scopedAuthorityRows = authorityRows.filter(r=>scopedOrgCodes.has(r["Organisation Code"]));
-  const apMap = new Map();
-  scopedAuthorityRows.forEach(r=>{ const s = r["Approval Status"]||"Unknown"; apMap.set(s,(apMap.get(s)||0)+1); });
-  const cardsEl = document.getElementById("statusCards");
-  cardsEl.innerHTML = "";
-  const allCard = document.createElement("div");
-  allCard.className = "status-card" + (approvalStatusFilter===null ? " selected" : "");
-  allCard.innerHTML = `<div class="sc-count" style="color:var(--text)">${fmtNum(scopedAuthorityRows.length)}</div><div class="sc-label">All Authorities</div>`;
-  allCard.addEventListener("click", ()=>{ approvalStatusFilter=null; renderApprovalCards(); renderApprovalTable(); });
-  cardsEl.appendChild(allCard);
-  [...apMap.entries()].forEach(([status,count])=>{
-    const cls = statusPillClass(status);
-    const colorVar = cls==="pending"?"var(--amber)":cls==="notreq"?"var(--text-dim)":cls==="empanelled"?"var(--green)":"var(--cyan)";
-    const el = document.createElement("div");
-    el.className = "status-card" + (approvalStatusFilter===status ? " selected" : "");
-    el.setAttribute("data-status", status);
-    el.innerHTML = `<div class="sc-count" style="color:${colorVar}">${fmtNum(count)}</div><div class="sc-label">${esc(status)}</div>`;
-    el.addEventListener("click", ()=>{ approvalStatusFilter = status; renderApprovalCards(); renderApprovalTable(); });
-    cardsEl.appendChild(el);
-  });
+  const host=document.getElementById("statusCards");
+  host.className="status-cards approval-hierarchy-panel";host.innerHTML='<div class="approval-h-head"><div><div class="approval-h-title">Approval Hierarchy Map</div><div class="approval-h-sub">Touch Empanelment, Source Approval or Not Confirm to expand or collapse approval statuses.</div></div></div>';
+  const rows=approvalHierarchyRows(),lom=new Map();
+  rows.forEach(r=>{const parent=(r["LOM Available or not"]||"Not Confirm").trim(),child=(r["Approval Status"]||"Unknown").trim();if(!lom.has(parent))lom.set(parent,new Map());const m=lom.get(parent);m.set(child,(m.get(child)||0)+1);});
+  const order=x=>{x=x.toLowerCase();return x.includes("empan")?0:x.includes("source")?1:x.includes("not confirm")?2:3};
+  const data={name:"LOM Available or Not",value:rows.length,children:[...lom].sort((a,b)=>order(a[0])-order(b[0])).map(([name,m])=>({name,value:[...m.values()].reduce((a,b)=>a+b,0),children:[...m].map(([n,v])=>({name:n,value:v})).sort((a,b)=>b.value-a.value)}))};
+  if(!data.children.length){host.insertAdjacentHTML('beforeend','<div class="empty-state">No authorities match the current filters.</div>');return;}
+  const svg=d3.select(host).append('svg').attr('id','approvalHierarchySvg').attr('viewBox','0 0 1100 560');
+  const root=d3.hierarchy(data);root.x0=280;root.y0=70;root.children.forEach(d=>{d._children=d.children;d.children=null;});
+  const tree=d3.tree().nodeSize([105,300]);
+  function update(source){
+    tree(root);const nodes=root.descendants(),links=root.links();
+    const minX=d3.min(nodes,d=>d.x),maxX=d3.max(nodes,d=>d.x),shift=280-(minX+maxX)/2;nodes.forEach(d=>{d.fx=d.x+shift;d.fy=55+d.depth*320;});
+    svg.selectAll('path.approval-link').data(links,d=>d.target.data.name+'-'+d.target.depth).join(enter=>enter.append('path').attr('class','approval-link'),update=>update,exit=>exit.remove()).attr('d',d=>`M${d.source.fy+85},${d.source.fx} C${(d.source.fy+d.target.fy)/2},${d.source.fx} ${(d.source.fy+d.target.fy)/2},${d.target.fx} ${d.target.fy-85},${d.target.fx}`);
+    const g=svg.selectAll('g.approval-node').data(nodes,d=>d.data.name+'-'+d.depth).join(enter=>{const x=enter.append('g').attr('class','approval-node');x.append('rect').attr('x',-85).attr('y',-39).attr('width',170).attr('height',78).attr('rx',13);x.append('text').attr('class','node-title').attr('y',-10);x.append('text').attr('class','node-count').attr('y',17);x.append('text').attr('class','node-hint').attr('y',32);return x;},update=>update,exit=>exit.remove()).attr('transform',d=>`translate(${d.fy},${d.fx})`).classed('collapsed',d=>!!d._children);
+    g.select('rect').attr('fill',d=>approvalHierarchyColor(d.data.name,d.depth));g.select('.node-title').text(d=>d.data.name.length>23?d.data.name.slice(0,22)+'…':d.data.name);g.select('.node-count').text(d=>fmtNum(d.data.value));g.select('.node-hint').text(d=>d.depth===1?(d._children?'Touch to expand':'Touch to collapse'):'authorities');
+    g.on('click',(event,d)=>{if(d.depth!==1)return;if(d.children){d._children=d.children;d.children=null;}else{d.children=d._children;d._children=null;}update(d);});
+  }
+  update(root);
 }
 
 function populateSectorFilter(){
@@ -1884,12 +1892,12 @@ document.getElementById("overviewClearFilters").addEventListener("click", ()=>{
   renderOverview();
 });
 ["approvalSalesFilter","approvalStateFilter","approvalDateFrom","approvalDateTo"].forEach(id=>{
-  const el = document.getElementById(id); if(el) el.addEventListener("change", ()=>{ renderApprovalCards(); renderApprovalTable(); });
+  const el = document.getElementById(id); if(el) el.addEventListener("change", ()=>{ renderApprovalCards(); });
 });
 document.getElementById("approvalClearFilters").addEventListener("click", ()=>{
   ["approvalSalesFilter","approvalStateFilter"].forEach(id=>document.getElementById(id).value="");
   ["approvalDateFrom","approvalDateTo"].forEach(id=>document.getElementById(id).value="");
-  renderApprovalCards(); renderApprovalTable();
+  renderApprovalCards();
 });
 ["spStateFilter","spDateFrom","spDateTo"].forEach(id=>{
   const el = document.getElementById(id); if(el) el.addEventListener("change", ()=>renderSalesPerson());
@@ -1945,8 +1953,8 @@ document.querySelectorAll("#overviewTypeChips .chip").forEach(chip=>{
   });
 });
 wireSortableHeaders("overviewTable", overviewSortState, renderOverviewTable);
-document.getElementById("approvalSearch").addEventListener("input", renderApprovalTable);
-document.getElementById("approvalSectorFilter").addEventListener("change", renderApprovalTable);
+document.getElementById("approvalSearch").addEventListener("input", renderApprovalCards);
+document.getElementById("approvalSectorFilter").addEventListener("change", renderApprovalCards);
 document.getElementById("spSearch").addEventListener("input", renderSalesPerson);
 document.getElementById("spSort").addEventListener("change", renderSalesPerson);
 document.getElementById("bigSearch").addEventListener("input", renderBigTable);
@@ -1967,7 +1975,7 @@ document.querySelectorAll("#typeChips .chip").forEach(chip=>{
   });
 });
 document.getElementById("refreshBtn").addEventListener("click", ()=>loadAll(true));
-wireSortableHeaders("approvalTable", approvalSortState, renderApprovalTable);
+
 wireSortableHeaders("bigTable", bigSortState, renderBigTable);
 
 /* ============================ LOAD ============================ */
@@ -1989,7 +1997,6 @@ async function loadAll(isRefresh){
     populateAllFilterDropdowns();
     renderOverview();
     renderApprovalCards();
-    renderApprovalTable();
     renderSalesPerson();
     renderBigTable();
     renderRegion();
